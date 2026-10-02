@@ -1,5 +1,5 @@
 /**
- * BedLink Core Type Definitions
+ * VitaRoute Core Type Definitions
  * Mission-critical emergency dispatch and hospital bed coordination
  */
 
@@ -16,7 +16,7 @@ export interface BedTypeMeta {
   label: string;
   shortLabel: string;
   description: string;
-  priorityWeight: number; // for emergency acuity matching
+  priorityWeight: number;
   equipmentHighlight: string;
 }
 
@@ -35,7 +35,7 @@ export const BED_TYPES: Record<BedTypeId, BedTypeMeta> = {
     shortLabel: 'ICU-Stepdown',
     description: 'High-dependency intensive care, inotropic infusion, NIV/BiPAP',
     priorityWeight: 8,
-    equipmentHighlight: 'Airvo 2 HFNC & Telemetry',
+    equipmentHighlight: 'Airvo 2 HFNC and Telemetry',
   },
   oxygen_bed: {
     id: 'oxygen_bed',
@@ -57,9 +57,9 @@ export const BED_TYPES: Record<BedTypeId, BedTypeMeta> = {
     id: 'burns_isolation',
     label: 'Burns / Isolation',
     shortLabel: 'Burns / Negative P',
-    description: 'HEPA filtered negative-pressure containment, climate-controlled laminar flow',
+    description: 'HEPA filtered negative-pressure containment, laminar air flow',
     priorityWeight: 7,
-    equipmentHighlight: 'Negative Pressure & Fluid Warmers',
+    equipmentHighlight: 'Negative Pressure and Fluid Warmers',
   },
   trauma_resuscitation: {
     id: 'trauma_resuscitation',
@@ -68,6 +68,65 @@ export const BED_TYPES: Record<BedTypeId, BedTypeMeta> = {
     description: 'Level 1 trauma resuscitation bay, rapid blood infuser, fluoroscopy',
     priorityWeight: 10,
     equipmentHighlight: 'Belmont Rapid Infuser + C-Arm',
+  },
+};
+
+export type SpecialtyId =
+  | 'cardiac_cath_lab'
+  | 'ecmo'
+  | 'stroke_thrombectomy'
+  | 'burn_unit'
+  | 'pediatric_icu'
+  | 'trauma_level_1'
+  | 'hyperbaric_o2'
+  | 'emergency_dialysis';
+
+export interface SpecialtyMeta {
+  id: SpecialtyId;
+  label: string;
+  category: 'cardiac' | 'neuro' | 'trauma' | 'burns' | 'pediatric' | 'general';
+}
+
+export const AVAILABLE_SPECIALTIES: Record<SpecialtyId, SpecialtyMeta> = {
+  cardiac_cath_lab: {
+    id: 'cardiac_cath_lab',
+    label: '24/7 Primary PCI (Cath Lab)',
+    category: 'cardiac',
+  },
+  ecmo: {
+    id: 'ecmo',
+    label: 'ECMO Standby',
+    category: 'cardiac',
+  },
+  stroke_thrombectomy: {
+    id: 'stroke_thrombectomy',
+    label: 'Endovascular Thrombectomy (Stroke)',
+    category: 'neuro',
+  },
+  burn_unit: {
+    id: 'burn_unit',
+    label: 'Specialized Burn ICU Team',
+    category: 'burns',
+  },
+  pediatric_icu: {
+    id: 'pediatric_icu',
+    label: 'Pediatric ICU (PICU)',
+    category: 'pediatric',
+  },
+  trauma_level_1: {
+    id: 'trauma_level_1',
+    label: 'Level 1 Trauma Surgical Crew',
+    category: 'trauma',
+  },
+  hyperbaric_o2: {
+    id: 'hyperbaric_o2',
+    label: 'Hyperbaric Oxygen Chamber',
+    category: 'general',
+  },
+  emergency_dialysis: {
+    id: 'emergency_dialysis',
+    label: 'Emergency Hemodialysis / CRRT',
+    category: 'general',
   },
 };
 
@@ -88,7 +147,7 @@ export const TRIAGE_LEVELS: Record<TriageAcuity, TriageLevelMeta> = {
     label: 'Immediate / Level 1',
     subtext: 'Life-threatening instability; zero-wait admission',
     targetResponse: '< 2 mins to ER bed',
-    colorClass: 'text-rose-400 bg-rose-950/40 border-rose-600/50',
+    colorClass: 'text-rose-700 bg-rose-50 border-rose-200',
     borderClass: 'border-rose-500',
   },
   Yellow: {
@@ -96,7 +155,7 @@ export const TRIAGE_LEVELS: Record<TriageAcuity, TriageLevelMeta> = {
     label: 'Urgent / Level 2',
     subtext: 'Potentially unstable; continuous vitals monitoring required',
     targetResponse: '< 15 mins to bed',
-    colorClass: 'text-amber-400 bg-amber-950/40 border-amber-600/50',
+    colorClass: 'text-amber-800 bg-amber-50 border-amber-200',
     borderClass: 'border-amber-500',
   },
   Green: {
@@ -104,7 +163,7 @@ export const TRIAGE_LEVELS: Record<TriageAcuity, TriageLevelMeta> = {
     label: 'Delayed / Level 3',
     subtext: 'Systemic signs stable; urgent care or observation',
     targetResponse: '< 60 mins to bed',
-    colorClass: 'text-emerald-400 bg-emerald-950/40 border-emerald-600/50',
+    colorClass: 'text-emerald-800 bg-emerald-50 border-emerald-200',
     borderClass: 'border-emerald-500',
   },
 };
@@ -125,11 +184,13 @@ export interface Hospital {
   ward: string;
   address: string;
   zone: string;
+  lat: number;
+  lng: number;
   distanceKm: number;
   travelTimeMins: number;
   erLoad: ERLoad;
   diversionStatus: 'Open' | 'Advisory' | 'Diversion';
-  specialties: string[];
+  specialties: SpecialtyId[];
   lastUpdatedMinutesAgo: number;
   lastUpdatedTimestamp: number;
   beds: Record<BedTypeId, HospitalBedCount>;
@@ -166,12 +227,37 @@ export interface HoldRequest {
   doctorInCharge?: string;
 }
 
-export type AppRole = 'nurse' | 'dispatch' | 'er';
+export type AppRole = 'citizen' | 'nurse' | 'dispatch' | 'er';
 
 export interface DispatchFilterState {
   triageAcuity: TriageAcuity;
   requiredBedType: BedTypeId;
+  requiredSpecialties: SpecialtyId[];
   locationSector: string;
+  useLiveGps: boolean;
   ambulanceCallSign: string;
   patientConditionNote: string;
+}
+
+export type EmergencyCategory =
+  | 'cardiac'
+  | 'respiratory'
+  | 'trauma'
+  | 'burn'
+  | 'stroke'
+  | 'general';
+
+export interface CitizenSOSRequest {
+  id: string;
+  timestamp: number;
+  category: EmergencyCategory;
+  callerPhone: string;
+  patientCount: number;
+  notes: string;
+  lat: number;
+  lng: number;
+  addressApprox: string;
+  assignedAmbulanceCallSign?: string;
+  status: 'transmitting' | 'dispatched' | 'en_route' | 'arrived';
+  etaMinutes: number;
 }

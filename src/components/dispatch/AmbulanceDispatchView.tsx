@@ -6,24 +6,31 @@ import {
   TRIAGE_LEVELS,
   TriageAcuity,
   Hospital,
-  HoldRequest,
+  SpecialtyId,
+  AVAILABLE_SPECIALTIES,
 } from '../../types/bedlink';
 import {
   AMBULANCE_FLEET,
   MOCK_LOCATION_SECTORS,
 } from '../../data/mockHospitals';
+import {
+  calculateHaversineDistance,
+  estimateEmergencyTravelTime,
+  METRO_SECTORS,
+} from '../../utils/geo';
 import { CountdownRing } from '../common/CountdownRing';
 import {
   Clock,
   Navigation,
-  CheckCircle,
-  TrendingUp,
   Building,
   Check,
   X,
-  AlertTriangle,
-  ArrowRight,
   ShieldCheck,
+  MapPin,
+  Compass,
+  CheckSquare,
+  Square,
+  Layers,
 } from 'lucide-react';
 
 export const AmbulanceDispatchView: React.FC = () => {
@@ -31,11 +38,16 @@ export const AmbulanceDispatchView: React.FC = () => {
     hospitals,
     dispatchFilter,
     setDispatchFilter,
+    toggleSpecialtyFilter,
     requestHold,
     acceptHold,
     rejectHold,
     activeHolds,
     setRole,
+    liveCoordinates,
+    gpsAccuracy,
+    requestLiveLocation,
+    isLocating,
   } = useBedLink();
 
   // Active confirmation modal hold state
@@ -47,36 +59,49 @@ export const AmbulanceDispatchView: React.FC = () => {
       label: 'Cardiac Arrest / STEMI',
       bedType: 'cardiac_monitored' as BedTypeId,
       acuity: 'Red' as TriageAcuity,
-      note: 'STEMI anterior lead · Post-resus ROSC · Emergent Cath Lab standby',
+      specialties: ['cardiac_cath_lab'] as SpecialtyId[],
+      note: 'STEMI anterior lead, Post-resus ROSC, Emergent Cath Lab standby',
     },
     {
       label: 'ARDS / Vent Failure',
       bedType: 'icu_ventilator' as BedTypeId,
       acuity: 'Red' as TriageAcuity,
-      note: 'Acute respiratory distress · SpO2 80% on 15L · Intubated in field',
+      specialties: ['ecmo'] as SpecialtyId[],
+      note: 'Acute respiratory distress, SpO2 80% on 15L, Intubated in field',
     },
     {
       label: 'Severe Chemical Burn',
       bedType: 'burns_isolation' as BedTypeId,
       acuity: 'Yellow' as TriageAcuity,
-      note: '35% TBSA chemical alkali exposure · Negative pressure room',
+      specialties: ['burn_unit'] as SpecialtyId[],
+      note: '35% TBSA chemical alkali exposure, Negative pressure room',
     },
     {
       label: 'Blunt Poly-Trauma',
       bedType: 'trauma_resuscitation' as BedTypeId,
       acuity: 'Red' as TriageAcuity,
-      note: 'High-speed rollover · Hemodynamic shock · Rapid infuser needed',
+      specialties: ['trauma_level_1'] as SpecialtyId[],
+      note: 'High-speed rollover, Hemodynamic shock, Rapid infuser needed',
+    },
+    {
+      label: 'Acute Ischemic Stroke',
+      bedType: 'icu_non_ventilator' as BedTypeId,
+      acuity: 'Red' as TriageAcuity,
+      specialties: ['stroke_thrombectomy'] as SpecialtyId[],
+      note: 'Onset 45 mins ago, Dense hemiplegia, Emergent thrombectomy candidate',
     },
   ];
 
-  const currentSector = useMemo(() => {
-    return (
-      MOCK_LOCATION_SECTORS.find((s) => s.id === dispatchFilter.locationSector) ||
-      MOCK_LOCATION_SECTORS[0]
-    );
-  }, [dispatchFilter.locationSector]);
+  // Origin coordinates for distance calculation: live GPS vs sector
+  const originCoords = useMemo(() => {
+    if (dispatchFilter.useLiveGps && liveCoordinates) {
+      return liveCoordinates;
+    }
+    const sectorMeta = METRO_SECTORS[dispatchFilter.locationSector];
+    return sectorMeta ? sectorMeta.coords : { lat: 40.7128, lng: -74.006 };
+  }, [dispatchFilter.useLiveGps, dispatchFilter.locationSector, liveCoordinates]);
 
-  // Compute composite score and rank hospitals
+  // Compute composite multi-constraint score and rank hospitals
   const rankedHospitals = useMemo(() => {
     const list = hospitals.map((h) => {
       const requestedBed = h.beds[dispatchFilter.requiredBedType] || {
@@ -86,34 +111,64 @@ export const AmbulanceDispatchView: React.FC = () => {
       };
       const availableBeds = requestedBed.available;
 
-      const calculatedDistance = Number(
-        (h.distanceKm + currentSector.baseDistanceOffset).toFixed(1)
-      );
-      const calculatedETA = Math.max(
-        4,
-        Math.round(h.travelTimeMins + currentSector.baseDistanceOffset * 1.8)
+      // Real Haversine distance and dynamic travel time
+      const calculatedDistance = calculateHaversineDistance(
+        originCoords.lat,
+        originCoords.lng,
+        h.lat,
+        h.lng
       );
 
+      const calculatedETA = estimateEmergencyTravelTime(
+        calculatedDistance,
+        h.erLoad
+      );
+
+      // Multi-Specialty Constraint Evaluation
+      const requiredSpecialties = dispatchFilter.requiredSpecialties;
+      const matchedSpecialties = requiredSpecialties.filter((req) =>
+        h.specialties.includes(req)
+      );
+      const missingSpecialties = requiredSpecialties.filter(
+        (req) => !h.specialties.includes(req)
+      );
+      const specialtyMatchRate =
+        requiredSpecialties.length > 0
+          ? matchedSpecialties.length / requiredSpecialties.length
+          : 1.0;
+
+      // Composite algorithmic penalty score (lower is better)
       let penalty = 0;
+
+      // 1. Bed Availability Weight
       if (availableBeds <= 0) {
-        penalty += 1000;
+        penalty += 1200;
       } else {
-        penalty -= availableBeds * 5;
+        penalty -= availableBeds * 6;
       }
 
-      penalty += calculatedETA * 3;
+      // 2. Specialty Missing Weight
+      if (missingSpecialties.length > 0) {
+        penalty += missingSpecialties.length * 150;
+      }
 
-      if (h.erLoad === 'Surge') penalty += 30;
+      // 3. Travel Time Weight
+      penalty += calculatedETA * 4;
+
+      // 4. ER Load Strain
+      if (h.erLoad === 'Surge') penalty += 35;
       if (h.erLoad === 'Medium') penalty += 10;
 
+      // 5. Data Freshness Penalty
       if (h.lastUpdatedMinutesAgo > 45) {
-        penalty += 45;
-      } else if (h.lastUpdatedMinutesAgo > 20) {
+        penalty += 50;
+      } else if (h.lastUpdatedMinutesAgo > 15) {
         penalty += 15;
       }
 
-      if (h.diversionStatus === 'Diversion') penalty += 500;
-      if (h.diversionStatus === 'Advisory') penalty += 20;
+      // 6. Diversion Status Penalty
+      if (h.diversionStatus === 'Diversion') penalty += 600;
+      if (h.diversionStatus === 'Advisory') penalty += 25;
 
       return {
         hospital: h,
@@ -122,13 +177,16 @@ export const AmbulanceDispatchView: React.FC = () => {
         heldBeds: requestedBed.held,
         calculatedDistance,
         calculatedETA,
+        matchedSpecialties,
+        missingSpecialties,
+        specialtyMatchRate,
         score: penalty,
       };
     });
 
     list.sort((a, b) => a.score - b.score);
     return list;
-  }, [hospitals, dispatchFilter.requiredBedType, currentSector]);
+  }, [hospitals, dispatchFilter.requiredBedType, dispatchFilter.requiredSpecialties, originCoords]);
 
   const handleRequestBedHold = (targetHospital: Hospital) => {
     const hold = requestHold(targetHospital.id, dispatchFilter.requiredBedType);
@@ -141,18 +199,19 @@ export const AmbulanceDispatchView: React.FC = () => {
   }, [activeHolds, activeModalHoldId]);
 
   const bedKeys = Object.keys(BED_TYPES) as BedTypeId[];
+  const allSpecialtyKeys = Object.keys(AVAILABLE_SPECIALTIES) as SpecialtyId[];
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
-      {/* Patient Requirement & Ambulance Location Form */}
+      {/* Patient Requirement, Multi-Constraint and Location Form */}
       <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <div>
             <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Ambulance Dispatch &amp; Patient Requirement</span>
+              <span>Ambulance Dispatch and Multi-Constraint Matching</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Select patient acuity, bed category, and current ambulance location to rank regional facilities.
+              Ranks regional facilities by live bed availability, required surgical specialties, GPS travel time, and ER load.
             </p>
           </div>
 
@@ -167,6 +226,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                     ...prev,
                     requiredBedType: sc.bedType,
                     triageAcuity: sc.acuity,
+                    requiredSpecialties: sc.specialties,
                     patientConditionNote: sc.note,
                   }))
                 }
@@ -178,7 +238,7 @@ export const AmbulanceDispatchView: React.FC = () => {
           </div>
         </div>
 
-        {/* Inputs Grid: Unit, Acuity, Bed Type, Sector */}
+        {/* Inputs Grid: Unit, Acuity, Bed Type, Geolocation Mode */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4">
           {/* Ambulance Unit */}
           <div>
@@ -214,7 +274,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                 const isSelected = dispatchFilter.triageAcuity === level;
                 let btnStyle = 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100';
                 if (isSelected) {
-                  if (level === 'Red') btnStyle = 'bg-red-50 text-red-700 border-red-300 font-bold';
+                  if (level === 'Red') btnStyle = 'bg-rose-50 text-rose-800 border-rose-300 font-bold';
                   if (level === 'Yellow') btnStyle = 'bg-amber-50 text-amber-800 border-amber-300 font-bold';
                   if (level === 'Green') btnStyle = 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold';
                 }
@@ -261,28 +321,101 @@ export const AmbulanceDispatchView: React.FC = () => {
             </select>
           </div>
 
-          {/* Location Sector */}
+          {/* Location Origin Mode (Live GPS vs Sector) */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-1.5">
-              Ambulance Location
-            </label>
-            <select
-              value={dispatchFilter.locationSector}
-              onChange={(e) =>
-                setDispatchFilter((prev) => ({
-                  ...prev,
-                  locationSector: e.target.value,
-                }))
-              }
-              aria-label="Ambulance Location Sector"
-              className="w-full bg-white border border-slate-300 rounded-md text-slate-900 text-sm font-semibold p-2 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 cursor-pointer"
-            >
-              {MOCK_LOCATION_SECTORS.map((sector) => (
-                <option key={sector.id} value={sector.id}>
-                  {sector.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Ambulance Location
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setDispatchFilter((prev) => ({
+                    ...prev,
+                    useLiveGps: !prev.useLiveGps,
+                  }))
+                }
+                className="text-[11px] font-semibold text-sky-700 hover:text-sky-800"
+              >
+                {dispatchFilter.useLiveGps ? 'Use Sector' : 'Use Live GPS'}
+              </button>
+            </div>
+
+            {dispatchFilter.useLiveGps ? (
+              <div className="bg-slate-50 border border-slate-300 rounded-md p-2 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-slate-800 font-mono">
+                  <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                  <span>
+                    {originCoords.lat.toFixed(3)}N, {Math.abs(originCoords.lng).toFixed(3)}W
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={requestLiveLocation}
+                  disabled={isLocating}
+                  className="text-[11px] text-sky-700 font-semibold hover:underline"
+                >
+                  {isLocating ? 'Locating...' : 'Refresh GPS'}
+                </button>
+              </div>
+            ) : (
+              <select
+                value={dispatchFilter.locationSector}
+                onChange={(e) =>
+                  setDispatchFilter((prev) => ({
+                    ...prev,
+                    locationSector: e.target.value,
+                  }))
+                }
+                aria-label="Ambulance Location Sector"
+                className="w-full bg-white border border-slate-300 rounded-md text-slate-900 text-sm font-semibold p-2 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 cursor-pointer"
+              >
+                {MOCK_LOCATION_SECTORS.map((sector) => (
+                  <option key={sector.id} value={sector.id}>
+                    {sector.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        </div>
+
+        {/* Multi-Specialty Filter Matrix */}
+        <div className="mt-4 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-sky-700" />
+              <span>Required Clinical Specialties (Multi-Select Constraints):</span>
+            </span>
+            <span className="text-[11px] text-slate-500">
+              {dispatchFilter.requiredSpecialties.length} specialty criteria active
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {allSpecialtyKeys.map((key) => {
+              const meta = AVAILABLE_SPECIALTIES[key];
+              const isChecked = dispatchFilter.requiredSpecialties.includes(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleSpecialtyFilter(key)}
+                  className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+                    isChecked
+                      ? 'bg-sky-50 text-sky-900 border-sky-300 font-semibold'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {isChecked ? (
+                    <CheckSquare className="w-3.5 h-3.5 text-sky-700" />
+                  ) : (
+                    <Square className="w-3.5 h-3.5 text-slate-400" />
+                  )}
+                  <span>{meta.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -300,7 +433,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                 patientConditionNote: e.target.value,
               }))
             }
-            placeholder="e.g. Acute respiratory distress, SpO2 82%, intubated..."
+            placeholder="e.g. Acute respiratory distress, SpO2 82%, intubated in field"
             className="flex-1 bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
           />
         </div>
@@ -310,25 +443,34 @@ export const AmbulanceDispatchView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-            Recommended Hospitals &middot; Matched for {BED_TYPES[dispatchFilter.requiredBedType].label}
+            Recommended Hospitals: Matched for {BED_TYPES[dispatchFilter.requiredBedType].label}
           </h2>
           <p className="text-xs text-slate-500">
-            Sorted by live bed availability, travel time, data freshness, and emergency room strain.
+            Sorted by live bed inventory, specialty compatibility, GPS road distance, data freshness, and ER load.
           </p>
         </div>
 
         <div className="text-xs text-slate-600 flex items-center gap-3">
           <span className="font-semibold text-slate-700">Data Freshness:</span>
           <span className="text-emerald-700 font-medium">&bull; &lt;15 min (Fresh)</span>
-          <span className="text-amber-700 font-medium">&bull; 15&ndash;45 min</span>
-          <span className="text-red-700 font-medium">&bull; &gt;45 min (Stale)</span>
+          <span className="text-amber-700 font-medium">&bull; 15-45 min</span>
+          <span className="text-rose-700 font-medium">&bull; &gt;45 min (Stale)</span>
         </div>
       </div>
 
       {/* Clean Hospital Recommendation List Layout */}
       <div className="flex flex-col gap-3">
         {rankedHospitals.map((item, index) => {
-          const { hospital, availableBeds, totalBeds, heldBeds, calculatedDistance, calculatedETA } = item;
+          const {
+            hospital,
+            availableBeds,
+            heldBeds,
+            calculatedDistance,
+            calculatedETA,
+            matchedSpecialties,
+            missingSpecialties,
+          } = item;
+
           const isBestMatch = index === 0 && availableBeds > 0;
           const rankNumber = index + 1;
           const isFull = availableBeds === 0;
@@ -339,7 +481,7 @@ export const AmbulanceDispatchView: React.FC = () => {
 
           if (hospital.lastUpdatedMinutesAgo > 45) {
             freshnessLabel = `Updated ${hospital.lastUpdatedMinutesAgo} min ago (Stale data)`;
-            freshnessStyle = 'text-red-800 bg-red-50 border-red-200';
+            freshnessStyle = 'text-rose-800 bg-rose-50 border-rose-200';
           } else if (hospital.lastUpdatedMinutesAgo > 15) {
             freshnessLabel = `Updated ${hospital.lastUpdatedMinutesAgo} min ago`;
             freshnessStyle = 'text-amber-800 bg-amber-50 border-amber-200';
@@ -349,7 +491,7 @@ export const AmbulanceDispatchView: React.FC = () => {
           let erLoadLabel = `${hospital.erLoad} Load`;
           let erLoadStyle = 'text-slate-700 bg-slate-100 border-slate-200';
           if (hospital.erLoad === 'Surge') {
-            erLoadStyle = 'text-red-800 bg-red-50 border-red-200 font-semibold';
+            erLoadStyle = 'text-rose-800 bg-rose-50 border-rose-200 font-semibold';
           } else if (hospital.erLoad === 'Medium') {
             erLoadStyle = 'text-amber-800 bg-amber-50 border-amber-200 font-semibold';
           }
@@ -365,7 +507,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                   : 'border-slate-200 hover:border-slate-300'
               }`}
             >
-              {/* Left Side: Hospital Details and Explicit Metrics */}
+              {/* Left Side: Hospital Details and Metrics */}
               <div className="flex items-start gap-4 flex-1">
                 {/* Clean Rank Number */}
                 <div
@@ -392,7 +534,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                       </span>
                     )}
                     {hospital.diversionStatus !== 'Open' && (
-                      <span className="text-xs font-bold text-red-800 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+                      <span className="text-xs font-bold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
                         {hospital.diversionStatus}
                       </span>
                     )}
@@ -402,12 +544,12 @@ export const AmbulanceDispatchView: React.FC = () => {
                     {hospital.designation} &middot; {hospital.address}
                   </p>
 
-                  {/* 4 Explicit Required Display Elements */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-100 text-xs">
+                  {/* 5 Explicit Metrics Display */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-3 pt-3 border-t border-slate-100 text-xs">
                     {/* 1. Bed match */}
                     <div>
                       <span className="text-slate-500 block text-[11px] font-medium">
-                        1. Bed Match ({BED_TYPES[dispatchFilter.requiredBedType].shortLabel})
+                        1. Bed Match
                       </span>
                       <span
                         className={`text-sm font-bold font-mono mt-0.5 block ${
@@ -415,12 +557,12 @@ export const AmbulanceDispatchView: React.FC = () => {
                             ? 'text-emerald-700'
                             : availableBeds > 0
                             ? 'text-amber-700'
-                            : 'text-red-700'
+                            : 'text-rose-700'
                         }`}
                       >
                         {availableBeds > 0
-                          ? `${availableBeds} beds available`
-                          : '0 beds available (Full)'}
+                          ? `${availableBeds} beds free`
+                          : '0 beds free'}
                       </span>
                       {heldBeds > 0 && (
                         <span className="text-[11px] text-amber-700 block">
@@ -429,10 +571,30 @@ export const AmbulanceDispatchView: React.FC = () => {
                       )}
                     </div>
 
-                    {/* 2. Estimated Travel Time */}
+                    {/* 2. Specialty Compatibility */}
                     <div>
                       <span className="text-slate-500 block text-[11px] font-medium">
-                        2. Travel Time
+                        2. Specialties
+                      </span>
+                      {dispatchFilter.requiredSpecialties.length === 0 ? (
+                        <span className="text-xs text-slate-600 mt-0.5 block font-medium">
+                          No specialty filter
+                        </span>
+                      ) : missingSpecialties.length === 0 ? (
+                        <span className="text-xs font-bold text-emerald-700 mt-0.5 block">
+                          100% Match ({matchedSpecialties.length}/{dispatchFilter.requiredSpecialties.length})
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold text-rose-700 mt-0.5 block">
+                          Missing {missingSpecialties.length} specialty
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 3. Estimated Travel Time */}
+                    <div>
+                      <span className="text-slate-500 block text-[11px] font-medium">
+                        3. Travel Time
                       </span>
                       <span className="text-sm font-bold font-mono text-slate-900 mt-0.5 flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-slate-500" />
@@ -440,10 +602,10 @@ export const AmbulanceDispatchView: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* 3. Bed-Data Freshness */}
+                    {/* 4. Bed-Data Freshness */}
                     <div>
                       <span className="text-slate-500 block text-[11px] font-medium">
-                        3. Bed-Data Freshness
+                        4. Data Freshness
                       </span>
                       <span
                         className={`inline-block px-2 py-0.5 rounded border text-[11px] font-semibold mt-0.5 ${freshnessStyle}`}
@@ -452,10 +614,10 @@ export const AmbulanceDispatchView: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* 4. Current Hospital/ER Load */}
+                    {/* 5. Current Hospital/ER Load */}
                     <div>
                       <span className="text-slate-500 block text-[11px] font-medium">
-                        4. Hospital / ER Load
+                        5. ER Strain
                       </span>
                       <span
                         className={`inline-block px-2 py-0.5 rounded border text-[11px] font-semibold mt-0.5 ${erLoadStyle}`}
@@ -488,7 +650,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                   onClick={() => setRole('er')}
                   className="w-full py-1.5 px-3 rounded-md text-[11px] text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors text-center"
                 >
-                  View Bed Hold Board &rarr;
+                  View Bed Hold Board
                 </button>
               </div>
             </div>
@@ -504,7 +666,7 @@ export const AmbulanceDispatchView: React.FC = () => {
               <div className="flex items-center gap-2 text-sky-800">
                 <Building className="w-5 h-5" />
                 <h3 className="font-bold text-base text-slate-900">
-                  2-Minute Bed Hold Confirmation
+                  2-Minute Bed Hold Confirmation Window
                 </h3>
               </div>
               <button
@@ -516,17 +678,17 @@ export const AmbulanceDispatchView: React.FC = () => {
               </button>
             </div>
 
-            {/* Hold Details as requested */}
+            {/* Hold Details */}
             <div className="space-y-3 text-sm">
               <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Request Status:
+                  Reservation Target:
                 </div>
                 <div className="text-base font-bold text-slate-900 mt-0.5">
                   Bed request sent to {currentActiveModalHold.hospitalName}
                 </div>
                 <div className="text-xs font-semibold text-sky-800 mt-1">
-                  {BED_TYPES[currentActiveModalHold.bedType].label} &mdash; 1 bed
+                  {BED_TYPES[currentActiveModalHold.bedType].label}: 1 bed held
                 </div>
               </div>
 
@@ -557,7 +719,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                   strokeWidth={8}
                 />
                 <p className="text-xs text-slate-500 text-center mt-2">
-                  Hospital has 120 seconds to confirm bed reservation.
+                  Hospital receiving desk has 120 seconds to confirm. On rejection or timeout, VitaRoute automatically escalates to the next hospital.
                 </p>
               </div>
             </div>
@@ -570,10 +732,10 @@ export const AmbulanceDispatchView: React.FC = () => {
                   onClick={() => {
                     rejectHold(currentActiveModalHold.id, 'Capacity unavailable');
                   }}
-                  className="py-2.5 px-4 rounded-md border border-red-300 bg-red-50 hover:bg-red-100 text-red-800 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                  className="py-2.5 px-4 rounded-md border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <X className="w-4 h-4 text-red-600" />
-                  <span>Reject</span>
+                  <X className="w-4 h-4 text-rose-600" />
+                  <span>Reject (Divert)</span>
                 </button>
 
                 <button
@@ -584,16 +746,16 @@ export const AmbulanceDispatchView: React.FC = () => {
                   className="py-2.5 px-4 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                 >
                   <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>Accept (Confirm Bed)</span>
+                  <span>Accept (Lock Bed)</span>
                 </button>
               </div>
             ) : currentActiveModalHold.status === 'accepted' ? (
               <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-md text-center">
                 <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">
-                  BED HELD &mdash; RESERVATION LOCKED
+                  BED HELD: RESERVATION LOCKED
                 </span>
                 <p className="text-xs text-slate-600 mt-1">
-                  Bed is officially reserved for {currentActiveModalHold.ambulanceCallSign}.
+                  Bed is locked for {currentActiveModalHold.ambulanceCallSign}.
                 </p>
                 <button
                   onClick={() => {
@@ -602,7 +764,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                   }}
                   className="mt-2.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-md"
                 >
-                  View in Bed Hold Screen &rarr;
+                  View in Bed Hold Screen
                 </button>
               </div>
             ) : (

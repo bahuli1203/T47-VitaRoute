@@ -163,7 +163,7 @@ export const ERConfirmHoldView: React.FC = () => {
               <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
                 <span className="text-xs text-slate-500 block font-medium">Requested Bed:</span>
                 <span className="text-base font-bold text-slate-900 block mt-0.5">
-                  {BED_TYPES[primaryPendingHold.bedType].label} &mdash; 1 bed
+                  {BED_TYPES[primaryPendingHold.bedType].label}: 1 bed
                 </span>
                 <span className="text-xs text-slate-600 mt-0.5 block">
                   Current Available in Hospital: {currentHospital.beds[primaryPendingHold.bedType]?.available ?? 0} beds

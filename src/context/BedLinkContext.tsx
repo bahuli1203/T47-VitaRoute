@@ -3,12 +3,16 @@ import {
   AppRole,
   Hospital,
   BedTypeId,
+  SpecialtyId,
   HoldRequest,
   DispatchFilterState,
   TriageAcuity,
+  CitizenSOSRequest,
+  EmergencyCategory,
 } from '../types/bedlink';
 import { INITIAL_HOSPITALS } from '../data/mockHospitals';
 import { soundManager } from '../utils/audio';
+import { METRO_SECTORS } from '../utils/geo';
 
 interface BedLinkContextType {
   role: AppRole;
@@ -21,16 +25,32 @@ interface BedLinkContextType {
   pendingHoldsCount: number;
   dispatchFilter: DispatchFilterState;
   setDispatchFilter: React.Dispatch<React.SetStateAction<DispatchFilterState>>;
+  toggleSpecialtyFilter: (specialtyId: SpecialtyId) => void;
   isMuted: boolean;
   toggleMute: () => void;
   lastSyncTimestamp: number;
-  
+
+  // Geolocation and Connectivity
+  liveCoordinates: { lat: number; lng: number };
+  gpsAccuracy: number | null;
+  gpsError: string | null;
+  isLocating: boolean;
+  requestLiveLocation: () => void;
+  isOnline: boolean;
+  pendingOfflineSyncCount: number;
+
+  // Citizen SOS
+  citizenSOSRequests: CitizenSOSRequest[];
+  activeCitizenSOS: CitizenSOSRequest | null;
+  triggerCitizenSOS: (category: EmergencyCategory, phone: string, notes: string) => CitizenSOSRequest;
+  cancelCitizenSOS: (id: string) => void;
+
   // Nurse Actions
   incrementBed: (hospitalId: string, bedType: BedTypeId) => void;
   decrementBed: (hospitalId: string, bedType: BedTypeId) => void;
   setBedPreset: (hospitalId: string, preset: 'all_full' | 'reset_default' | 'surge_capacity') => void;
   syncAllBeds: (hospitalId: string) => void;
-  bedLastUpdatedMap: Record<string, number>; // hospitalId-bedType -> timestamp
+  bedLastUpdatedMap: Record<string, number>;
 
   // Dispatch Actions
   requestHold: (
@@ -47,7 +67,7 @@ interface BedLinkContextType {
   markArrived: (holdId: string) => void;
   cancelHold: (holdId: string) => void;
 
-  // Simulation & System Actions
+  // Simulation and System Actions
   simulateIncomingAmbulance: () => void;
   simulateMassSurge: () => void;
   resetAllData: () => void;
@@ -55,8 +75,12 @@ interface BedLinkContextType {
   dismissNotification: () => void;
 }
 
-const STORAGE_KEY_HOSPITALS = 'bedlink_hospitals_v3';
-const STORAGE_KEY_HOLDS = 'bedlink_holds_v3';
+const STORAGE_KEY_HOSPITALS = 'vitaroute_hospitals_v4';
+const STORAGE_KEY_HOLDS = 'vitaroute_holds_v4';
+const STORAGE_KEY_OFFLINE_QUEUE = 'vitaroute_offline_queue_v1';
+const STORAGE_KEY_CITIZEN_SOS = 'vitaroute_citizen_sos_v1';
+
+const DEFAULT_COORDS = { lat: 40.7128, lng: -74.006 };
 
 const BedLinkContext = createContext<BedLinkContextType | null>(null);
 
@@ -70,6 +94,35 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     text: string;
     type: 'success' | 'warning' | 'alert' | 'info';
   } | null>(null);
+
+  // Connectivity and Offline Sync
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [offlineQueue, setOfflineQueue] = useState<Array<{ hospitalId: string; bedType: BedTypeId; action: 'increment' | 'decrement'; timestamp: number }>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_OFFLINE_QUEUE);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+
+  // Geolocation state
+  const [liveCoordinates, setLiveCoordinates] = useState<{ lat: number; lng: number }>(DEFAULT_COORDS);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+
+  // Citizen SOS state
+  const [citizenSOSRequests, setCitizenSOSRequests] = useState<CitizenSOSRequest[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_CITIZEN_SOS);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return [];
+  });
 
   // Initialize hospitals from localStorage or fallback
   const [hospitals, setHospitals] = useState<Hospital[]>(() => {
@@ -94,7 +147,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return [
       {
         id: 'hold-demo-104',
-        ambulanceCallSign: 'Ambulance #104 (ALS Paramedic Unit)',
+        ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
         hospitalId: 'sjm-01',
         hospitalName: 'St. Jude Metropolitan Hospital',
         bedType: 'icu_ventilator',
@@ -107,8 +160,8 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           spo2: 82,
           gcs: 9,
         },
-        etaMinutes: 8,
-        distanceKm: 3.2,
+        etaMinutes: 6,
+        distanceKm: 2.4,
         createdAt: Date.now() - 5 * 1000,
         expiresAt: initialExpiry,
         status: 'pending',
@@ -118,14 +171,102 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     ];
   });
 
-  // Dispatch filter state
+  // Dispatch filter state with multi-specialty selection and live GPS toggle
   const [dispatchFilter, setDispatchFilter] = useState<DispatchFilterState>({
     triageAcuity: 'Red',
     requiredBedType: 'icu_ventilator',
+    requiredSpecialties: ['cardiac_cath_lab'],
     locationSector: 'sec-downtown',
-    ambulanceCallSign: 'Ambulance #104 (ALS Paramedic Unit)',
-    patientConditionNote: 'Acute Respiratory Distress · Intubated en route',
+    useLiveGps: true,
+    ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
+    patientConditionNote: 'Acute Respiratory Distress, Intubated en route',
   });
+
+  const toggleSpecialtyFilter = useCallback((specialtyId: SpecialtyId) => {
+    setDispatchFilter((prev) => {
+      const exists = prev.requiredSpecialties.includes(specialtyId);
+      const updated = exists
+        ? prev.requiredSpecialties.filter((s) => s !== specialtyId)
+        : [...prev.requiredSpecialties, specialtyId];
+      return { ...prev, requiredSpecialties: updated };
+    });
+  }, []);
+
+  // Request browser geolocation
+  const requestLiveLocation = useCallback(() => {
+    if (!('geolocation' in navigator)) {
+      setGpsError('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setIsLocating(true);
+    setGpsError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLiveCoordinates({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setGpsAccuracy(Math.round(position.coords.accuracy));
+        setIsLocating(false);
+      },
+      (error) => {
+        setGpsError(error.message || 'Unable to retrieve location.');
+        setIsLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000,
+      }
+    );
+  }, []);
+
+  // Listen to geolocation and online status
+  useEffect(() => {
+    requestLiveLocation();
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Flush offline sync queue
+      setOfflineQueue((queue) => {
+        if (queue.length > 0) {
+          setNotificationMessage({
+            text: `Connection restored. Synced ${queue.length} offline updates.`,
+            type: 'success',
+          });
+          localStorage.removeItem(STORAGE_KEY_OFFLINE_QUEUE);
+        }
+        return [];
+      });
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setNotificationMessage({
+        text: 'Network offline. Bed updates are queued locally and will sync when restored.',
+        type: 'warning',
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [requestLiveLocation]);
+
+  // Persist offline queue
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_OFFLINE_QUEUE, JSON.stringify(offlineQueue));
+    } catch {
+      // ignore
+    }
+  }, [offlineQueue]);
 
   // Sync mute state with sound manager
   useEffect(() => {
@@ -150,6 +291,15 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [activeHolds]);
 
+  // Persist citizen SOS
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_CITIZEN_SOS, JSON.stringify(citizenSOSRequests));
+    } catch {
+      // ignore
+    }
+  }, [citizenSOSRequests]);
+
   // Current selected hospital
   const currentHospital = useMemo(() => {
     return hospitals.find((h) => h.id === currentHospitalId) || hospitals[0];
@@ -159,6 +309,10 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const pendingHoldsCount = useMemo(() => {
     return activeHolds.filter((h) => h.status === 'pending').length;
   }, [activeHolds]);
+
+  const activeCitizenSOS = useMemo(() => {
+    return citizenSOSRequests.find((r) => r.status === 'transmitting' || r.status === 'dispatched' || r.status === 'en_route') || null;
+  }, [citizenSOSRequests]);
 
   const dismissNotification = useCallback(() => {
     setNotificationMessage(null);
@@ -182,6 +336,13 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...prev,
       [`${hospitalId}-${bedType}`]: now,
     }));
+
+    if (!navigator.onLine) {
+      setOfflineQueue((prev) => [
+        ...prev,
+        { hospitalId, bedType, action: 'increment', timestamp: now },
+      ]);
+    }
 
     setHospitals((prev) =>
       prev.map((h) => {
@@ -213,6 +374,13 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...prev,
       [`${hospitalId}-${bedType}`]: now,
     }));
+
+    if (!navigator.onLine) {
+      setOfflineQueue((prev) => [
+        ...prev,
+        { hospitalId, bedType, action: 'decrement', timestamp: now },
+      ]);
+    }
 
     setHospitals((prev) =>
       prev.map((h) => {
@@ -301,7 +469,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       soundManager.playAcceptChime();
       soundManager.triggerVibration([80, 50, 80]);
 
-      // Decrement available bed count optimistically & increase held count
+      // Decrement available bed count optimistically and increase held count
       setHospitals((prev) =>
         prev.map((h) => {
           if (h.id !== hospitalId) return h;
@@ -435,7 +603,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           assignedBay: `Bay ${Math.floor(Math.random() * 4) + 1}`,
         };
 
-        // Decrement next hospital's bed
+        // Decrement next hospital bed
         setHospitals((prev) =>
           prev.map((h) => {
             if (h.id !== nextHospital.id) return h;
@@ -577,12 +745,87 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [activeHolds, showNotification]
   );
 
+  // CITIZEN SOS ACTIONS
+  const triggerCitizenSOS = useCallback(
+    (category: EmergencyCategory, phone: string, notes: string): CitizenSOSRequest => {
+      soundManager.playRejectTone();
+      soundManager.triggerVibration([120, 80, 120]);
+
+      const newRequest: CitizenSOSRequest = {
+        id: `sos-${Date.now()}`,
+        timestamp: Date.now(),
+        category,
+        callerPhone: phone || 'Emergency Caller',
+        patientCount: 1,
+        notes: notes || 'Citizen SOS trigger, urgent response required',
+        lat: liveCoordinates.lat,
+        lng: liveCoordinates.lng,
+        addressApprox: 'GPS Location Verified (Sector Core)',
+        assignedAmbulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
+        status: 'dispatched',
+        etaMinutes: 5,
+      };
+
+      setCitizenSOSRequests((prev) => [newRequest, ...prev]);
+
+      // Pre-configure dispatch filter to match the emergency
+      let mappedBed: BedTypeId = 'oxygen_bed';
+      let mappedAcuity: TriageAcuity = 'Yellow';
+      let mappedSpecialties: SpecialtyId[] = [];
+
+      if (category === 'cardiac') {
+        mappedBed = 'cardiac_monitored';
+        mappedAcuity = 'Red';
+        mappedSpecialties = ['cardiac_cath_lab'];
+      } else if (category === 'respiratory') {
+        mappedBed = 'icu_ventilator';
+        mappedAcuity = 'Red';
+        mappedSpecialties = ['ecmo'];
+      } else if (category === 'burn') {
+        mappedBed = 'burns_isolation';
+        mappedAcuity = 'Yellow';
+        mappedSpecialties = ['burn_unit'];
+      } else if (category === 'trauma') {
+        mappedBed = 'trauma_resuscitation';
+        mappedAcuity = 'Red';
+        mappedSpecialties = ['trauma_level_1'];
+      } else if (category === 'stroke') {
+        mappedBed = 'icu_non_ventilator';
+        mappedAcuity = 'Red';
+        mappedSpecialties = ['stroke_thrombectomy'];
+      }
+
+      setDispatchFilter((prev) => ({
+        ...prev,
+        requiredBedType: mappedBed,
+        triageAcuity: mappedAcuity,
+        requiredSpecialties: mappedSpecialties,
+        patientConditionNote: `SOS Alert: ${category.toUpperCase()} - ${notes || 'Immediate assistance requested'}`,
+      }));
+
+      showNotification('Emergency SOS transmitted. ALS Ambulance 104 dispatched.', 'alert');
+      return newRequest;
+    },
+    [liveCoordinates, showNotification]
+  );
+
+  const cancelCitizenSOS = useCallback(
+    (id: string) => {
+      soundManager.playTap();
+      setCitizenSOSRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: 'arrived' as const } : r))
+      );
+      showNotification('Citizen SOS marked resolved.', 'info');
+    },
+    [showNotification]
+  );
+
   // SIMULATION HELPERS
   const simulateIncomingAmbulance = useCallback(() => {
     requestHold(
       'sjm-01',
       'icu_ventilator',
-      'Ambulance #104 (ALS Paramedic Unit)',
+      'Ambulance 104 (ALS Paramedic Unit)',
       'Red',
       { bp: '82/50', hr: 132, spo2: 80, gcs: 8 }
     );
@@ -615,12 +858,16 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const resetAllData = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY_HOSPITALS);
     localStorage.removeItem(STORAGE_KEY_HOLDS);
+    localStorage.removeItem(STORAGE_KEY_OFFLINE_QUEUE);
+    localStorage.removeItem(STORAGE_KEY_CITIZEN_SOS);
     setHospitals(INITIAL_HOSPITALS);
+    setCitizenSOSRequests([]);
+    setOfflineQueue([]);
     const initialExpiry = Date.now() + 118 * 1000;
     setActiveHolds([
       {
         id: 'hold-demo-104',
-        ambulanceCallSign: 'Ambulance #104 (ALS Paramedic Unit)',
+        ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
         hospitalId: 'sjm-01',
         hospitalName: 'St. Jude Metropolitan Hospital',
         bedType: 'icu_ventilator',
@@ -633,8 +880,8 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           spo2: 82,
           gcs: 9,
         },
-        etaMinutes: 8,
-        distanceKm: 3.2,
+        etaMinutes: 6,
+        distanceKm: 2.4,
         createdAt: Date.now() - 2 * 1000,
         expiresAt: initialExpiry,
         status: 'pending',
@@ -705,9 +952,21 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         pendingHoldsCount,
         dispatchFilter,
         setDispatchFilter,
+        toggleSpecialtyFilter,
         isMuted,
         toggleMute,
         lastSyncTimestamp,
+        liveCoordinates,
+        gpsAccuracy,
+        gpsError,
+        isLocating,
+        requestLiveLocation,
+        isOnline,
+        pendingOfflineSyncCount: offlineQueue.length,
+        citizenSOSRequests,
+        activeCitizenSOS,
+        triggerCitizenSOS,
+        cancelCitizenSOS,
         incrementBed,
         decrementBed,
         setBedPreset,

@@ -1,0 +1,43 @@
+{
+  "name": "VitaRoute - Emergency Medical Bed Allocation",
+  "short_name": "VitaRoute",
+  "description": "Real-time emergency medical dispatch, 10-second hospital bed updates, and 120-second ER hold confirmations.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/vite.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "health", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Citizen SOS",
+      "url": "/?role=citizen",
+      "description": "Trigger immediate emergency medical SOS"
+    },
+    {
+      "name": "Nurse Bed Update",
+      "url": "/?role=nurse",
+      "description": "10-second bed inventory update"
+    },
+    {
+      "name": "Ambulance CAD",
+      "url": "/?role=dispatch",
+      "description": "Computer-aided hospital matching"
+    }
+  ]
+}

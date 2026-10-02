@@ -7,6 +7,7 @@ import {
   Ambulance,
   Clock,
   AlertTriangle,
+  AlertCircle,
 } from 'lucide-react';
 
 export const DemoScenarioBar: React.FC = () => {
@@ -24,10 +25,10 @@ export const DemoScenarioBar: React.FC = () => {
     <div className="bg-slate-100 border-b border-slate-200 text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2 text-slate-700 font-medium">
-          <span className="font-semibold text-slate-900">Hospital Software Demo Controls</span>
+          <span className="font-semibold text-slate-900">Emergency Operations Demo Testing Controls</span>
           <span className="text-slate-400">|</span>
           <span className="text-slate-600 hidden sm:inline">
-            Quick-test workflows across the 3 operational roles:
+            Quick-test workflows across the 4 stages:
           </span>
         </div>
 
@@ -41,8 +42,22 @@ export const DemoScenarioBar: React.FC = () => {
       </div>
 
       {isOpen && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-3 pt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          {/* Scenario 1 */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-3 pt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          {/* Scenario 0: Citizen SOS */}
+          <button
+            onClick={() => {
+              setRole('citizen');
+            }}
+            className="flex items-center gap-2 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-left transition-colors shadow-xs"
+          >
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <div>
+              <span className="font-semibold text-slate-900 block">1. Citizen SOS</span>
+              <span className="text-[11px] text-slate-500 block">1-tap GPS emergency call</span>
+            </div>
+          </button>
+
+          {/* Scenario 1: Nurse Bed Update */}
           <button
             onClick={() => {
               setRole('nurse');
@@ -52,24 +67,24 @@ export const DemoScenarioBar: React.FC = () => {
           >
             <Activity className="w-4 h-4 text-sky-700 shrink-0" />
             <div>
-              <span className="font-semibold text-slate-900 block">1. Nurse Occupies Bed</span>
-              <span className="text-[11px] text-slate-500 block">Updates ward count instantly</span>
+              <span className="font-semibold text-slate-900 block">2. Nurse Occupies Bed</span>
+              <span className="text-[11px] text-slate-500 block">Updates ward count in 10s</span>
             </div>
           </button>
 
-          {/* Scenario 2 */}
+          {/* Scenario 2: Dispatch Hospital Match */}
           <button
             onClick={() => setRole('dispatch')}
             className="flex items-center gap-2 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-left transition-colors shadow-xs"
           >
             <Ambulance className="w-4 h-4 text-sky-700 shrink-0" />
             <div>
-              <span className="font-semibold text-slate-900 block">2. Dispatch Hospital Match</span>
-              <span className="text-[11px] text-slate-500 block">Check recommendations &amp; freshness</span>
+              <span className="font-semibold text-slate-900 block">3. CAD Multi-Match</span>
+              <span className="text-[11px] text-slate-500 block">GPS + multi-specialty rank</span>
             </div>
           </button>
 
-          {/* Scenario 3 */}
+          {/* Scenario 3: 2-Min Confirmation Hold */}
           <button
             onClick={() => {
               simulateIncomingAmbulance();
@@ -79,20 +94,20 @@ export const DemoScenarioBar: React.FC = () => {
           >
             <Clock className="w-4 h-4 text-amber-700 shrink-0" />
             <div>
-              <span className="font-semibold text-slate-900 block">3. 2-Min Confirmation Hold</span>
-              <span className="text-[11px] text-slate-500 block">Test Accept, Reject &amp; Timeout</span>
+              <span className="font-semibold text-slate-900 block">4. 120s Hold Window</span>
+              <span className="text-[11px] text-slate-500 block">Accept, reject, or auto-timeout</span>
             </div>
           </button>
 
-          {/* Scenario 4 */}
+          {/* Scenario 4: Surge Drill */}
           <button
             onClick={simulateMassSurge}
             className="flex items-center gap-2 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-left transition-colors shadow-xs"
           >
-            <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
             <div>
-              <span className="font-semibold text-slate-900 block">4. Regional Surge Drill</span>
-              <span className="text-[11px] text-slate-500 block">Elevates hospital strain to Surge</span>
+              <span className="font-semibold text-slate-900 block">5. Regional Surge Drill</span>
+              <span className="text-[11px] text-slate-500 block">Simulate mass casualty surge</span>
             </div>
           </button>
         </div>

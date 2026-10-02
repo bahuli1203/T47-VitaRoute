@@ -1,5 +1,5 @@
 /**
- * VitaRoute - Hospital Emergency Bed Coordination & Ambulance Dispatch
+ * VitaRoute - Hospital Emergency Bed Coordination and Ambulance Dispatch
  * High-reliability, real-time emergency healthcare operations software
  */
 
@@ -7,6 +7,7 @@ import React from 'react';
 import { BedLinkProvider, useBedLink } from './context/BedLinkContext';
 import { Header } from './components/Header';
 import { DemoScenarioBar } from './components/common/DemoScenarioBar';
+import { CitizenSOSView } from './components/citizen/CitizenSOSView';
 import { NurseBedUpdateView } from './components/nurse/NurseBedUpdateView';
 import { AmbulanceDispatchView } from './components/dispatch/AmbulanceDispatchView';
 import { ERConfirmHoldView } from './components/er/ERConfirmHoldView';
@@ -25,6 +26,7 @@ const DashboardContent: React.FC = () => {
 
       {/* Main Operations Section */}
       <main className="flex-1 pb-16">
+        {role === 'citizen' && <CitizenSOSView />}
         {role === 'nurse' && <NurseBedUpdateView />}
         {role === 'dispatch' && <AmbulanceDispatchView />}
         {role === 'er' && <ERConfirmHoldView />}
@@ -39,7 +41,7 @@ const DashboardContent: React.FC = () => {
           <div className="flex items-center gap-2 font-medium">
             <span className="text-slate-700 font-semibold">VitaRoute Emergency Operations Platform</span>
             <span>&middot;</span>
-            <span>Regional CAD &amp; Hospital Bed Coordination</span>
+            <span>Regional CAD and Hospital Bed Coordination</span>
           </div>
           <div className="text-slate-400">
             HL7 FHIR Clinical Standards Compliant &middot; High-Reliability Emergency Dispatch

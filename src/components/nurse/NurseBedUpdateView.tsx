@@ -9,8 +9,8 @@ import {
   Building,
   RotateCcw,
   Ban,
-  ShieldCheck,
   Check,
+  WifiOff,
 } from 'lucide-react';
 
 export const NurseBedUpdateView: React.FC = () => {
@@ -24,6 +24,8 @@ export const NurseBedUpdateView: React.FC = () => {
     syncAllBeds,
     lastSyncTimestamp,
     bedLastUpdatedMap,
+    isOnline,
+    pendingOfflineSyncCount,
   } = useBedLink();
 
   const [secondsSinceSync, setSecondsSinceSync] = useState(0);
@@ -79,6 +81,21 @@ export const NurseBedUpdateView: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
+      {/* Offline Mode Alert for Hospital Basement Dead Zones */}
+      {!isOnline && (
+        <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-xs text-amber-900 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <WifiOff className="w-4 h-4 text-amber-700 shrink-0" />
+            <span>
+              <strong>Ward Offline Queue Mode Active:</strong> Operating without Wi-Fi connection. {pendingOfflineSyncCount} bed update(s) saved locally and will auto-sync upon signal restoration.
+            </span>
+          </div>
+          <span className="font-mono text-amber-800 font-bold px-2 py-0.5 bg-amber-100 rounded">
+            PWA Offline
+          </span>
+        </div>
+      )}
+
       {/* Top Station Header */}
       <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
@@ -108,7 +125,7 @@ export const NurseBedUpdateView: React.FC = () => {
             </p>
           </div>
 
-          {/* Sync Button & Status */}
+          {/* Sync Button and Status */}
           <div className="flex items-center gap-3">
             <div className="text-right">
               <span className="text-xs text-slate-500 block">Ward Sync Status:</span>
@@ -132,7 +149,7 @@ export const NurseBedUpdateView: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Presets & Status Legend */}
+        {/* Quick Presets and Status Legend */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-xs">
           <div className="flex items-center gap-2">
             <span className="text-slate-500 font-medium">Quick Ward Presets:</span>
@@ -140,7 +157,7 @@ export const NurseBedUpdateView: React.FC = () => {
               onClick={() => setBedPreset(currentHospital.id, 'all_full')}
               className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-medium transition-colors flex items-center gap-1"
             >
-              <Ban className="w-3 h-3 text-red-600" />
+              <Ban className="w-3 h-3 text-rose-600" />
               All Full (0)
             </button>
             <button
@@ -157,10 +174,10 @@ export const NurseBedUpdateView: React.FC = () => {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Available (&gt;2)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Low (1–2 left)
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Low (1-2 left)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span> Full (0)
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span> Full (0)
             </span>
           </div>
         </div>
@@ -188,10 +205,10 @@ export const NurseBedUpdateView: React.FC = () => {
 
           if (available === 0) {
             statusTheme = {
-              cardBorder: 'border-red-200',
-              badgeBg: 'bg-red-50 text-red-800 border-red-200',
+              cardBorder: 'border-rose-200',
+              badgeBg: 'bg-rose-50 text-rose-800 border-rose-200',
               badgeLabel: 'Full (0 Beds)',
-              numberColor: 'text-red-700',
+              numberColor: 'text-rose-700',
             };
           } else if (available <= 2) {
             statusTheme = {
@@ -207,7 +224,7 @@ export const NurseBedUpdateView: React.FC = () => {
               key={key}
               className={`bg-white border ${statusTheme.cardBorder} rounded-lg p-4 sm:p-5 shadow-xs flex flex-col justify-between transition-colors`}
             >
-              {/* Card Header: Title & Status Badge */}
+              {/* Card Header: Title and Status Badge */}
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -272,15 +289,15 @@ export const NurseBedUpdateView: React.FC = () => {
                 </div>
               </div>
 
-              {/* One-Tap Controls: Bed Filled & Bed Free */}
+              {/* One-Tap Tactile Touch Controls: 48px Min Height for Cheap Mobile Touchscreens */}
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => handleBedUpdate(key, 'decrement')}
                   disabled={available <= 0}
-                  className={`py-2.5 px-3 rounded-md border font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors ${
+                  className={`min-h-[48px] py-2.5 px-3 rounded-md border font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     available > 0
-                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 active:bg-slate-300'
                       : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
                   }`}
                   aria-label={`Mark bed filled for ${meta.label}`}
@@ -293,9 +310,9 @@ export const NurseBedUpdateView: React.FC = () => {
                   type="button"
                   onClick={() => handleBedUpdate(key, 'increment')}
                   disabled={available >= total}
-                  className={`py-2.5 px-3 rounded-md font-semibold text-xs flex items-center justify-center gap-1.5 text-white transition-colors ${
+                  className={`min-h-[48px] py-2.5 px-3 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 text-white transition-colors cursor-pointer ${
                     available < total
-                      ? 'bg-sky-600 hover:bg-sky-700 border border-sky-600 shadow-xs'
+                      ? 'bg-sky-600 hover:bg-sky-700 border border-sky-600 shadow-xs active:bg-sky-800'
                       : 'bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-300'
                   }`}
                   aria-label={`Mark bed free for ${meta.label}`}
