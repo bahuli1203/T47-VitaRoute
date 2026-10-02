@@ -19,6 +19,7 @@ import {
   METRO_SECTORS,
 } from '../../utils/geo';
 import { CountdownRing } from '../common/CountdownRing';
+import { RuggedMdtView } from '../mdt/RuggedMdtView';
 import {
   Clock,
   Navigation,
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react';
 
 export const AmbulanceDispatchView: React.FC = () => {
+  const [viewMode, setViewMode] = useState<'mdt' | 'cad'>('mdt');
   const {
     hospitals,
     dispatchFilter,
@@ -201,8 +203,66 @@ export const AmbulanceDispatchView: React.FC = () => {
   const bedKeys = Object.keys(BED_TYPES) as BedTypeId[];
   const allSpecialtyKeys = Object.keys(AVAILABLE_SPECIALTIES) as SpecialtyId[];
 
+  if (viewMode === 'mdt') {
+    return (
+      <div className="flex flex-col">
+        <div className="bg-slate-900 border-b border-slate-800 text-slate-300 py-2.5 px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-white">Ambulance Operating Mode:</span>
+              <span className="text-slate-400">Capacitor Native Hardware MDT Tablet (Non-PWA)</span>
+            </div>
+            <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded border border-slate-700">
+              <button
+                type="button"
+                onClick={() => setViewMode('mdt')}
+                className="px-3 py-1 rounded text-xs font-semibold cursor-pointer bg-amber-500 text-black font-bold"
+              >
+                In-Vehicle Rugged MDT (Tablet)
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('cad')}
+                className="px-3 py-1 rounded text-xs font-semibold cursor-pointer text-slate-400 hover:text-white"
+              >
+                Regional CAD Console
+              </button>
+            </div>
+          </div>
+        </div>
+        <RuggedMdtView />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
+    <div className="flex flex-col">
+      <div className="bg-slate-900 border-b border-slate-800 text-slate-300 py-2.5 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-white">Ambulance Operating Mode:</span>
+            <span className="text-slate-400">Regional CAD Fleet Dispatch Console</span>
+          </div>
+          <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded border border-slate-700">
+            <button
+              type="button"
+              onClick={() => setViewMode('mdt')}
+              className="px-3 py-1 rounded text-xs font-semibold cursor-pointer text-slate-400 hover:text-white"
+            >
+              In-Vehicle Rugged MDT (Tablet)
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('cad')}
+              className="px-3 py-1 rounded text-xs font-semibold cursor-pointer bg-sky-600 text-white font-bold"
+            >
+              Regional CAD Console
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 w-full">
       {/* Patient Requirement, Multi-Constraint and Location Form */}
       <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-200">
@@ -783,6 +843,7 @@ export const AmbulanceDispatchView: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

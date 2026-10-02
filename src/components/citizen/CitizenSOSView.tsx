@@ -8,10 +8,13 @@ import {
   Clock,
   Shield,
   CheckCircle,
-  XCircle,
   Ambulance,
   Compass,
   FileText,
+  Mic,
+  MicOff,
+  Radio,
+  KeyRound,
 } from 'lucide-react';
 
 export const CitizenSOSView: React.FC = () => {
@@ -19,6 +22,8 @@ export const CitizenSOSView: React.FC = () => {
     triggerCitizenSOS,
     cancelCitizenSOS,
     activeCitizenSOS,
+    sosVerification,
+    connectTeleTriageAudio,
     liveCoordinates,
     gpsAccuracy,
     gpsError,
@@ -87,7 +92,7 @@ export const CitizenSOSView: React.FC = () => {
               Immediate Medical Dispatch
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              One-tap direct ambulance dispatch and automated regional hospital bed coordination.
+              Zero-wait automatic ambulance CAD dispatch and live telemetry verification.
             </p>
           </div>
 
@@ -96,7 +101,7 @@ export const CitizenSOSView: React.FC = () => {
               onClick={() => setRole('dispatch')}
               className="text-xs font-semibold px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors"
             >
-              Switch to CAD Dispatch View
+              Switch to Ambulance CAD
             </button>
           </div>
         </div>
@@ -122,7 +127,7 @@ export const CitizenSOSView: React.FC = () => {
 
           <button
             onClick={requestLiveLocation}
-            className="text-xs text-sky-700 hover:text-sky-800 font-medium flex items-center gap-1 self-start sm:self-auto"
+            className="text-xs text-sky-700 hover:text-sky-800 font-medium flex items-center gap-1 self-start sm:self-auto cursor-pointer"
           >
             <Compass className="w-3.5 h-3.5" />
             <span>Refresh Location</span>
@@ -130,7 +135,7 @@ export const CitizenSOSView: React.FC = () => {
         </div>
       </div>
 
-      {/* ACTIVE SOS STATUS CARD */}
+      {/* ACTIVE SOS STATUS CARD: FAST VERIFICATION AND PARALLEL CAD TELE-TRIAGE */}
       {activeCitizenSOS ? (
         <div className="bg-white border-2 border-rose-500 rounded-lg p-5 sm:p-6 shadow-sm flex flex-col gap-4">
           <div className="flex items-center justify-between pb-3 border-b border-rose-100">
@@ -145,6 +150,7 @@ export const CitizenSOSView: React.FC = () => {
             </span>
           </div>
 
+          {/* Unit, ETA, Category Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-slate-50 p-3 rounded border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-500 uppercase block">
@@ -176,6 +182,60 @@ export const CitizenSOSView: React.FC = () => {
             </div>
           </div>
 
+          {/* FAST VERIFICATION AND PARALLEL CAD TELE-TRIAGE STRIP */}
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sky-950 flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  Auto-Verified Incident Record:
+                </span>
+                <span className="font-mono bg-white px-2 py-0.5 rounded border border-sky-200 font-bold text-sky-900">
+                  #{activeCitizenSOS.id.toUpperCase()}
+                </span>
+              </div>
+              <p className="text-slate-600">
+                Paramedic on-scene verification PIN:{' '}
+                <strong className="text-slate-900 font-mono text-sm">
+                  {sosVerification ? sosVerification.verificationPin : '4821'}
+                </strong>
+                . Zero waiting time, ambulance was dispatched immediately.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href="tel:911"
+                className="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1.5 text-xs shadow-xs"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>Call 911 / 108</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={connectTeleTriageAudio}
+                className={`px-3 py-1.5 rounded font-bold flex items-center gap-1.5 text-xs border transition-colors ${
+                  sosVerification?.teleTriageAudioConnected
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white hover:bg-slate-50 text-sky-800 border-sky-300'
+                }`}
+              >
+                {sosVerification?.teleTriageAudioConnected ? (
+                  <>
+                    <Radio className="w-3.5 h-3.5 animate-pulse" />
+                    <span>Tele-Triage Audio Active</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-3.5 h-3.5 text-sky-700" />
+                    <span>Connect CAD Tele-Triage</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Guidelines Box */}
           <div className="bg-slate-50 border border-slate-200 rounded p-4 text-xs space-y-2 text-slate-700">
             <div className="font-bold text-slate-900 flex items-center gap-1.5">
@@ -183,10 +243,10 @@ export const CitizenSOSView: React.FC = () => {
               <span>Critical First-Responder Instructions:</span>
             </div>
             <ul className="list-disc pl-5 space-y-1 text-slate-600">
-              <li>Keep phone line clear in case the ambulance crew calls for specific gate or building access.</li>
-              <li>Do not move trauma or spinal injury patients unless in immediate environmental danger.</li>
-              <li>If the patient is unconscious and not breathing normally, begin continuous chest compressions.</li>
-              <li>Turn on front lights and have someone stand at the street entrance if safe.</li>
+              <li>Keep your phone line open; CAD operators and paramedics can reach you directly.</li>
+              <li>Do not move trauma or spinal injury patients unless in immediate danger.</li>
+              <li>If the patient is unresponsive and not breathing normally, begin continuous chest compressions.</li>
+              <li>Turn on front lights and have someone wait at the street entrance if possible.</li>
             </ul>
           </div>
 
@@ -194,14 +254,14 @@ export const CitizenSOSView: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200">
             <button
               onClick={() => cancelCitizenSOS(activeCitizenSOS.id)}
-              className="w-full sm:w-auto px-4 py-2 rounded border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 rounded border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Cancel Request / Patient Transported
             </button>
 
             <button
               onClick={() => setRole('dispatch')}
-              className="w-full sm:w-auto px-4 py-2 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-colors shadow-xs"
+              className="w-full sm:w-auto px-4 py-2 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-colors shadow-xs cursor-pointer"
             >
               Monitor in Regional Hospital Dispatch Matrix
             </button>
@@ -222,7 +282,7 @@ export const CitizenSOSView: React.FC = () => {
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`p-3 rounded-lg border text-left transition-colors flex flex-col justify-between ${
+                    className={`p-3 rounded-lg border text-left transition-colors flex flex-col justify-between cursor-pointer ${
                       isSelected
                         ? 'border-rose-600 bg-rose-50/60 ring-1 ring-rose-500'
                         : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
@@ -253,7 +313,7 @@ export const CitizenSOSView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
             <div>
               <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Callback Phone Number (Optional):
+                Callback Phone Number (Auto-Locks to Incident):
               </label>
               <div className="relative">
                 <PhoneCall className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -289,21 +349,21 @@ export const CitizenSOSView: React.FC = () => {
             {isConfirming ? (
               <div className="w-full max-w-md bg-rose-50 border border-rose-300 rounded-lg p-4 text-center space-y-3">
                 <p className="text-xs font-bold text-rose-900">
-                  Confirm Emergency Dispatch Request
+                  Confirm Immediate Emergency Dispatch
                 </p>
                 <p className="text-xs text-rose-700">
-                  This will dispatch an Advanced Life Support ambulance and reserve a hospital bed.
+                  Zero wait: Advanced Life Support ambulance will be routed immediately and hospital bed will be held.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setIsConfirming(false)}
-                    className="py-2.5 rounded border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50"
+                    className="py-2.5 rounded border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleTriggerSOS}
-                    className="py-2.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs"
+                    className="py-2.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs cursor-pointer"
                   >
                     Confirm and Dispatch Now
                   </button>
@@ -320,7 +380,7 @@ export const CitizenSOSView: React.FC = () => {
               </button>
             )}
             <span className="text-[11px] text-slate-500 mt-2 text-center">
-              Works on all standard mobile web browsers. Instant automatic location lock.
+              Zero-wait automatic verification. Connects tele-triage audio without delay.
             </span>
           </div>
         </div>

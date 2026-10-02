@@ -272,5 +272,38 @@ export interface EhrSyncEvent {
   wardId: string;
   bedType: BedTypeId;
   delta: number;
-  sourceSystem: 'Epic Systems HL7v2' | 'Cerner Millennium FHIR' | 'Nurse One-Tap Override';
+  sourceSystem: 'Epic Systems HL7v2' | 'Cerner Millennium FHIR' | 'Generic REST Webhook' | 'Night Shift Baseline' | 'Nurse One-Tap Override';
+}
+
+export type EhrIntegrationMode =
+  | 'generic_rest_webhook'
+  | 'hl7_fhir_connected'
+  | 'autonomous_night_schedule'
+  | 'manual_one_tap';
+
+export interface GenericEhrWebhookPayload {
+  hospitalCode: string;
+  apiSecret: string;
+  timestamp: number;
+  census: Partial<Record<BedTypeId, { available: number; total: number }>>;
+}
+
+export interface SosVerificationState {
+  verifiedImmediately: boolean;
+  callbackPhone: string;
+  verificationPin: string;
+  teleTriageAudioConnected: boolean;
+  dispatchConfirmedTimestamp: number;
+}
+
+export type MdtDisplayTheme = 'tactical_night' | 'day_standard';
+
+export interface CardiacMonitorTelemetry {
+  heartRate: number;
+  bloodPressure: string;
+  spo2: number;
+  etco2: number;
+  ecgRhythm: 'Sinus Tachycardia' | 'STEMI Anterior' | 'Ventricular Fibrillation' | 'Normal Sinus';
+  monitorModel: 'Zoll X Series Advanced' | 'Philips Tempus Pro';
+  isConnected: boolean;
 }

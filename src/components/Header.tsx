@@ -51,7 +51,7 @@ export const Header: React.FC = () => {
     {
       id: 'dispatch',
       number: '3',
-      label: 'Ambulance CAD',
+      label: 'Ambulance MDT',
       icon: Ambulance,
     },
     {

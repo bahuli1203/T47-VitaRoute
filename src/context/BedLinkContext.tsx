@@ -10,6 +10,11 @@ import {
   CitizenSOSRequest,
   EmergencyCategory,
   EhrSyncStatus,
+  EhrIntegrationMode,
+  GenericEhrWebhookPayload,
+  SosVerificationState,
+  MdtDisplayTheme,
+  CardiacMonitorTelemetry,
 } from '../types/bedlink';
 import { INITIAL_HOSPITALS } from '../data/mockHospitals';
 import { soundManager } from '../utils/audio';
@@ -40,11 +45,22 @@ interface BedLinkContextType {
   isOnline: boolean;
   pendingOfflineSyncCount: number;
 
-  // Citizen SOS
+  // Citizen SOS and Fast Verification
   citizenSOSRequests: CitizenSOSRequest[];
   activeCitizenSOS: CitizenSOSRequest | null;
   triggerCitizenSOS: (category: EmergencyCategory, phone: string, notes: string) => CitizenSOSRequest;
   cancelCitizenSOS: (id: string) => void;
+  sosVerification: SosVerificationState | null;
+  connectTeleTriageAudio: () => void;
+
+  // Rugged In-Vehicle MDT (Native Ambulance Tablet)
+  mdtTheme: MdtDisplayTheme;
+  setMdtTheme: (theme: MdtDisplayTheme) => void;
+  isWakeLockActive: boolean;
+  toggleWakeLock: () => void;
+  cardiacTelemetry: CardiacMonitorTelemetry;
+  updateCardiacTelemetry: (data: Partial<CardiacMonitorTelemetry>) => void;
+  toggleMonitorConnection: () => void;
 
   // Nurse Actions
   incrementBed: (hospitalId: string, bedType: BedTypeId) => void;
@@ -68,10 +84,13 @@ interface BedLinkContextType {
   markArrived: (holdId: string) => void;
   cancelHold: (holdId: string) => void;
 
-  // EHR / HIS Automatic Synchronization
+  // EHR / HIS Automatic Synchronization and Generic Ingestion
   ehrSyncStatus: EhrSyncStatus;
+  ehrMode: EhrIntegrationMode;
+  setEhrMode: (mode: EhrIntegrationMode) => void;
   lastEhrSyncTimestamp: number;
   simulateEhrEvent: (eventType: 'ADT_A01_ADMIT' | 'ADT_A03_DISCHARGE') => void;
+  ingestGenericWebhookPayload: (payload: GenericEhrWebhookPayload) => boolean;
 
   // Simulation and System Actions
   simulateIncomingAmbulance: () => void;
@@ -809,11 +828,89 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         patientConditionNote: `SOS Alert: ${category.toUpperCase()} - ${notes || 'Immediate assistance requested'}`,
       }));
 
+      const fastPin = Math.floor(1000 + Math.random() * 9000).toString();
+      setSosVerification({
+        verifiedImmediately: true,
+        callbackPhone: phone || 'Emergency Caller (Auto-Locked)',
+        verificationPin: fastPin,
+        teleTriageAudioConnected: false,
+        dispatchConfirmedTimestamp: Date.now(),
+      });
+
       showNotification('Emergency SOS transmitted. ALS Ambulance 104 dispatched.', 'alert');
       return newRequest;
     },
     [liveCoordinates, showNotification]
   );
+
+  // EHR Ingestion Mode (Connected generic webhook vs alternate autonomous schedule)
+  const [ehrMode, setEhrMode] = useState<EhrIntegrationMode>('hl7_fhir_connected');
+
+  // Fast Citizen SOS Verification State
+  const [sosVerification, setSosVerification] = useState<SosVerificationState | null>(null);
+
+  // Rugged In-Vehicle MDT (Native Ambulance Tablet) State
+  const [mdtTheme, setMdtTheme] = useState<MdtDisplayTheme>('tactical_night');
+  const [isWakeLockActive, setIsWakeLockActive] = useState<boolean>(true);
+  const [cardiacTelemetry, setCardiacTelemetry] = useState<CardiacMonitorTelemetry>({
+    heartRate: 118,
+    bloodPressure: '84/52',
+    spo2: 83,
+    etco2: 44,
+    ecgRhythm: 'STEMI Anterior',
+    monitorModel: 'Zoll X Series Advanced',
+    isConnected: true,
+  });
+
+  const toggleWakeLock = useCallback(() => {
+    setIsWakeLockActive((prev) => !prev);
+  }, []);
+
+  const updateCardiacTelemetry = useCallback((data: Partial<CardiacMonitorTelemetry>) => {
+    setCardiacTelemetry((prev) => ({ ...prev, ...data }));
+  }, []);
+
+  const toggleMonitorConnection = useCallback(() => {
+    setCardiacTelemetry((prev) => ({ ...prev, isConnected: !prev.isConnected }));
+  }, []);
+
+  const connectTeleTriageAudio = useCallback(() => {
+    soundManager.playAcceptChime();
+    setSosVerification((prev) =>
+      prev ? { ...prev, teleTriageAudioConnected: true } : null
+    );
+    showNotification('Connected live audio with CAD Emergency Dispatcher.', 'success');
+  }, [showNotification]);
+
+  const ingestGenericWebhookPayload = useCallback((payload: GenericEhrWebhookPayload): boolean => {
+    soundManager.playAcceptChime();
+    soundManager.triggerVibration(50);
+    setHospitals((prev) =>
+      prev.map((h) => {
+        if (h.code !== payload.hospitalCode && h.id !== payload.hospitalCode) return h;
+        const updatedBeds = { ...h.beds };
+        Object.keys(payload.census).forEach((key) => {
+          const bKey = key as BedTypeId;
+          const newCounts = payload.census[bKey];
+          if (newCounts) {
+            updatedBeds[bKey] = {
+              total: newCounts.total,
+              available: newCounts.available,
+              held: updatedBeds[bKey].held,
+            };
+          }
+        });
+        return {
+          ...h,
+          lastUpdatedMinutesAgo: 0,
+          lastUpdatedTimestamp: Date.now(),
+          beds: updatedBeds,
+        };
+      })
+    );
+    showNotification(`Generic REST Webhook ingested for ${payload.hospitalCode}. Bed counts updated.`, 'success');
+    return true;
+  }, [showNotification]);
 
   const cancelCitizenSOS = useCallback(
     (id: string) => {
@@ -1024,6 +1121,15 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         activeCitizenSOS,
         triggerCitizenSOS,
         cancelCitizenSOS,
+        sosVerification,
+        connectTeleTriageAudio,
+        mdtTheme,
+        setMdtTheme,
+        isWakeLockActive,
+        toggleWakeLock,
+        cardiacTelemetry,
+        updateCardiacTelemetry,
+        toggleMonitorConnection,
         incrementBed,
         decrementBed,
         setBedPreset,
@@ -1038,8 +1144,11 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         simulateMassSurge,
         resetAllData,
         ehrSyncStatus,
+        ehrMode,
+        setEhrMode,
         lastEhrSyncTimestamp,
         simulateEhrEvent,
+        ingestGenericWebhookPayload,
         notificationMessage,
         dismissNotification,
       }}
