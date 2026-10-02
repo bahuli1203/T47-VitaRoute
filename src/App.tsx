@@ -4,58 +4,77 @@
  */
 
 import React from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { BedLinkProvider, useBedLink } from './context/BedLinkContext';
 import { Header } from './components/Header';
-import { DemoScenarioBar } from './components/common/DemoScenarioBar';
-import { CitizenSOSView } from './components/citizen/CitizenSOSView';
+import { LoginPage } from './components/auth/LoginPage';
+import { PatientDashboard } from './components/patient/PatientDashboard';
+import { AmbulanceDashboard } from './components/ambulance/AmbulanceDashboard';
 import { NurseBedUpdateView } from './components/nurse/NurseBedUpdateView';
-import { AmbulanceDispatchView } from './components/dispatch/AmbulanceDispatchView';
-import { ERConfirmHoldView } from './components/er/ERConfirmHoldView';
+import { HospitalDashboard } from './components/hospital/HospitalDashboard';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { NotificationToast } from './components/common/NotificationToast';
 
 const DashboardContent: React.FC = () => {
-  const { role } = useBedLink();
+  const { user } = useAuth();
+  const { role, setRole } = useBedLink();
+
+  // Sync context role with auth role
+  React.useEffect(() => {
+    if (user && user.role !== role) {
+      setRole(user.role);
+    }
+  }, [user, role, setRole]);
+
+  const currentRole = user?.role || role;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Institutional Hospital Header */}
+      {/* Header */}
       <Header />
 
-      {/* Operational Testing Scenarios Bar */}
-      <DemoScenarioBar />
-
       {/* Main Operations Section */}
-      <main className="flex-1 pb-16">
-        {role === 'citizen' && <CitizenSOSView />}
-        {role === 'nurse' && <NurseBedUpdateView />}
-        {role === 'dispatch' && <AmbulanceDispatchView />}
-        {role === 'er' && <ERConfirmHoldView />}
+      <main className="flex-1 pb-6">
+        {currentRole === 'patient' && <PatientDashboard />}
+        {currentRole === 'ambulance' && <AmbulanceDashboard />}
+        {currentRole === 'nurse' && <NurseBedUpdateView />}
+        {currentRole === 'hospital' && <HospitalDashboard />}
+        {currentRole === 'admin' && <AdminDashboard />}
       </main>
 
       {/* Notification Toast */}
       <NotificationToast />
 
-      {/* Hospital Software Footer */}
-      <footer className="border-t border-slate-200 bg-white py-4 px-4 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2 font-medium">
-            <span className="text-slate-700 font-semibold">VitaRoute Emergency Operations Platform</span>
-            <span>&middot;</span>
-            <span>Regional CAD and Hospital Bed Coordination</span>
-          </div>
-          <div className="text-slate-400">
-            HL7 FHIR Clinical Standards Compliant &middot; High-Reliability Emergency Dispatch
-          </div>
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white py-3 px-4 text-center text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto">
+          <span className="font-medium text-slate-500">VitaRoute Emergency Operations Platform</span>
+          <span className="mx-1">&middot;</span>
+          <span>Real-Time Bed Allocation & Dispatch</span>
         </div>
       </footer>
     </div>
   );
 };
 
-export default function App() {
+const AuthenticatedApp: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   return (
     <BedLinkProvider>
       <DashboardContent />
     </BedLinkProvider>
+  );
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthenticatedApp />
+    </AuthProvider>
   );
 }

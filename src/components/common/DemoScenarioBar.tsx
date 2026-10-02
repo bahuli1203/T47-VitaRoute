@@ -46,7 +46,7 @@ export const DemoScenarioBar: React.FC = () => {
           {/* Scenario 0: Citizen SOS */}
           <button
             onClick={() => {
-              setRole('citizen');
+              setRole('patient');
             }}
             className="flex items-center gap-2 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-left transition-colors shadow-xs"
           >
@@ -74,7 +74,7 @@ export const DemoScenarioBar: React.FC = () => {
 
           {/* Scenario 2: Dispatch Hospital Match */}
           <button
-            onClick={() => setRole('dispatch')}
+            onClick={() => setRole('ambulance')}
             className="flex items-center gap-2 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-left transition-colors shadow-xs"
           >
             <Ambulance className="w-4 h-4 text-sky-700 shrink-0" />
@@ -88,7 +88,7 @@ export const DemoScenarioBar: React.FC = () => {
           <button
             onClick={() => {
               simulateIncomingAmbulance();
-              setRole('er');
+              setRole('hospital');
             }}
             className="flex items-center gap-2 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-left transition-colors shadow-xs"
           >

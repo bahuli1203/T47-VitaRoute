@@ -15,10 +15,20 @@ import {
   SosVerificationState,
   MdtDisplayTheme,
   CardiacMonitorTelemetry,
+  Emergency,
+  EmergencyTimelineEvent,
+  EmergencyTimelineStep,
+  EmergencyStatus,
+  TIMELINE_STEP_LABELS,
+  AVAILABLE_SPECIALTIES,
 } from '../types/bedlink';
 import { INITIAL_HOSPITALS } from '../data/mockHospitals';
 import { soundManager } from '../utils/audio';
 import { METRO_SECTORS } from '../utils/geo';
+import {
+  calculateHaversineDistance,
+  estimateEmergencyTravelTime,
+} from '../utils/geo';
 
 interface BedLinkContextType {
   role: AppRole;
@@ -75,7 +85,8 @@ interface BedLinkContextType {
     bedType: BedTypeId,
     overrideCallSign?: string,
     overrideAcuity?: TriageAcuity,
-    overrideVitals?: { bp: string; hr: number; spo2: number; gcs: number }
+    overrideVitals?: { bp: string; hr: number; spo2: number; gcs: number },
+    emergencyId?: string
   ) => HoldRequest;
 
   // ER Actions
@@ -98,19 +109,30 @@ interface BedLinkContextType {
   resetAllData: () => void;
   notificationMessage: { text: string; type: 'success' | 'warning' | 'alert' | 'info' } | null;
   dismissNotification: () => void;
+
+  // Emergency Lifecycle (NEW)
+  emergencies: Emergency[];
+  activeEmergency: Emergency | null;
+  createEmergency: (category: EmergencyCategory, patientId: string, patientName: string) => Emergency;
+  updateEmergencyStatus: (emergencyId: string, status: EmergencyStatus) => void;
+  addTimelineEvent: (emergencyId: string, step: EmergencyTimelineStep, detail?: string) => void;
+  assignHospitalToEmergency: (emergencyId: string, hospitalId: string, hospitalName: string, holdId: string, matchReasons: string[]) => void;
+  completeEmergency: (emergencyId: string) => void;
+  ambulanceAction: (emergencyId: string, action: 'navigate' | 'arrived' | 'handed_over') => void;
 }
 
 const STORAGE_KEY_HOSPITALS = 'vitaroute_hospitals_v4';
 const STORAGE_KEY_HOLDS = 'vitaroute_holds_v4';
 const STORAGE_KEY_OFFLINE_QUEUE = 'vitaroute_offline_queue_v1';
 const STORAGE_KEY_CITIZEN_SOS = 'vitaroute_citizen_sos_v1';
+const STORAGE_KEY_EMERGENCIES = 'vitaroute_emergencies_v1';
 
 const DEFAULT_COORDS = { lat: 40.7128, lng: -74.006 };
 
 const BedLinkContext = createContext<BedLinkContextType | null>(null);
 
 export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [role, setRole] = useState<AppRole>('nurse');
+  const [role, setRole] = useState<AppRole>('patient');
   const [currentHospitalId, setCurrentHospitalId] = useState<string>('sjm-01');
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(Date.now());
@@ -142,6 +164,17 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [citizenSOSRequests, setCitizenSOSRequests] = useState<CitizenSOSRequest[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_CITIZEN_SOS);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+
+  // Emergency state (NEW)
+  const [emergencies, setEmergencies] = useState<Emergency[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_EMERGENCIES);
       if (saved) return JSON.parse(saved);
     } catch {
       // ignore
@@ -325,6 +358,15 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [citizenSOSRequests]);
 
+  // Persist emergencies
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_EMERGENCIES, JSON.stringify(emergencies));
+    } catch {
+      // ignore
+    }
+  }, [emergencies]);
+
   // Current selected hospital
   const currentHospital = useMemo(() => {
     return hospitals.find((h) => h.id === currentHospitalId) || hospitals[0];
@@ -339,6 +381,11 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return citizenSOSRequests.find((r) => r.status === 'transmitting' || r.status === 'dispatched' || r.status === 'en_route') || null;
   }, [citizenSOSRequests]);
 
+  // Active emergency (the most recent non-completed)
+  const activeEmergency = useMemo(() => {
+    return emergencies.find((e) => e.status !== 'completed') || null;
+  }, [emergencies]);
+
   const dismissNotification = useCallback(() => {
     setNotificationMessage(null);
   }, []);
@@ -350,6 +397,242 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
   }, []);
+
+  // ======= EMERGENCY LIFECYCLE MANAGEMENT (NEW) =======
+
+  const addTimelineEvent = useCallback((emergencyId: string, step: EmergencyTimelineStep, detail?: string) => {
+    setEmergencies((prev) =>
+      prev.map((e) => {
+        if (e.id !== emergencyId) return e;
+        const newEvent: EmergencyTimelineEvent = {
+          step,
+          timestamp: Date.now(),
+          label: TIMELINE_STEP_LABELS[step],
+          detail,
+        };
+        return {
+          ...e,
+          timeline: [...e.timeline, newEvent],
+        };
+      })
+    );
+  }, []);
+
+  const updateEmergencyStatus = useCallback((emergencyId: string, status: EmergencyStatus) => {
+    setEmergencies((prev) =>
+      prev.map((e) => {
+        if (e.id !== emergencyId) return e;
+        return { ...e, status };
+      })
+    );
+  }, []);
+
+  const createEmergency = useCallback(
+    (category: EmergencyCategory, patientId: string, patientName: string): Emergency => {
+      // Map category to bed type and specialties
+      let mappedBed: BedTypeId = 'oxygen_bed';
+      let mappedSpecialties: SpecialtyId[] = [];
+
+      if (category === 'cardiac') {
+        mappedBed = 'cardiac_monitored';
+        mappedSpecialties = ['cardiac_cath_lab'];
+      } else if (category === 'respiratory') {
+        mappedBed = 'icu_ventilator';
+        mappedSpecialties = ['ecmo'];
+      } else if (category === 'burn') {
+        mappedBed = 'burns_isolation';
+        mappedSpecialties = ['burn_unit'];
+      } else if (category === 'trauma') {
+        mappedBed = 'trauma_resuscitation';
+        mappedSpecialties = ['trauma_level_1'];
+      } else if (category === 'stroke') {
+        mappedBed = 'icu_non_ventilator';
+        mappedSpecialties = ['stroke_thrombectomy'];
+      }
+
+      // Find best hospital match
+      const rankedHospitals = hospitals
+        .map((h) => {
+          const bed = h.beds[mappedBed];
+          const availableBeds = bed?.available ?? 0;
+          const dist = calculateHaversineDistance(liveCoordinates.lat, liveCoordinates.lng, h.lat, h.lng);
+          const eta = estimateEmergencyTravelTime(dist, h.erLoad);
+          const matchedSpecs = mappedSpecialties.filter((s) => h.specialties.includes(s));
+          const missingSpecs = mappedSpecialties.filter((s) => !h.specialties.includes(s));
+
+          let penalty = 0;
+          if (availableBeds <= 0) penalty += 1200;
+          else penalty -= availableBeds * 6;
+          if (missingSpecs.length > 0) penalty += missingSpecs.length * 150;
+          penalty += eta * 4;
+          if (h.erLoad === 'Surge') penalty += 35;
+          if (h.erLoad === 'Medium') penalty += 10;
+          if (h.lastUpdatedMinutesAgo > 45) penalty += 50;
+          else if (h.lastUpdatedMinutesAgo > 15) penalty += 15;
+          if (h.diversionStatus === 'Diversion') penalty += 600;
+          if (h.diversionStatus === 'Advisory') penalty += 25;
+
+          // Build match reasons
+          const reasons: string[] = [];
+          if (availableBeds > 0) reasons.push(`✓ ${availableBeds} ${mappedBed.replace(/_/g, ' ')} bed(s) available`);
+          else reasons.push(`✗ No ${mappedBed.replace(/_/g, ' ')} beds`);
+          matchedSpecs.forEach((s) => reasons.push(`✓ ${AVAILABLE_SPECIALTIES[s].label}`));
+          missingSpecs.forEach((s) => reasons.push(`✗ Missing: ${AVAILABLE_SPECIALTIES[s].label}`));
+          reasons.push(`✓ ${eta} min ETA (${dist} km)`);
+          if (h.erLoad === 'Low') reasons.push('✓ Low ER load');
+          else if (h.erLoad === 'Medium') reasons.push('⚠ Medium ER load');
+          else reasons.push('⚠ Surge ER load');
+          if (h.lastUpdatedMinutesAgo <= 15) reasons.push('✓ Recently updated data');
+          else if (h.lastUpdatedMinutesAgo <= 45) reasons.push('⚠ Data updated ' + h.lastUpdatedMinutesAgo + ' min ago');
+          else reasons.push('⚠ Stale data (' + h.lastUpdatedMinutesAgo + ' min ago)');
+
+          return { hospital: h, penalty, eta, dist, reasons, availableBeds };
+        })
+        .sort((a, b) => a.penalty - b.penalty);
+
+      const bestMatch = rankedHospitals[0];
+
+      const emergencyId = `emg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      const newEmergency: Emergency = {
+        id: emergencyId,
+        patientId,
+        patientName,
+        category,
+        status: 'active',
+        createdAt: Date.now(),
+        lat: liveCoordinates.lat,
+        lng: liveCoordinates.lng,
+        assignedAmbulance: 'Ambulance 104 (ALS Paramedic Unit)',
+        assignedHospitalId: bestMatch?.hospital.id || null,
+        assignedHospitalName: bestMatch?.hospital.name || null,
+        holdRequestId: null,
+        etaMinutes: bestMatch?.eta || 10,
+        timeline: [
+          { step: 'sos_triggered', timestamp: Date.now(), label: TIMELINE_STEP_LABELS.sos_triggered },
+          { step: 'location_acquired', timestamp: Date.now() + 500, label: TIMELINE_STEP_LABELS.location_acquired, detail: `GPS: ${liveCoordinates.lat.toFixed(4)}N, ${Math.abs(liveCoordinates.lng).toFixed(4)}W` },
+          { step: 'ambulance_assigned', timestamp: Date.now() + 1000, label: TIMELINE_STEP_LABELS.ambulance_assigned, detail: 'Ambulance 104 (ALS Paramedic Unit)' },
+        ],
+        requiredBedType: mappedBed,
+        requiredSpecialties: mappedSpecialties,
+        matchReasons: bestMatch?.reasons || [],
+      };
+
+      setEmergencies((prev) => [newEmergency, ...prev]);
+
+      // Auto-request hospital hold after a short delay
+      if (bestMatch && bestMatch.availableBeds > 0) {
+        setTimeout(() => {
+          setEmergencies((prev) =>
+            prev.map((e) => {
+              if (e.id !== emergencyId) return e;
+              return {
+                ...e,
+                status: 'hospital_pending',
+                timeline: [
+                  ...e.timeline,
+                  {
+                    step: 'hospital_selected' as EmergencyTimelineStep,
+                    timestamp: Date.now(),
+                    label: TIMELINE_STEP_LABELS.hospital_selected,
+                    detail: bestMatch.hospital.name,
+                  },
+                ],
+              };
+            })
+          );
+        }, 2000);
+      }
+
+      return newEmergency;
+    },
+    [hospitals, liveCoordinates]
+  );
+
+  const assignHospitalToEmergency = useCallback(
+    (emergencyId: string, hospitalId: string, hospitalName: string, holdId: string, matchReasons: string[]) => {
+      setEmergencies((prev) =>
+        prev.map((e) => {
+          if (e.id !== emergencyId) return e;
+          return {
+            ...e,
+            assignedHospitalId: hospitalId,
+            assignedHospitalName: hospitalName,
+            holdRequestId: holdId,
+            matchReasons,
+            status: 'hospital_pending',
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const ambulanceAction = useCallback(
+    (emergencyId: string, action: 'navigate' | 'arrived' | 'handed_over') => {
+      setEmergencies((prev) =>
+        prev.map((e) => {
+          if (e.id !== emergencyId) return e;
+          if (action === 'navigate') {
+            return {
+              ...e,
+              status: 'en_route_hospital' as EmergencyStatus,
+              timeline: [
+                ...e.timeline,
+                { step: 'ambulance_en_route' as EmergencyTimelineStep, timestamp: Date.now(), label: TIMELINE_STEP_LABELS.ambulance_en_route },
+              ],
+            };
+          }
+          if (action === 'arrived') {
+            return {
+              ...e,
+              status: 'arrived' as EmergencyStatus,
+              timeline: [
+                ...e.timeline,
+                { step: 'ambulance_arrived' as EmergencyTimelineStep, timestamp: Date.now(), label: TIMELINE_STEP_LABELS.ambulance_arrived },
+              ],
+            };
+          }
+          if (action === 'handed_over') {
+            return {
+              ...e,
+              status: 'handed_over' as EmergencyStatus,
+              timeline: [
+                ...e.timeline,
+                { step: 'patient_handed_over' as EmergencyTimelineStep, timestamp: Date.now(), label: TIMELINE_STEP_LABELS.patient_handed_over },
+              ],
+            };
+          }
+          return e;
+        })
+      );
+
+      if (action === 'handed_over') {
+        showNotification('Patient successfully handed over to hospital.', 'success');
+      }
+    },
+    [showNotification]
+  );
+
+  const completeEmergency = useCallback(
+    (emergencyId: string) => {
+      setEmergencies((prev) =>
+        prev.map((e) => {
+          if (e.id !== emergencyId) return e;
+          return {
+            ...e,
+            status: 'completed' as EmergencyStatus,
+            timeline: [
+              ...e.timeline,
+              { step: 'emergency_completed' as EmergencyTimelineStep, timestamp: Date.now(), label: TIMELINE_STEP_LABELS.emergency_completed },
+            ],
+          };
+        })
+      );
+      showNotification('Emergency marked as completed.', 'success');
+    },
+    [showNotification]
+  );
 
   // NURSE ACTIONS
   const incrementBed = useCallback((hospitalId: string, bedType: BedTypeId) => {
@@ -485,7 +768,8 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       bedType: BedTypeId,
       overrideCallSign?: string,
       overrideAcuity?: TriageAcuity,
-      overrideVitals?: { bp: string; hr: number; spo2: number; gcs: number }
+      overrideVitals?: { bp: string; hr: number; spo2: number; gcs: number },
+      emergencyId?: string
     ) => {
       const targetHospital = hospitals.find((h) => h.id === hospitalId) || hospitals[0];
       const callSign = overrideCallSign || dispatchFilter.ambulanceCallSign;
@@ -536,9 +820,25 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         status: 'pending',
         assignedBay: `Bay ${Math.floor(Math.random() * 5) + 1}`,
         doctorInCharge: 'Dr. Katherine Vance, MD',
+        emergencyId: emergencyId,
       };
 
       setActiveHolds((prev) => [newHold, ...prev]);
+
+      // If emergency context, link the hold
+      if (emergencyId) {
+        setEmergencies((prev) =>
+          prev.map((e) => {
+            if (e.id !== emergencyId) return e;
+            return {
+              ...e,
+              holdRequestId: newHold.id,
+              assignedHospitalId: targetHospital.id,
+              assignedHospitalName: targetHospital.name,
+            };
+          })
+        );
+      }
 
       showNotification(
         `Bed request sent to ${targetHospital.name}. 2-minute confirmation timer started.`,
@@ -573,9 +873,15 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           `BED HELD for ${target.ambulanceCallSign} at ${target.hospitalName}. Bed locked.`,
           'success'
         );
+
+        // Update emergency timeline if linked
+        if (target.emergencyId) {
+          addTimelineEvent(target.emergencyId, 'hospital_accepted', target.hospitalName);
+          updateEmergencyStatus(target.emergencyId, 'hospital_confirmed');
+        }
       }
     },
-    [activeHolds, showNotification]
+    [activeHolds, showNotification, addTimelineEvent, updateEmergencyStatus]
   );
 
   // Auto-escalation function when hold is rejected or expired
@@ -603,6 +909,11 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           };
         })
       );
+
+      // Update emergency timeline if linked
+      if (rejectedHold.emergencyId) {
+        addTimelineEvent(rejectedHold.emergencyId, 'hospital_rejected', `${rejectedHold.hospitalName}: ${reason}`);
+      }
 
       // Find next best eligible hospital with available bed
       const candidateHospitals = hospitals.filter(
@@ -648,6 +959,31 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           })
         );
 
+        // Update emergency with new hospital
+        if (rejectedHold.emergencyId) {
+          setEmergencies((prev) =>
+            prev.map((e) => {
+              if (e.id !== rejectedHold.emergencyId) return e;
+              return {
+                ...e,
+                assignedHospitalId: nextHospital.id,
+                assignedHospitalName: nextHospital.name,
+                holdRequestId: escalatedHoldId,
+                etaMinutes: nextHospital.travelTimeMins + 3,
+                timeline: [
+                  ...e.timeline,
+                  {
+                    step: 'hospital_selected' as EmergencyTimelineStep,
+                    timestamp: Date.now(),
+                    label: TIMELINE_STEP_LABELS.hospital_selected,
+                    detail: `Escalated to ${nextHospital.name}`,
+                  },
+                ],
+              };
+            })
+          );
+        }
+
         setActiveHolds((prev) => [
           newEscalatedHold,
           ...prev.map((h) =>
@@ -685,7 +1021,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         );
       }
     },
-    [hospitals, showNotification]
+    [hospitals, showNotification, addTimelineEvent]
   );
 
   const rejectHold = useCallback(
@@ -1014,9 +1350,11 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.removeItem(STORAGE_KEY_HOLDS);
     localStorage.removeItem(STORAGE_KEY_OFFLINE_QUEUE);
     localStorage.removeItem(STORAGE_KEY_CITIZEN_SOS);
+    localStorage.removeItem(STORAGE_KEY_EMERGENCIES);
     setHospitals(INITIAL_HOSPITALS);
     setCitizenSOSRequests([]);
     setOfflineQueue([]);
+    setEmergencies([]);
     const initialExpiry = Date.now() + 118 * 1000;
     setActiveHolds([
       {
@@ -1151,6 +1489,15 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         ingestGenericWebhookPayload,
         notificationMessage,
         dismissNotification,
+        // Emergency lifecycle
+        emergencies,
+        activeEmergency,
+        createEmergency,
+        updateEmergencyStatus,
+        addTimelineEvent,
+        assignHospitalToEmergency,
+        completeEmergency,
+        ambulanceAction,
       }}
     >
       {children}

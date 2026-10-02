@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useBedLink } from '../../context/BedLinkContext';
+import { useAuth } from '../../context/AuthContext';
 import { BED_TYPES, BedTypeId } from '../../types/bedlink';
 import {
   CheckCircle2,
@@ -15,9 +16,13 @@ import {
   RefreshCw,
   Sliders,
   ShieldCheck,
+  Stethoscope,
+  ArrowLeft,
+  ListFilter,
 } from 'lucide-react';
 
 export const NurseBedUpdateView: React.FC = () => {
+  const { logout } = useAuth();
   const {
     currentHospital,
     hospitals,
@@ -93,34 +98,74 @@ export const NurseBedUpdateView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
-      {/* Offline Mode Alert for Hospital Basement Dead Zones */}
+    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
+      
+      {/* Top Entity Management Breadcrumb Toolbar */}
+      <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 transition-colors cursor-pointer"
+            title="Return to Main Portal"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>← Back to Home</span>
+          </button>
+          <div className="h-4 w-px bg-slate-200" />
+          <div className="flex items-center gap-2">
+            <Stethoscope className="w-4 h-4 text-emerald-700" />
+            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Ward Bed Management System</span>
+            <span className="text-xs font-mono text-slate-500">Ward: {currentHospital.ward}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+            Duty Charge Nurse: {currentHospital.nurseInCharge}
+          </span>
+          <button
+            onClick={handleSyncAll}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer ${
+              syncedNotification
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{syncedNotification ? 'Synced to Dispatch!' : 'Sync All Bed Data'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Offline Alert */}
       {!isOnline && (
-        <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-xs text-amber-900 flex items-center justify-between">
+        <div className="bg-amber-50 border border-amber-300 rounded-xl p-3.5 text-xs text-amber-900 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <WifiOff className="w-4 h-4 text-amber-700 shrink-0" />
             <span>
-              <strong>Ward Offline Queue Mode Active:</strong> Operating without Wi-Fi connection. {pendingOfflineSyncCount} bed update(s) saved locally and will auto-sync upon signal restoration.
+              <strong>Ward Offline Queue Active:</strong> Operating without network signal. {pendingOfflineSyncCount} bed update(s) cached locally.
             </span>
           </div>
-          <span className="font-mono text-amber-800 font-bold px-2 py-0.5 bg-amber-100 rounded">
-            PWA Offline
+          <span className="font-mono text-amber-800 font-bold px-2.5 py-0.5 bg-amber-100 rounded">
+            PWA Caching
           </span>
         </div>
       )}
 
-      {/* Top Station Header */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-          <div>
-            <div className="flex items-center gap-2">
-              <Building className="w-5 h-5 text-sky-700 shrink-0" />
+      {/* Station Header & EHR Auto-Sync Bar */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+              <Stethoscope className="w-5 h-5" />
+            </div>
+            <div>
               <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={currentHospital.id}
                   aria-label="Select Hospital Facility"
                   onChange={(e) => setCurrentHospitalId(e.target.value)}
-                  className="bg-white border border-slate-300 rounded-md font-bold text-slate-900 text-sm sm:text-base px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 cursor-pointer"
+                  className="bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-base px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-600 cursor-pointer"
                 >
                   {hospitals.map((h) => (
                     <option key={h.id} value={h.id}>
@@ -128,102 +173,75 @@ export const NurseBedUpdateView: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
                   {currentHospital.designation}
                 </span>
               </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Ward Station: <strong className="text-slate-900">{currentHospital.ward}</strong> &middot; Direct Radio Channel: {currentHospital.directRadioChannel}
+              </p>
             </div>
-            <p className="text-xs text-slate-600 mt-1 pl-7">
-              Current Ward: <strong className="text-slate-800">{currentHospital.ward}</strong> &middot; Charge Nurse on duty: {currentHospital.nurseInCharge}
-            </p>
-          </div>
-
-          {/* Sync Button and Status */}
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <span className="text-xs text-slate-500 block">Ward Sync Status:</span>
-              <span className="text-xs font-semibold text-slate-800 flex items-center justify-end gap-1">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
-                {secondsSinceSync < 60 ? `${secondsSinceSync}s ago` : `${Math.floor(secondsSinceSync / 60)}m ago`}
-              </span>
-            </div>
-
-            <button
-              onClick={handleSyncAll}
-              className={`px-4 py-2 text-xs font-bold rounded-md border transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer ${
-                syncedNotification
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-sky-600 hover:bg-sky-700 text-white border-sky-600'
-              }`}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{syncedNotification ? 'Synced to Dispatch!' : 'Sync All Bed Data'}</span>
-            </button>
           </div>
         </div>
 
-        {/* Automated Hospital EHR Ingestion Strip: Night Shift Auto-Sync */}
-        <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs bg-slate-50 p-3 rounded-md border">
-          <div className="flex items-start sm:items-center gap-2">
-            <Database className="w-4 h-4 text-sky-700 shrink-0 mt-0.5 sm:mt-0" />
+        {/* EHR Feed Controls */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div className="flex items-center gap-2.5">
+            <Database className="w-4 h-4 text-emerald-700 shrink-0" />
             <div>
-              <span className="font-bold text-slate-900 block sm:inline">
-                Hospital EHR Auto-Sync (HL7 v2 / FHIR ADT Feed):
-              </span>{' '}
-              <span className="text-emerald-700 font-semibold">Active and Connected</span>
+              <span className="font-bold text-slate-900">Hospital EHR Feed (HL7 v2 / FHIR ADT): </span>
+              <span className="text-emerald-700 font-bold">Active & Connected</span>
               <span className="text-slate-500 block sm:inline sm:ml-2">
-                Night shift automated census active. Bed counts adjust automatically upon patient admission or discharge.
+                Bed inventory adjusts automatically upon ADT admission or discharge events.
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-slate-500 font-medium hidden sm:inline">Test EHR Feed:</span>
+            <span className="text-slate-500 font-medium">Test EHR Feed:</span>
             <button
               onClick={() => handleTriggerEhr('ADT_A01_ADMIT')}
               disabled={isSimulatingEhr}
-              className="px-2.5 py-1 text-xs font-semibold rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 transition-colors shadow-2xs"
-              title="Simulates patient admission from hospital EHR, decrementing ICU bed count automatically"
+              className="px-3 py-1.5 text-xs font-bold rounded-md bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 transition-colors shadow-2xs cursor-pointer"
             >
               + Admit Patient
             </button>
             <button
               onClick={() => handleTriggerEhr('ADT_A03_DISCHARGE')}
               disabled={isSimulatingEhr}
-              className="px-2.5 py-1 text-xs font-semibold rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 transition-colors shadow-2xs"
-              title="Simulates patient discharge from hospital EHR, returning ICU bed to available inventory"
+              className="px-3 py-1.5 text-xs font-bold rounded-md bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 transition-colors shadow-2xs cursor-pointer"
             >
               - Discharge Patient
             </button>
           </div>
         </div>
 
-        {/* Quick Presets and Status Legend */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-xs">
+        {/* Presets and Legend */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-slate-500 font-medium">Quick Ward Overrides:</span>
+            <span className="text-slate-500 font-semibold">Ward Overrides:</span>
             <button
               onClick={() => setBedPreset(currentHospital.id, 'all_full')}
-              className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold transition-colors flex items-center gap-1 cursor-pointer"
             >
-              <Ban className="w-3 h-3 text-rose-600" />
+              <Ban className="w-3.5 h-3.5 text-rose-600" />
               All Full (0)
             </button>
             <button
               onClick={() => setBedPreset(currentHospital.id, 'reset_default')}
-              className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold transition-colors flex items-center gap-1 cursor-pointer"
             >
-              <RotateCcw className="w-3 h-3 text-slate-600" />
-              Reset to Benchmark
+              <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
+              Reset Benchmark
             </button>
           </div>
 
-          <div className="flex items-center gap-3 text-slate-600 font-medium">
+          <div className="flex items-center gap-4 text-slate-600 font-semibold">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Available (&gt;2)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Low (1-2 left)
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Low (1-2)
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span> Full (0)
@@ -232,8 +250,8 @@ export const NurseBedUpdateView: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid of Bed Categories */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Grid of Bed Categories (3 columns on Desktop) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {bedKeys.map((key) => {
           const meta = BED_TYPES[key];
           const bedData = currentHospital.beds[key] || { total: 10, available: 0, held: 0 };
@@ -244,7 +262,6 @@ export const NurseBedUpdateView: React.FC = () => {
 
           const isJustUpdated = justUpdatedBed === key;
 
-          // Strictly functional status colors
           let statusTheme = {
             cardBorder: 'border-slate-200',
             badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
@@ -254,14 +271,14 @@ export const NurseBedUpdateView: React.FC = () => {
 
           if (available === 0) {
             statusTheme = {
-              cardBorder: 'border-rose-200',
+              cardBorder: 'border-rose-300',
               badgeBg: 'bg-rose-50 text-rose-800 border-rose-200',
               badgeLabel: 'Full (0 Beds)',
               numberColor: 'text-rose-700',
             };
           } else if (available <= 2) {
             statusTheme = {
-              cardBorder: 'border-amber-200',
+              cardBorder: 'border-amber-300',
               badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
               badgeLabel: `${available} Left`,
               numberColor: 'text-amber-700',
@@ -271,9 +288,8 @@ export const NurseBedUpdateView: React.FC = () => {
           return (
             <div
               key={key}
-              className={`bg-white border ${statusTheme.cardBorder} rounded-lg p-4 sm:p-5 shadow-xs flex flex-col justify-between transition-colors`}
+              className={`bg-white border ${statusTheme.cardBorder} rounded-xl p-5 shadow-xs flex flex-col justify-between transition-colors`}
             >
-              {/* Card Header: Title and Status Badge */}
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -281,33 +297,29 @@ export const NurseBedUpdateView: React.FC = () => {
                       {meta.label}
                     </h3>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[11px] font-medium text-slate-500">
+                      <span className="text-xs font-semibold text-slate-500">
                         {meta.shortLabel}
                       </span>
                       {held > 0 && (
-                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
-                          {held} Held by EMS
+                        <span className="text-[10px] font-mono font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                          {held} Held
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-0.5 rounded border shrink-0 ${statusTheme.badgeBg}`}
-                  >
+                  <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md border shrink-0 ${statusTheme.badgeBg}`}>
                     {statusTheme.badgeLabel}
                   </span>
                 </div>
 
-                {/* Main Metrics: Available Beds + Total + Occupied */}
+                {/* Metrics */}
                 <div className="my-4 py-3 border-y border-slate-100 flex items-baseline justify-between">
                   <div>
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
                       Available Beds
                     </span>
-                    <span
-                      className={`text-4xl font-bold font-mono tracking-tight tabular-nums block mt-0.5 ${statusTheme.numberColor}`}
-                    >
+                    <span className={`text-4xl font-black font-mono tracking-tight tabular-nums block mt-0.5 ${statusTheme.numberColor}`}>
                       {available}
                     </span>
                   </div>
@@ -317,12 +329,11 @@ export const NurseBedUpdateView: React.FC = () => {
                       Total Beds: <span className="font-bold text-slate-900">{total}</span>
                     </div>
                     <div>
-                      Occupied Beds: <span className="font-semibold text-slate-800">{occupied}</span>
+                      Occupied: <span className="font-semibold text-slate-800">{occupied}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Freshness Timestamp / Confirmation */}
                 <div className="flex items-center justify-between text-xs text-slate-500 pb-3">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -330,28 +341,28 @@ export const NurseBedUpdateView: React.FC = () => {
                   </div>
 
                   {isJustUpdated && (
-                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                    <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
                       <Check className="w-3 h-3" />
-                      Updated just now
+                      Saved
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* One-Tap Tactile Touch Controls: 48px Min Height for Cheap Mobile Touchscreens */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+              {/* 48px Touch Adjuster Buttons */}
+              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => handleBedUpdate(key, 'decrement')}
                   disabled={available <= 0}
-                  className={`min-h-[48px] py-2.5 px-3 rounded-md border font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                  className={`min-h-[48px] py-3 px-3 rounded-lg border font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     available > 0
-                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 active:bg-slate-300'
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300 active:bg-slate-300'
                       : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
                   }`}
                   aria-label={`Mark bed filled for ${meta.label}`}
                 >
-                  <Minus className="w-4 h-4 text-slate-700 stroke-[2.5]" />
+                  <Minus className="w-4 h-4 text-slate-800 stroke-[2.5]" />
                   <span>Bed Filled</span>
                 </button>
 
@@ -359,9 +370,9 @@ export const NurseBedUpdateView: React.FC = () => {
                   type="button"
                   onClick={() => handleBedUpdate(key, 'increment')}
                   disabled={available >= total}
-                  className={`min-h-[48px] py-2.5 px-3 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 text-white transition-colors cursor-pointer ${
+                  className={`min-h-[48px] py-3 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 text-white transition-colors cursor-pointer ${
                     available < total
-                      ? 'bg-sky-600 hover:bg-sky-700 border border-sky-600 shadow-xs active:bg-sky-800'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 shadow-2xs active:bg-emerald-800'
                       : 'bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-300'
                   }`}
                   aria-label={`Mark bed free for ${meta.label}`}

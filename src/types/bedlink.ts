@@ -225,9 +225,14 @@ export interface HoldRequest {
   escalatedToHospitalId?: string;
   assignedBay?: string;
   doctorInCharge?: string;
+  emergencyId?: string; // link to emergency
 }
 
-export type AppRole = 'citizen' | 'nurse' | 'dispatch' | 'er';
+// Updated 5-role system
+export type AppRole = 'patient' | 'ambulance' | 'nurse' | 'hospital' | 'admin';
+
+// Legacy role mapping (for backward compat in context)
+export type LegacyAppRole = 'citizen' | 'nurse' | 'dispatch' | 'er';
 
 export interface DispatchFilterState {
   triageAcuity: TriageAcuity;
@@ -307,3 +312,95 @@ export interface CardiacMonitorTelemetry {
   monitorModel: 'Zoll X Series Advanced' | 'Philips Tempus Pro';
   isConnected: boolean;
 }
+
+// ========== NEW TYPES FOR VITAROUTE UPGRADE ==========
+
+export interface PatientProfile {
+  id: string;
+  name: string;
+  age: number;
+  bloodGroup: string;
+  allergies: string[];
+  medicalConditions: string[];
+  primaryMobile: string;
+  backupMobile1: string;
+  backupMobile2: string;
+  emergencyContact: string;
+}
+
+export type EmergencyTimelineStep =
+  | 'sos_triggered'
+  | 'location_acquired'
+  | 'ambulance_assigned'
+  | 'hospital_selected'
+  | 'hospital_accepted'
+  | 'hospital_rejected'
+  | 'ambulance_en_route'
+  | 'ambulance_arrived'
+  | 'patient_handed_over'
+  | 'emergency_completed';
+
+export interface EmergencyTimelineEvent {
+  step: EmergencyTimelineStep;
+  timestamp: number;
+  label: string;
+  detail?: string;
+}
+
+export type EmergencyStatus =
+  | 'active'
+  | 'ambulance_dispatched'
+  | 'hospital_pending'
+  | 'hospital_confirmed'
+  | 'en_route_hospital'
+  | 'arrived'
+  | 'handed_over'
+  | 'completed';
+
+export interface Emergency {
+  id: string;
+  patientId: string;
+  patientName: string;
+  category: EmergencyCategory;
+  status: EmergencyStatus;
+  createdAt: number;
+  lat: number;
+  lng: number;
+  assignedAmbulance: string;
+  assignedHospitalId: string | null;
+  assignedHospitalName: string | null;
+  holdRequestId: string | null;
+  etaMinutes: number;
+  timeline: EmergencyTimelineEvent[];
+  requiredBedType: BedTypeId;
+  requiredSpecialties: SpecialtyId[];
+  matchReasons: string[];
+}
+
+export interface MatchReason {
+  icon: 'check' | 'warning' | 'info';
+  text: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: AppRole;
+  hospitalId?: string; // for nurse/hospital roles
+  ambulanceId?: string; // for ambulance role
+  patientProfile?: PatientProfile;
+}
+
+export const TIMELINE_STEP_LABELS: Record<EmergencyTimelineStep, string> = {
+  sos_triggered: 'SOS Triggered',
+  location_acquired: 'Location Acquired',
+  ambulance_assigned: 'Ambulance Assigned',
+  hospital_selected: 'Hospital Selected',
+  hospital_accepted: 'Hospital Accepted',
+  hospital_rejected: 'Hospital Rejected',
+  ambulance_en_route: 'Ambulance En Route',
+  ambulance_arrived: 'Ambulance Arrived at Hospital',
+  patient_handed_over: 'Patient Handed Over',
+  emergency_completed: 'Emergency Completed',
+};

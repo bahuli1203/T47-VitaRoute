@@ -707,7 +707,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => setRole('er')}
+                  onClick={() => setRole('hospital')}
                   className="w-full py-1.5 px-3 rounded-md text-[11px] text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors text-center"
                 >
                   View Bed Hold Board
@@ -820,7 +820,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                 <button
                   onClick={() => {
                     setActiveModalHoldId(null);
-                    setRole('er');
+                    setRole('hospital');
                   }}
                   className="mt-2.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-md"
                 >

@@ -497,7 +497,7 @@ export const RuggedMdtView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => setRole('er')}
+                  onClick={() => setRole('hospital')}
                   className="w-full py-1.5 px-3 rounded text-[11px] text-slate-400 hover:text-slate-200 bg-slate-950 border border-slate-800 text-center cursor-pointer"
                 >
                   View ER Receiving Board
