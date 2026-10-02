@@ -9,6 +9,7 @@ import {
   TriageAcuity,
   CitizenSOSRequest,
   EmergencyCategory,
+  EhrSyncStatus,
 } from '../types/bedlink';
 import { INITIAL_HOSPITALS } from '../data/mockHospitals';
 import { soundManager } from '../utils/audio';
@@ -66,6 +67,11 @@ interface BedLinkContextType {
   rejectHold: (holdId: string, reason: string) => void;
   markArrived: (holdId: string) => void;
   cancelHold: (holdId: string) => void;
+
+  // EHR / HIS Automatic Synchronization
+  ehrSyncStatus: EhrSyncStatus;
+  lastEhrSyncTimestamp: number;
+  simulateEhrEvent: (eventType: 'ADT_A01_ADMIT' | 'ADT_A03_DISCHARGE') => void;
 
   // Simulation and System Actions
   simulateIncomingAmbulance: () => void;
@@ -855,6 +861,57 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     showNotification('Simulated regional mass surge: ER load status updated.', 'warning');
   }, [showNotification]);
 
+  // EHR and Night-Shift Ingestion Simulation
+  const [ehrSyncStatus] = useState<EhrSyncStatus>('connected');
+  const [lastEhrSyncTimestamp, setLastEhrSyncTimestamp] = useState<number>(Date.now());
+
+  const simulateEhrEvent = useCallback(
+    (eventType: 'ADT_A01_ADMIT' | 'ADT_A03_DISCHARGE') => {
+      soundManager.playAcceptChime();
+      soundManager.triggerVibration(40);
+      const now = Date.now();
+      setLastEhrSyncTimestamp(now);
+      const targetBedType: BedTypeId = 'icu_ventilator';
+
+      setHospitals((prev) =>
+        prev.map((h) => {
+          if (h.id !== currentHospitalId) return h;
+          const currentBeds = h.beds[targetBedType];
+          const newAvailable =
+            eventType === 'ADT_A01_ADMIT'
+              ? Math.max(0, currentBeds.available - 1)
+              : Math.min(currentBeds.total, currentBeds.available + 1);
+
+          return {
+            ...h,
+            lastUpdatedMinutesAgo: 0,
+            lastUpdatedTimestamp: now,
+            beds: {
+              ...h.beds,
+              [targetBedType]: {
+                ...currentBeds,
+                available: newAvailable,
+              },
+            },
+          };
+        })
+      );
+
+      if (eventType === 'ADT_A01_ADMIT') {
+        showNotification(
+          'HL7 ADT-A01 Admit: Patient registered in Epic EHR. ICU bed count auto-decremented.',
+          'info'
+        );
+      } else {
+        showNotification(
+          'HL7 ADT-A03 Discharge: Patient discharged from ward. ICU bed auto-returned to inventory.',
+          'success'
+        );
+      }
+    },
+    [currentHospitalId, showNotification]
+  );
+
   const resetAllData = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY_HOSPITALS);
     localStorage.removeItem(STORAGE_KEY_HOLDS);
@@ -980,6 +1037,9 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         simulateIncomingAmbulance,
         simulateMassSurge,
         resetAllData,
+        ehrSyncStatus,
+        lastEhrSyncTimestamp,
+        simulateEhrEvent,
         notificationMessage,
         dismissNotification,
       }}

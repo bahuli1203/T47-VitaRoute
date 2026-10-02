@@ -261,3 +261,16 @@ export interface CitizenSOSRequest {
   status: 'transmitting' | 'dispatched' | 'en_route' | 'arrived';
   etaMinutes: number;
 }
+
+export type EhrSyncStatus = 'connected' | 'syncing' | 'offline' | 'manual_override';
+
+export interface EhrSyncEvent {
+  id: string;
+  timestamp: number;
+  eventType: 'ADT_A01_ADMIT' | 'ADT_A03_DISCHARGE' | 'ADT_A02_TRANSFER' | 'NIGHT_SHIFT_CENSUS';
+  hospitalId: string;
+  wardId: string;
+  bedType: BedTypeId;
+  delta: number;
+  sourceSystem: 'Epic Systems HL7v2' | 'Cerner Millennium FHIR' | 'Nurse One-Tap Override';
+}
