@@ -1,0 +1,6 @@
+{
+  "name": "VitaRoute - Emergency Medical Dispatch & Hospital Bed Coordination",
+  "description": "Real-time emergency medical dispatch and hospital bed coordination platform featuring 10-second nurse bed updates, instant ambulance hospital matching, and 120-second ER hold confirmations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
