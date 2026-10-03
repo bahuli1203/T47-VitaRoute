@@ -1,9 +1,9 @@
 /**
  * VitaRoute Service Worker
- * Offline resilience, asset caching, background sync queue, and emergency push alerts
+ * Offline resilience, shell asset caching, background sync queue, and emergency hold push alerts
  */
 
-const CACHE_NAME = 'vitaroute-cache-v1';
+const CACHE_NAME = 'vitaroute-cache-v3';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -38,6 +38,12 @@ self.addEventListener('activate', (event) => {
 // Fetch: Stale-while-revalidate for assets, network-first for external API
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip caching for external APIs to let the app handle network state and custom caching
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) {
     return;
   }
 
@@ -101,12 +107,12 @@ self.addEventListener('sync', (event) => {
 // Push Notifications: High-urgency incoming bed hold reservations
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || 'VitaRoute Emergency Alert';
+  const title = data.title || 'BedLink Emergency Alert';
   const options = {
     body: data.body || 'Incoming ambulance bed hold confirmation required (120s window).',
     icon: '/vite.svg',
     badge: '/vite.svg',
-    tag: 'vitaroute-hold-alert',
+    tag: 'bedlink-hold-alert',
     renotify: true,
     requireInteraction: true,
     data: {

@@ -77,9 +77,9 @@ export const AdminDashboard: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={simulateIncomingAmbulance}
-            className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-neutral-100 text-neutral-800 border border-neutral-300 hover:bg-neutral-200 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
-            <Zap className="w-3.5 h-3.5 text-sky-600" />
+            <Zap className="w-3.5 h-3.5 text-neutral-800" />
             Simulate Request
           </button>
           <button
@@ -108,13 +108,13 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center">
-          <Ambulance className="w-5 h-5 text-sky-600 mx-auto mb-1.5" />
+          <Ambulance className="w-5 h-5 text-neutral-800 mx-auto mb-1.5" />
           <span className="text-2xl font-black text-slate-900 font-mono block">{activeAmbulances}</span>
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dispatched Fleet Units</span>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-center">
-          <Building2 className="w-5 h-5 text-violet-600 mx-auto mb-1.5" />
+          <Building2 className="w-5 h-5 text-neutral-800 mx-auto mb-1.5" />
           <span className="text-2xl font-black text-slate-900 font-mono block">{hospitals.length}</span>
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Connected Hospitals</span>
         </div>
@@ -139,7 +139,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-violet-700" />
+              <Building2 className="w-4 h-4 text-neutral-800" />
               Regional Hospital Capacity Matrix
             </h3>
             <span className="text-xs text-slate-500 font-mono">Live Census Updates</span>

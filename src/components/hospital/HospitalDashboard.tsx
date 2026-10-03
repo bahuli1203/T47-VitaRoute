@@ -111,14 +111,14 @@ export const HospitalDashboard: React.FC = () => {
           </button>
           <div className="h-4 w-px bg-slate-200" />
           <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-violet-700" />
+            <Building2 className="w-4 h-4 text-neutral-800" />
             <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Hospital ER Command Management</span>
             <span className="text-xs font-mono text-slate-500">Facility #{currentHospital.code}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-violet-50 text-violet-800 border border-violet-200">
+          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-neutral-100 text-neutral-800 border border-neutral-300">
             Radio: {currentHospital.directRadioChannel}
           </span>
           <button
@@ -135,7 +135,7 @@ export const HospitalDashboard: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-700">
+            <div className="w-11 h-11 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-800">
               <Building2 className="w-6 h-6" />
             </div>
             <div>
@@ -144,7 +144,7 @@ export const HospitalDashboard: React.FC = () => {
                   value={currentHospital.id}
                   onChange={(e) => setCurrentHospitalId(e.target.value)}
                   aria-label="Select Hospital Facility"
-                  className="bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-base px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-600 cursor-pointer"
+                  className="bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-base px-3.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-neutral-900 cursor-pointer"
                 >
                   {hospitals.map((h) => (
                     <option key={h.id} value={h.id}>

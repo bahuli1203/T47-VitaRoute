@@ -28,15 +28,15 @@ const STEP_ICONS: Record<EmergencyTimelineStep, React.ComponentType<{ className?
 
 const STEP_COLORS: Record<EmergencyTimelineStep, { bg: string; icon: string; line: string }> = {
   sos_triggered: { bg: 'bg-rose-100', icon: 'text-rose-600', line: 'bg-rose-300' },
-  location_acquired: { bg: 'bg-sky-100', icon: 'text-sky-600', line: 'bg-sky-300' },
-  ambulance_assigned: { bg: 'bg-sky-100', icon: 'text-sky-600', line: 'bg-sky-300' },
-  hospital_selected: { bg: 'bg-violet-100', icon: 'text-violet-600', line: 'bg-violet-300' },
-  hospital_accepted: { bg: 'bg-emerald-100', icon: 'text-emerald-600', line: 'bg-emerald-300' },
+  location_acquired: { bg: 'bg-neutral-200', icon: 'text-neutral-800', line: 'bg-neutral-300' },
+  ambulance_assigned: { bg: 'bg-neutral-200', icon: 'text-neutral-800', line: 'bg-neutral-300' },
+  hospital_selected: { bg: 'bg-amber-100', icon: 'text-amber-800', line: 'bg-amber-300' },
+  hospital_accepted: { bg: 'bg-emerald-100', icon: 'text-emerald-700', line: 'bg-emerald-300' },
   hospital_rejected: { bg: 'bg-rose-100', icon: 'text-rose-600', line: 'bg-rose-300' },
-  ambulance_en_route: { bg: 'bg-sky-100', icon: 'text-sky-600', line: 'bg-sky-300' },
-  ambulance_arrived: { bg: 'bg-emerald-100', icon: 'text-emerald-600', line: 'bg-emerald-300' },
-  patient_handed_over: { bg: 'bg-emerald-100', icon: 'text-emerald-600', line: 'bg-emerald-300' },
-  emergency_completed: { bg: 'bg-emerald-100', icon: 'text-emerald-600', line: 'bg-emerald-300' },
+  ambulance_en_route: { bg: 'bg-neutral-200', icon: 'text-neutral-800', line: 'bg-neutral-300' },
+  ambulance_arrived: { bg: 'bg-emerald-100', icon: 'text-emerald-700', line: 'bg-emerald-300' },
+  patient_handed_over: { bg: 'bg-emerald-100', icon: 'text-emerald-700', line: 'bg-emerald-300' },
+  emergency_completed: { bg: 'bg-emerald-100', icon: 'text-emerald-700', line: 'bg-emerald-300' },
 };
 
 // The full ordered sequence of possible steps
@@ -91,7 +91,7 @@ export const EmergencyTimeline: React.FC<EmergencyTimelineProps> = ({ events, co
                   isCompleted
                     ? `${colors.bg}`
                     : 'bg-slate-100'
-                } ${isCurrent ? 'ring-2 ring-offset-1 ring-sky-400' : ''}`}
+                } ${isCurrent ? 'ring-2 ring-offset-1 ring-neutral-900' : ''}`}
                 title={TIMELINE_STEP_LABELS[step]}
               >
                 <Icon className={`w-3.5 h-3.5 ${isCompleted ? colors.icon : 'text-slate-300'}`} />
@@ -131,7 +131,7 @@ export const EmergencyTimeline: React.FC<EmergencyTimelineProps> = ({ events, co
                   isCompleted
                     ? `${colors.bg} border-transparent`
                     : isCurrent
-                    ? 'bg-white border-sky-400 animate-subtle-pulse'
+                    ? 'bg-white border-neutral-900 animate-subtle-pulse'
                     : 'bg-slate-50 border-slate-200'
                 }`}
               >

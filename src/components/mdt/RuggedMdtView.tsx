@@ -274,7 +274,7 @@ export const RuggedMdtView: React.FC = () => {
 
           <div className="bg-slate-950 border border-slate-800 p-2 rounded">
             <span className="text-[10px] text-slate-400 block font-sans">SpO2</span>
-            <span className="text-lg font-bold text-sky-400">{cardiacTelemetry.spo2}%</span>
+            <span className="text-lg font-bold text-emerald-400">{cardiacTelemetry.spo2}%</span>
             <span className="text-[9px] text-slate-500 block">15L NRB</span>
           </div>
 
@@ -399,7 +399,7 @@ export const RuggedMdtView: React.FC = () => {
                 isBestMatch
                   ? isNight
                     ? 'border-amber-500 bg-slate-900 ring-1 ring-amber-500/50'
-                    : 'border-sky-500 bg-white ring-1 ring-sky-300'
+                    : 'border-neutral-900 bg-white ring-1 ring-neutral-900/10'
                   : isFull
                   ? isNight
                     ? 'border-slate-900 bg-slate-950 opacity-60'

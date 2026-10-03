@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 
 export const AmbulanceDispatchView: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'mdt' | 'cad'>('mdt');
+  const [viewMode, setViewMode] = useState<'mdt' | 'cad'>('cad');
   const {
     hospitals,
     dispatchFilter,
@@ -50,6 +50,9 @@ export const AmbulanceDispatchView: React.FC = () => {
     gpsAccuracy,
     requestLiveLocation,
     isLocating,
+    isLoadingRealHospitals,
+    realHospitalSource,
+    loadRealHospitalsForLocation,
   } = useBedLink();
 
   // Active confirmation modal hold state
@@ -197,7 +200,16 @@ export const AmbulanceDispatchView: React.FC = () => {
 
   const currentActiveModalHold = useMemo(() => {
     if (!activeModalHoldId) return null;
-    return activeHolds.find((h) => h.id === activeModalHoldId) || null;
+    const direct = activeHolds.find((h) => h.id === activeModalHoldId);
+    if (!direct) return null;
+    // Auto-follow escalation chain if the previous hospital rejected or timed out
+    if ((direct.status === 'expired' || direct.status === 'rejected') && direct.escalatedToHospitalId) {
+      const escalated = activeHolds.find(
+        (h) => h.hospitalId === direct.escalatedToHospitalId && (h.status === 'pending' || h.status === 'accepted')
+      );
+      if (escalated) return escalated;
+    }
+    return direct;
   }, [activeHolds, activeModalHoldId]);
 
   const bedKeys = Object.keys(BED_TYPES) as BedTypeId[];
@@ -237,26 +249,26 @@ export const AmbulanceDispatchView: React.FC = () => {
 
   return (
     <div className="flex flex-col">
-      <div className="bg-slate-900 border-b border-slate-800 text-slate-300 py-2.5 px-4 sm:px-6">
+      <div className="bg-white border-b border-neutral-200 text-neutral-600 py-2.5 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-white">Ambulance Operating Mode:</span>
-            <span className="text-slate-400">Regional CAD Fleet Dispatch Console</span>
+            <span className="font-semibold text-neutral-900">Console Mode:</span>
+            <span className="text-neutral-500">Ambulance Dispatch &amp; Road Routing</span>
           </div>
-          <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded border border-slate-700">
-            <button
-              type="button"
-              onClick={() => setViewMode('mdt')}
-              className="px-3 py-1 rounded text-xs font-semibold cursor-pointer text-slate-400 hover:text-white"
-            >
-              In-Vehicle Rugged MDT (Tablet)
-            </button>
+          <div className="flex items-center gap-1 bg-neutral-100 p-0.5 rounded-lg border border-neutral-200">
             <button
               type="button"
               onClick={() => setViewMode('cad')}
-              className="px-3 py-1 rounded text-xs font-semibold cursor-pointer bg-sky-600 text-white font-bold"
+              className="px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors bg-neutral-900 text-white shadow-xs"
             >
-              Regional CAD Console
+              Dispatch Console
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('mdt')}
+              className="px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors text-neutral-600 hover:text-neutral-900"
+            >
+              In-Vehicle Tablet (MDT)
             </button>
           </div>
         </div>
@@ -264,14 +276,14 @@ export const AmbulanceDispatchView: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 w-full">
       {/* Patient Requirement, Multi-Constraint and Location Form */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+      <div className="bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-neutral-200">
           <div>
-            <h2 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Ambulance Dispatch and Multi-Constraint Matching</span>
+            <h2 className="text-base font-bold text-neutral-900 tracking-tight flex items-center gap-2">
+              <span>Ambulance Dispatch &amp; Hospital Matching</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Ranks regional facilities by live bed availability, required surgical specialties, GPS travel time, and ER load.
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Ranks hospitals by actual road travel time, bed availability, surgical teams, and ER crowding.
             </p>
           </div>
 
@@ -314,7 +326,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                 }))
               }
               aria-label="Select Ambulance ID"
-              className="w-full bg-white border border-slate-300 rounded-md text-slate-900 text-sm font-semibold p-2 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 cursor-pointer"
+              className="w-full bg-white border border-neutral-300 rounded-lg text-neutral-900 text-sm font-semibold p-2 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer"
             >
               {AMBULANCE_FLEET.map((fleet) => (
                 <option key={fleet} value={fleet}>
@@ -326,13 +338,13 @@ export const AmbulanceDispatchView: React.FC = () => {
 
           {/* Triage Acuity */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-1.5">
+            <label className="text-xs font-semibold text-neutral-700 uppercase tracking-wider block mb-1.5">
               Triage Acuity
             </label>
             <div className="grid grid-cols-3 gap-1.5">
               {(['Red', 'Yellow', 'Green'] as TriageAcuity[]).map((level) => {
                 const isSelected = dispatchFilter.triageAcuity === level;
-                let btnStyle = 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100';
+                let btnStyle = 'bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100';
                 if (isSelected) {
                   if (level === 'Red') btnStyle = 'bg-rose-50 text-rose-800 border-rose-300 font-bold';
                   if (level === 'Yellow') btnStyle = 'bg-amber-50 text-amber-800 border-amber-300 font-bold';
@@ -359,7 +371,7 @@ export const AmbulanceDispatchView: React.FC = () => {
 
           {/* Required Bed Category */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-1.5">
+            <label className="text-xs font-semibold text-neutral-700 uppercase tracking-wider block mb-1.5">
               Required Bed Type
             </label>
             <select
@@ -371,7 +383,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                 }))
               }
               aria-label="Required Bed Category"
-              className="w-full bg-white border border-slate-300 rounded-md text-slate-900 text-sm font-semibold p-2 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 cursor-pointer"
+              className="w-full bg-white border border-neutral-300 rounded-lg text-neutral-900 text-sm font-semibold p-2 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer"
             >
               {bedKeys.map((key) => (
                 <option key={key} value={key}>
@@ -384,7 +396,7 @@ export const AmbulanceDispatchView: React.FC = () => {
           {/* Location Origin Mode (Live GPS vs Sector) */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                 Ambulance Location
               </label>
               <button
@@ -395,27 +407,37 @@ export const AmbulanceDispatchView: React.FC = () => {
                     useLiveGps: !prev.useLiveGps,
                   }))
                 }
-                className="text-[11px] font-semibold text-sky-700 hover:text-sky-800"
+                className="text-[11px] font-semibold text-neutral-700 hover:text-neutral-950 underline cursor-pointer"
               >
                 {dispatchFilter.useLiveGps ? 'Use Sector' : 'Use Live GPS'}
               </button>
             </div>
 
             {dispatchFilter.useLiveGps ? (
-              <div className="bg-slate-50 border border-slate-300 rounded-md p-2 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-800 font-mono">
-                  <MapPin className="w-3.5 h-3.5 text-rose-600" />
-                  <span>
-                    {originCoords.lat.toFixed(3)}N, {Math.abs(originCoords.lng).toFixed(3)}W
-                  </span>
+              <div className="bg-neutral-50 border border-neutral-300 rounded-lg p-2 flex flex-col gap-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-neutral-800 font-mono">
+                    <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span>
+                      {originCoords.lat.toFixed(4)}°N, {Math.abs(originCoords.lng).toFixed(4)}°W
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={requestLiveLocation}
+                    disabled={isLocating}
+                    className="text-[11px] text-neutral-800 font-bold hover:underline cursor-pointer"
+                  >
+                    {isLocating ? 'Locating...' : 'Refresh GPS'}
+                  </button>
                 </div>
                 <button
                   type="button"
-                  onClick={requestLiveLocation}
-                  disabled={isLocating}
-                  className="text-[11px] text-sky-700 font-semibold hover:underline"
+                  onClick={() => loadRealHospitalsForLocation(originCoords.lat, originCoords.lng)}
+                  disabled={isLoadingRealHospitals}
+                  className="w-full py-1.5 px-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-[11px] flex items-center justify-center gap-1 border border-neutral-300 transition-colors cursor-pointer"
                 >
-                  {isLocating ? 'Locating...' : 'Refresh GPS'}
+                  <span>{isLoadingRealHospitals ? 'Querying OpenStreetMap...' : 'Scan Nearby Area (OSM API)'}</span>
                 </button>
               </div>
             ) : (
@@ -428,7 +450,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                   }))
                 }
                 aria-label="Ambulance Location Sector"
-                className="w-full bg-white border border-slate-300 rounded-md text-slate-900 text-sm font-semibold p-2 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 cursor-pointer"
+                className="w-full bg-white border border-neutral-300 rounded-lg text-neutral-900 text-sm font-semibold p-2 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 cursor-pointer"
               >
                 {MOCK_LOCATION_SECTORS.map((sector) => (
                   <option key={sector.id} value={sector.id}>
@@ -441,13 +463,13 @@ export const AmbulanceDispatchView: React.FC = () => {
         </div>
 
         {/* Multi-Specialty Filter Matrix */}
-        <div className="mt-4 pt-3 border-t border-slate-100">
+        <div className="mt-4 pt-3 border-t border-neutral-100">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-sky-700" />
-              <span>Required Clinical Specialties (Multi-Select Constraints):</span>
+            <span className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-neutral-700" />
+              <span>Required Clinical Specialties:</span>
             </span>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-neutral-500">
               {dispatchFilter.requiredSpecialties.length} specialty criteria active
             </span>
           </div>
@@ -461,16 +483,16 @@ export const AmbulanceDispatchView: React.FC = () => {
                   key={key}
                   type="button"
                   onClick={() => toggleSpecialtyFilter(key)}
-                  className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 cursor-pointer ${
                     isChecked
-                      ? 'bg-sky-50 text-sky-900 border-sky-300 font-semibold'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-neutral-900 text-white border-neutral-900 font-semibold'
+                      : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100'
                   }`}
                 >
                   {isChecked ? (
-                    <CheckSquare className="w-3.5 h-3.5 text-sky-700" />
+                    <CheckSquare className="w-3.5 h-3.5 text-white" />
                   ) : (
-                    <Square className="w-3.5 h-3.5 text-slate-400" />
+                    <Square className="w-3.5 h-3.5 text-neutral-400" />
                   )}
                   <span>{meta.label}</span>
                 </button>
@@ -494,7 +516,7 @@ export const AmbulanceDispatchView: React.FC = () => {
               }))
             }
             placeholder="e.g. Acute respiratory distress, SpO2 82%, intubated in field"
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-600 focus:border-sky-600"
+            className="flex-1 bg-white border border-neutral-300 rounded-md px-3 py-1.5 text-xs text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900"
           />
         </div>
       </div>
@@ -535,8 +557,10 @@ export const AmbulanceDispatchView: React.FC = () => {
           const rankNumber = index + 1;
           const isFull = availableBeds === 0;
 
-          // Freshness calculation explicitly
-          let freshnessLabel = `Updated ${hospital.lastUpdatedMinutesAgo} min ago`;
+          // Freshness calculation explicitly (Problem Statement requirement: Every listing shows how many minutes old its data is)
+          let freshnessLabel = hospital.lastUpdatedMinutesAgo <= 0
+            ? 'Updated <1 min ago (Live)'
+            : `Updated ${hospital.lastUpdatedMinutesAgo} min ago`;
           let freshnessStyle = 'text-emerald-800 bg-emerald-50 border-emerald-200';
 
           if (hospital.lastUpdatedMinutesAgo > 45) {
@@ -559,22 +583,22 @@ export const AmbulanceDispatchView: React.FC = () => {
           return (
             <div
               key={hospital.id}
-              className={`bg-white border rounded-lg p-4 sm:p-5 shadow-xs transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
+              className={`bg-white border rounded-xl p-5 shadow-xs transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
                 isBestMatch
-                  ? 'border-sky-400 ring-1 ring-sky-300'
+                  ? 'border-neutral-900 ring-1 ring-neutral-900/10 bg-neutral-50/30'
                   : isFull
-                  ? 'border-slate-200 opacity-75 bg-slate-50/50'
-                  : 'border-slate-200 hover:border-slate-300'
+                  ? 'border-neutral-200 opacity-75 bg-neutral-50/40'
+                  : 'border-neutral-200 hover:border-neutral-300'
               }`}
             >
               {/* Left Side: Hospital Details and Metrics */}
               <div className="flex items-start gap-4 flex-1">
                 {/* Clean Rank Number */}
                 <div
-                  className={`w-9 h-9 rounded-md flex items-center justify-center font-bold text-sm shrink-0 border ${
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 border ${
                     isBestMatch
-                      ? 'bg-sky-600 text-white border-sky-600'
-                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                      ? 'bg-neutral-900 text-white border-neutral-900 shadow-xs'
+                      : 'bg-neutral-100 text-neutral-700 border-neutral-200'
                   }`}
                 >
                   #{rankNumber}
@@ -582,14 +606,14 @@ export const AmbulanceDispatchView: React.FC = () => {
 
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-bold text-slate-900">
+                    <h3 className="text-base font-bold text-neutral-950">
                       {hospital.name}
                     </h3>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200">
                       {hospital.code}
                     </span>
                     {isBestMatch && (
-                      <span className="text-xs font-bold text-sky-800 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded">
+                      <span className="text-xs font-semibold text-neutral-900 bg-neutral-100 border border-neutral-300 px-2 py-0.5 rounded">
                         #1 Recommended Match
                       </span>
                     )}
@@ -690,16 +714,16 @@ export const AmbulanceDispatchView: React.FC = () => {
               </div>
 
               {/* Right Side: Request Bed Hold Action */}
-              <div className="shrink-0 flex flex-col gap-2 min-w-[160px] pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+              <div className="shrink-0 flex flex-col gap-2 min-w-[160px] pt-2 lg:pt-0 border-t lg:border-t-0 border-neutral-100">
                 <button
                   onClick={() => handleRequestBedHold(hospital)}
                   disabled={availableBeds <= 0}
-                  className={`w-full py-2.5 px-4 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs ${
+                  className={`w-full py-2.5 px-4 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer ${
                     availableBeds <= 0
-                      ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                      ? 'bg-neutral-100 text-neutral-400 border border-neutral-200 cursor-not-allowed'
                       : isBestMatch
-                      ? 'bg-sky-600 hover:bg-sky-700 text-white border border-sky-600'
-                      : 'bg-white hover:bg-slate-50 text-sky-800 border border-slate-300'
+                      ? 'bg-neutral-900 hover:bg-black text-white'
+                      : 'bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300'
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4" />
@@ -708,7 +732,7 @@ export const AmbulanceDispatchView: React.FC = () => {
 
                 <button
                   onClick={() => setRole('hospital')}
-                  className="w-full py-1.5 px-3 rounded-md text-[11px] text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors text-center"
+                  className="w-full py-1.5 px-3 rounded-lg text-[11px] text-neutral-600 hover:text-neutral-900 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 transition-colors text-center cursor-pointer"
                 >
                   View Bed Hold Board
                 </button>
@@ -720,18 +744,18 @@ export const AmbulanceDispatchView: React.FC = () => {
 
       {/* 2-MINUTE CONFIRMATION MODAL / DIALOG */}
       {currentActiveModalHold && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white border border-slate-300 rounded-lg p-6 max-w-lg w-full shadow-lg flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2 text-sky-800">
-                <Building className="w-5 h-5" />
-                <h3 className="font-bold text-base text-slate-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-xl flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
+              <div className="flex items-center gap-2 text-neutral-900">
+                <Building className="w-5 h-5 text-neutral-700" />
+                <h3 className="font-bold text-base text-neutral-950">
                   2-Minute Bed Hold Confirmation Window
                 </h3>
               </div>
               <button
                 onClick={() => setActiveModalHoldId(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-neutral-400 hover:text-neutral-700 p-1 cursor-pointer"
                 aria-label="Close Confirmation Modal"
               >
                 <X className="w-5 h-5" />
@@ -740,28 +764,28 @@ export const AmbulanceDispatchView: React.FC = () => {
 
             {/* Hold Details */}
             <div className="space-y-3 text-sm">
-              <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200">
+                <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
                   Reservation Target:
                 </div>
-                <div className="text-base font-bold text-slate-900 mt-0.5">
+                <div className="text-base font-bold text-neutral-900 mt-0.5">
                   Bed request sent to {currentActiveModalHold.hospitalName}
                 </div>
-                <div className="text-xs font-semibold text-sky-800 mt-1">
+                <div className="text-xs font-semibold text-neutral-700 mt-1">
                   {BED_TYPES[currentActiveModalHold.bedType].label}: 1 bed held
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                  <span className="text-slate-500 block font-medium">Ambulance Call Sign:</span>
-                  <span className="font-bold text-slate-900 font-mono">
+                <div className="bg-neutral-50 p-2.5 rounded-lg border border-neutral-200">
+                  <span className="text-neutral-500 block font-medium">Ambulance Call Sign:</span>
+                  <span className="font-bold text-neutral-900 font-mono">
                     {currentActiveModalHold.ambulanceCallSign}
                   </span>
                 </div>
-                <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                  <span className="text-slate-500 block font-medium">Estimated Arrival:</span>
-                  <span className="font-bold text-slate-900 font-mono">
+                <div className="bg-neutral-50 p-2.5 rounded-lg border border-neutral-200">
+                  <span className="text-neutral-500 block font-medium">Estimated Arrival:</span>
+                  <span className="font-bold text-neutral-900 font-mono">
                     ~{currentActiveModalHold.etaMinutes} mins ({currentActiveModalHold.distanceKm} km)
                   </span>
                 </div>

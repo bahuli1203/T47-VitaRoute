@@ -84,9 +84,9 @@ export const ERConfirmHoldView: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
       {/* Top Receiving Station Header */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-md bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700">
+          <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-800 shadow-xs">
             <Building className="w-5 h-5" />
           </div>
           <div>
@@ -95,7 +95,7 @@ export const ERConfirmHoldView: React.FC = () => {
                 value={currentHospital.id}
                 onChange={(e) => setCurrentHospitalId(e.target.value)}
                 aria-label="Select Hospital ER Receiving Station"
-                className="bg-white border border-slate-300 rounded-md font-bold text-slate-900 text-sm sm:text-base px-3 py-1 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-sky-600 cursor-pointer"
+                className="bg-white border border-neutral-300 rounded-lg font-bold text-neutral-900 text-sm sm:text-base px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-900 cursor-pointer"
               >
                 {hospitals.map((h) => (
                   <option key={h.id} value={h.id}>
@@ -104,7 +104,7 @@ export const ERConfirmHoldView: React.FC = () => {
                 ))}
               </select>
             </div>
-            <p className="text-xs text-slate-600 mt-0.5">
+            <p className="text-xs text-neutral-500 mt-1">
               Receiving ER Desk &middot; Trauma Bay Coordination &middot; Radio: {currentHospital.directRadioChannel}
             </p>
           </div>
@@ -112,7 +112,7 @@ export const ERConfirmHoldView: React.FC = () => {
 
         <button
           onClick={simulateIncomingAmbulance}
-          className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
           <Flame className="w-3.5 h-3.5 text-amber-600" />
           <span>Simulate Incoming Request</span>
@@ -121,16 +121,16 @@ export const ERConfirmHoldView: React.FC = () => {
 
       {/* 2-MINUTE CONFIRMATION: INCOMING AMBULANCE BED REQUEST CARD */}
       {primaryPendingHold && primaryPendingHold.status === 'pending' ? (
-        <div className="bg-white border-2 border-amber-300 rounded-lg p-5 sm:p-6 shadow-sm flex flex-col gap-4">
+        <div className="bg-white border-2 border-amber-500 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col gap-4">
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-subtle-pulse"></span>
-              <h3 className="font-bold text-sm sm:text-base text-slate-900">
-                Bed request sent to {primaryPendingHold.hospitalName}
+              <h3 className="font-bold text-sm sm:text-base text-neutral-900">
+                Incoming bed hold request from {primaryPendingHold.ambulanceCallSign}
               </h3>
             </div>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
               120s Confirmation Window
             </span>
           </div>
@@ -212,21 +212,21 @@ export const ERConfirmHoldView: React.FC = () => {
             </div>
           </div>
 
-          {/* Action Buttons: Accept & Reject */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
+          {/* Action Buttons: Accept & Reject (Min 48px touch targets for mobile) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-neutral-200">
             <button
               type="button"
               onClick={() => setRejectingHoldId(primaryPendingHold.id)}
-              className="py-2.5 px-4 rounded-md border border-red-300 bg-red-50 hover:bg-red-100 text-red-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+              className="min-h-[48px] py-3 px-4 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:bg-rose-200"
             >
-              <X className="w-4 h-4 text-red-600" />
+              <X className="w-4 h-4 text-rose-600" />
               <span>Reject (Trigger Hospital Diversion)</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleConfirmAccept(primaryPendingHold)}
-              className="py-2.5 px-4 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+              className="min-h-[48px] py-3 px-4 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98"
             >
               <Check className="w-4 h-4 stroke-[2.5]" />
               <span>Accept Bed Request (Confirm &amp; Lock)</span>
@@ -235,19 +235,19 @@ export const ERConfirmHoldView: React.FC = () => {
         </div>
       ) : (
         /* Empty Pending State */
-        <div className="bg-white border border-slate-200 rounded-lg p-6 text-center shadow-xs">
-          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-500">
+        <div className="bg-white border border-neutral-200 rounded-2xl p-6 text-center shadow-xs">
+          <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-2 text-neutral-500">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900">
+          <h3 className="text-sm font-bold text-neutral-900">
             No Incoming Unconfirmed Requests at {currentHospital.name}
           </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-3">
+          <p className="text-xs text-neutral-500 max-w-sm mx-auto mt-1 mb-3">
             All inbound emergency beds are confirmed or active. Click below to simulate an incoming ambulance reservation.
           </p>
           <button
             onClick={simulateIncomingAmbulance}
-            className="px-3.5 py-1.5 text-xs font-semibold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 transition-colors inline-flex items-center gap-1.5"
+            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Flame className="w-3.5 h-3.5 text-amber-600" />
             <span>Simulate Incoming Ambulance (120s Hold)</span>
@@ -256,14 +256,14 @@ export const ERConfirmHoldView: React.FC = () => {
       )}
 
       {/* BED HOLD SECTION: WHEN A HOSPITAL ACCEPTS */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-xs">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+      <div className="bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-xs">
+        <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-emerald-700" />
               <span>Confirmed Bed Holds &middot; Inbound Ambulance Queue</span>
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-neutral-500">
               Emergency beds officially locked for arriving ambulances.
             </p>
           </div>

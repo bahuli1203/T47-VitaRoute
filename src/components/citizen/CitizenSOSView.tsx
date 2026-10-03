@@ -127,7 +127,7 @@ export const CitizenSOSView: React.FC = () => {
 
           <button
             onClick={requestLiveLocation}
-            className="text-xs text-sky-700 hover:text-sky-800 font-medium flex items-center gap-1 self-start sm:self-auto cursor-pointer"
+            className="text-xs text-neutral-700 hover:text-neutral-900 font-medium flex items-center gap-1 self-start sm:self-auto cursor-pointer"
           >
             <Compass className="w-3.5 h-3.5" />
             <span>Refresh Location</span>
@@ -183,14 +183,14 @@ export const CitizenSOSView: React.FC = () => {
           </div>
 
           {/* FAST VERIFICATION AND PARALLEL CAD TELE-TRIAGE STRIP */}
-          <div className="bg-sky-50 border border-sky-200 rounded-lg p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sky-950 flex items-center gap-1">
+                <span className="font-bold text-neutral-900 flex items-center gap-1">
                   <CheckCircle className="w-4 h-4 text-emerald-600" />
                   Auto-Verified Incident Record:
                 </span>
-                <span className="font-mono bg-white px-2 py-0.5 rounded border border-sky-200 font-bold text-sky-900">
+                <span className="font-mono bg-white px-2 py-0.5 rounded border border-neutral-300 font-bold text-neutral-900">
                   #{activeCitizenSOS.id.toUpperCase()}
                 </span>
               </div>
@@ -218,7 +218,7 @@ export const CitizenSOSView: React.FC = () => {
                 className={`px-3 py-1.5 rounded font-bold flex items-center gap-1.5 text-xs border transition-colors ${
                   sosVerification?.teleTriageAudioConnected
                     ? 'bg-emerald-600 text-white border-emerald-600'
-                    : 'bg-white hover:bg-slate-50 text-sky-800 border-sky-300'
+                    : 'bg-white hover:bg-neutral-50 text-neutral-800 border-neutral-300'
                 }`}
               >
                 {sosVerification?.teleTriageAudioConnected ? (
@@ -228,7 +228,7 @@ export const CitizenSOSView: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Mic className="w-3.5 h-3.5 text-sky-700" />
+                    <Mic className="w-3.5 h-3.5 text-neutral-700" />
                     <span>Connect CAD Tele-Triage</span>
                   </>
                 )}
@@ -239,7 +239,7 @@ export const CitizenSOSView: React.FC = () => {
           {/* Guidelines Box */}
           <div className="bg-slate-50 border border-slate-200 rounded p-4 text-xs space-y-2 text-slate-700">
             <div className="font-bold text-slate-900 flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-sky-700" />
+              <Shield className="w-4 h-4 text-neutral-800" />
               <span>Critical First-Responder Instructions:</span>
             </div>
             <ul className="list-disc pl-5 space-y-1 text-slate-600">
@@ -261,7 +261,7 @@ export const CitizenSOSView: React.FC = () => {
 
             <button
               onClick={() => setRole('ambulance')}
-              className="w-full sm:w-auto px-4 py-2 rounded bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-colors shadow-xs cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2 rounded bg-neutral-900 hover:bg-black text-white text-xs font-bold transition-colors shadow-xs cursor-pointer"
             >
               Monitor in Regional Hospital Dispatch Matrix
             </button>

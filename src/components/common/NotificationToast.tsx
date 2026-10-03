@@ -18,10 +18,10 @@ export const NotificationToast: React.FC = () => {
   const { text, type } = notificationMessage;
 
   const styleMap = {
-    success: 'bg-white border-l-4 border-l-emerald-600 border-slate-200 text-slate-800',
-    alert: 'bg-white border-l-4 border-l-red-600 border-slate-200 text-slate-800',
-    warning: 'bg-white border-l-4 border-l-amber-500 border-slate-200 text-slate-800',
-    info: 'bg-white border-l-4 border-l-sky-600 border-slate-200 text-slate-800',
+    success: 'border-l-4 border-l-emerald-600 bg-white text-neutral-900 shadow-md',
+    alert: 'border-l-4 border-l-rose-600 bg-white text-neutral-900 shadow-md',
+    warning: 'border-l-4 border-l-amber-500 bg-white text-neutral-900 shadow-md',
+    info: 'border-l-4 border-l-neutral-900 bg-white text-neutral-900 shadow-md',
   };
 
   const IconMap = {
@@ -33,25 +33,25 @@ export const NotificationToast: React.FC = () => {
 
   const iconColorMap = {
     success: 'text-emerald-600',
-    alert: 'text-red-600',
+    alert: 'text-rose-600',
     warning: 'text-amber-600',
-    info: 'text-sky-600',
+    info: 'text-neutral-800',
   };
 
   const Icon = IconMap[type];
 
   return (
-    <div className="fixed bottom-6 right-4 sm:right-6 z-50 max-w-md w-full animate-fade-in pointer-events-auto">
+    <div className="fixed bottom-20 md:bottom-8 right-4 sm:right-6 z-50 max-w-md w-full animate-fade-in pointer-events-auto">
       <div
-        className={`border rounded-lg p-4 flex items-start gap-3 shadow-lg ${styleMap[type]}`}
+        className={`border border-neutral-200 rounded-xl p-3.5 flex items-start gap-3 shadow-lg ${styleMap[type]}`}
       >
         <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${iconColorMap[type]}`} />
-        <div className="flex-1 text-xs sm:text-sm font-medium leading-snug">
+        <div className="flex-1 text-xs sm:text-sm font-medium leading-snug text-neutral-800">
           {text}
         </div>
         <button
           onClick={dismissNotification}
-          className="text-slate-400 hover:text-slate-700 p-1 -mr-1 -mt-1 transition-colors"
+          className="text-neutral-400 hover:text-neutral-700 p-1 -mr-1 -mt-1 transition-colors cursor-pointer"
           aria-label="Dismiss Notification"
         >
           <X className="w-4 h-4" />

@@ -1,26 +1,29 @@
 import React from 'react';
-import { useAuth, DEMO_USERS } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useBedLink } from '../context/BedLinkContext';
 import { AppRole } from '../types/bedlink';
 import {
   Heart,
   Ambulance,
   Stethoscope,
-  Building2,
-  UserCog,
+  Clock,
+  MapPin,
   Volume2,
   VolumeX,
-  LogOut,
   Wifi,
   WifiOff,
-  ArrowLeft,
-  ChevronDown,
-  LayoutDashboard,
-  Building,
+  Home,
+  User,
+  LogOut,
+  UserCog,
 } from 'lucide-react';
 
-export const Header: React.FC = () => {
-  const { user, logout, login } = useAuth();
+interface HeaderProps {
+  onReturnHome?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
+  const { user, logout } = useAuth();
   const {
     role,
     setRole,
@@ -28,143 +31,274 @@ export const Header: React.FC = () => {
     isMuted,
     toggleMute,
     isOnline,
+    activeLocationName,
+    realHospitalSource,
   } = useBedLink();
 
-  const currentRole = user?.role || role;
+  const currentRole = role;
 
-  const ROLE_META: Record<AppRole, {
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    color: string;
-    bgColor: string;
-    borderColor: string;
-  }> = {
-    patient: { label: 'Patient Management', icon: Heart, color: 'text-rose-700', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
-    ambulance: { label: 'Paramedic Fleet Dispatch', icon: Ambulance, color: 'text-sky-700', bgColor: 'bg-sky-50', borderColor: 'border-sky-200' },
-    nurse: { label: 'Ward Bed Management', icon: Stethoscope, color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
-    hospital: { label: 'ER Command Center', icon: Building2, color: 'text-violet-700', bgColor: 'bg-violet-50', borderColor: 'border-violet-200' },
-    admin: { label: 'Regional Command Admin', icon: UserCog, color: 'text-slate-800', bgColor: 'bg-slate-100', borderColor: 'border-slate-300' },
+  const handleSwitchTab = (targetRole: AppRole) => {
+    setRole(targetRole);
   };
 
-  const roleMeta = ROLE_META[currentRole];
-  const RoleIcon = roleMeta.icon;
-
-  const handleEntitySwitch = (targetRole: AppRole) => {
-    const demoUser = DEMO_USERS.find((u) => u.user.role === targetRole);
-    if (demoUser) {
-      login(demoUser.email, 'demo123');
-      setRole(targetRole);
-    }
-  };
+  const isDispatchActive = currentRole === 'dispatch' || currentRole === 'ambulance';
+  const isNurseActive = currentRole === 'nurse';
+  const isERActive = currentRole === 'er' || currentRole === 'hospital';
+  const isPatientActive = currentRole === 'patient';
+  const isAdminActive = currentRole === 'admin';
 
   return (
-    <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
-      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-        
-        {/* Left Section: Back Button + Brand Logo */}
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Back to Home Button */}
-          <button
-            onClick={logout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer border border-rose-500"
-            title="Return to Main Home Portal"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Back to Home</span>
-          </button>
-
-          <div className="h-5 w-px bg-slate-700 hidden sm:block" />
-
-          {/* Brand Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-white text-slate-900 flex items-center justify-center font-black text-xs tracking-tight">
-              VR
-            </div>
-            <div>
-              <span className="text-sm font-extrabold text-white tracking-tight block leading-none">VitaRoute</span>
-              <span className="hidden lg:inline text-[9px] uppercase font-bold text-slate-400 tracking-wider">Management System</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Center Section: Quick Entity Switcher Bar (Management Portal Navigation) */}
-        <div className="hidden md:flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
-          {(['patient', 'ambulance', 'nurse', 'hospital', 'admin'] as AppRole[]).map((r) => {
-            const isSelected = r === currentRole;
-            const meta = ROLE_META[r];
-            const Icon = meta.icon;
-            return (
-              <button
-                key={r}
-                onClick={() => handleEntitySwitch(r)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-slate-950 text-white shadow-xs border border-slate-700'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-rose-400' : 'text-slate-400'}`} />
-                <span className="capitalize">{r}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right Section: Role Badge + Connectivity + User Controls */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          {/* Current Entity Badge */}
-          <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg ${roleMeta.bgColor} border ${roleMeta.borderColor}`}>
-            <RoleIcon className={`w-3.5 h-3.5 ${roleMeta.color}`} />
-            <span className={`text-xs font-bold ${roleMeta.color}`}>{roleMeta.label}</span>
-            {pendingHoldsCount > 0 && currentRole === 'hospital' && (
-              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-mono font-bold leading-none animate-pulse">
-                {pendingHoldsCount} Hold Alert
-              </span>
-            )}
-          </div>
-
-          {/* Network Connectivity */}
-          <div className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-bold ${
-            isOnline
-              ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-              : 'bg-amber-950/80 text-amber-300 border-amber-800'
-          }`}>
-            {isOnline ? <Wifi className="w-3.5 h-3.5 text-emerald-400" /> : <WifiOff className="w-3.5 h-3.5 text-amber-400" />}
-            <span>{isOnline ? 'Online' : 'Offline'}</span>
-          </div>
-
-          {/* Audio Alert Toggle */}
-          <button
-            onClick={toggleMute}
-            className={`p-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
-              isMuted
-                ? 'bg-slate-800 text-slate-500 border-slate-700'
-                : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
-            }`}
-            title={isMuted ? 'Unmute Audio Alerts' : 'Mute Audio Alerts'}
-            aria-label="Toggle Alert Audio"
-          >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-
-          {/* User Sign Out */}
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-            <div className="hidden xl:block text-right">
-              <span className="text-xs font-bold text-slate-200 block leading-tight">{user?.name}</span>
-              <span className="text-[10px] text-slate-400 font-mono block leading-tight">{user?.email}</span>
-            </div>
+    <>
+      {/* Clean, Humanized Light Header */}
+      <header className="bg-white/95 backdrop-blur-md border-b border-neutral-200 text-neutral-900 sticky top-0 z-50 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-15 flex items-center justify-between gap-3">
+          
+          {/* Left: Brand & Location */}
+          <div className="flex items-center gap-3 shrink-0">
             <button
-              onClick={logout}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/40 border border-slate-700 text-slate-300 hover:text-rose-300 transition-colors cursor-pointer"
-              title="Sign Out to Portal"
-              aria-label="Sign Out"
+              onClick={onReturnHome}
+              className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none"
+              title="Return to VitaRoute Overview"
             >
-              <LogOut className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-sm tracking-tight shadow-xs group-hover:bg-neutral-800 transition-colors">
+                VR
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base font-bold text-neutral-950 tracking-tight leading-none">
+                    VitaRoute
+                  </span>
+                  <span className="text-[10px] font-semibold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full border border-neutral-200">
+                    Emergency Bed Ops
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-[11px] text-neutral-500 mt-0.5 font-medium">
+                  <MapPin className="w-3 h-3 text-rose-600 shrink-0" />
+                  <span className="truncate max-w-[150px] sm:max-w-xs">{activeLocationName}</span>
+                  {realHospitalSource === 'live_osm' && (
+                    <span className="text-[9px] font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-semibold">
+                      Live GPS
+                    </span>
+                  )}
+                </div>
+              </div>
             </button>
           </div>
-        </div>
 
-      </div>
-    </header>
+          {/* Center: The 3 Core Operations Tabs (Desktop) */}
+          <nav className="hidden md:flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80">
+            {/* 1. Ambulance Dispatch */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('dispatch')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none ${
+                isDispatchActive
+                  ? 'bg-neutral-900 text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+              }`}
+            >
+              <Ambulance className="w-4 h-4" />
+              <span>1. Ambulance Dispatch</span>
+            </button>
+
+            {/* 2. 10s Nurse Bed Update */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('nurse')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none ${
+                isNurseActive
+                  ? 'bg-neutral-900 text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+              }`}
+            >
+              <Stethoscope className="w-4 h-4" />
+              <span>2. 10s Bed Counter</span>
+            </button>
+
+            {/* 3. 2m ER Hold */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('er')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none relative ${
+                isERActive
+                  ? 'bg-neutral-900 text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              <span>3. ER Hold (2m)</span>
+              {pendingHoldsCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-mono font-bold leading-none animate-pulse">
+                  {pendingHoldsCount}
+                </span>
+              )}
+            </button>
+          </nav>
+
+          {/* Right: Network, Audio, Patient SOS, Home, User Profile */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Online / Offline Status */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium ${
+                isOnline
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  : 'bg-amber-50 text-amber-800 border-amber-200'
+              }`}
+              title={isOnline ? 'Online - Live hospital inventory syncing' : 'Offline queue active'}
+            >
+              {isOnline ? <Wifi className="w-3.5 h-3.5 text-emerald-600" /> : <WifiOff className="w-3.5 h-3.5 text-amber-600" />}
+              <span className="hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
+            </div>
+
+            {/* Audio Alert Toggle */}
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="p-1.5 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900 text-xs transition-colors cursor-pointer"
+              title={isMuted ? 'Turn Sound On' : 'Mute Audio Alerts'}
+              aria-label="Toggle Alert Audio"
+            >
+              {isMuted ? <VolumeX className="w-4 h-4 text-neutral-400" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+
+            {/* Citizen SOS Button */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('patient')}
+              className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                isPatientActive
+                  ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+              }`}
+              title="Emergency SOS"
+            >
+              <Heart className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">SOS</span>
+            </button>
+
+            {/* Admin Overview */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('admin')}
+              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer hidden xl:flex items-center gap-1.5 ${
+                isAdminActive
+                  ? 'bg-neutral-900 text-white border-neutral-900'
+                  : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50 hover:text-neutral-900'
+              }`}
+              title="Regional Admin Operations"
+            >
+              <UserCog className="w-3.5 h-3.5" />
+              <span>Admin</span>
+            </button>
+
+            {/* Return to Home / Overview */}
+            {onReturnHome && (
+              <button
+                type="button"
+                onClick={onReturnHome}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-700 text-xs font-semibold border border-neutral-200 transition-colors cursor-pointer"
+                title="Overview & Login Portal"
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>Home</span>
+              </button>
+            )}
+
+            {/* User Session & Sign Out */}
+            {user && (
+              <div className="flex items-center gap-1.5 pl-1 border-l border-neutral-200">
+                <div
+                  className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-100 border border-neutral-200 text-xs font-medium text-neutral-800"
+                  title={`Logged in as ${user.name}`}
+                >
+                  <User className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                  <span className="truncate max-w-[120px]">{user.name.split(' ')[0]}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900 border border-neutral-200 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* MOBILE BOTTOM NAVIGATION DOCK (Clean White, 48px touch targets) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-neutral-200 px-2 py-1 flex items-center justify-around shadow-sm">
+        <button
+          type="button"
+          onClick={() => handleSwitchTab('dispatch')}
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+            isDispatchActive
+              ? 'text-neutral-950 font-bold bg-neutral-100'
+              : 'text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          <Ambulance className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">Dispatch</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSwitchTab('nurse')}
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+            isNurseActive
+              ? 'text-neutral-950 font-bold bg-neutral-100'
+              : 'text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          <Stethoscope className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">10s Beds</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSwitchTab('er')}
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 relative ${
+            isERActive
+              ? 'text-neutral-950 font-bold bg-neutral-100'
+              : 'text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          <Clock className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">ER Hold</span>
+          {pendingHoldsCount > 0 && (
+            <span className="absolute top-1 right-2.5 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] font-mono font-bold flex items-center justify-center animate-pulse">
+              {pendingHoldsCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSwitchTab('patient')}
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+            isPatientActive
+              ? 'text-rose-700 font-bold bg-rose-50'
+              : 'text-neutral-500 hover:text-rose-600'
+          }`}
+        >
+          <Heart className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">SOS</span>
+        </button>
+
+        {onReturnHome && (
+          <button
+            type="button"
+            onClick={onReturnHome}
+            className="flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer active:scale-95"
+          >
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] mt-0.5">Home</span>
+          </button>
+        )}
+      </nav>
+    </>
   );
 };

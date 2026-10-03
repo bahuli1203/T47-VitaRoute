@@ -65,7 +65,7 @@ export const DemoScenarioBar: React.FC = () => {
             }}
             className="flex items-center gap-2 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-left transition-colors shadow-xs"
           >
-            <Activity className="w-4 h-4 text-sky-700 shrink-0" />
+            <Activity className="w-4 h-4 text-emerald-700 shrink-0" />
             <div>
               <span className="font-semibold text-slate-900 block">2. Nurse Occupies Bed</span>
               <span className="text-[11px] text-slate-500 block">Updates ward count in 10s</span>
@@ -77,7 +77,7 @@ export const DemoScenarioBar: React.FC = () => {
             onClick={() => setRole('ambulance')}
             className="flex items-center gap-2 p-2.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-left transition-colors shadow-xs"
           >
-            <Ambulance className="w-4 h-4 text-sky-700 shrink-0" />
+            <Ambulance className="w-4 h-4 text-neutral-900 shrink-0" />
             <div>
               <span className="font-semibold text-slate-900 block">3. CAD Multi-Match</span>
               <span className="text-[11px] text-slate-500 block">GPS + multi-specialty rank</span>

@@ -1,72 +1,102 @@
-/**
- * VitaRoute - Hospital Emergency Bed Coordination and Ambulance Dispatch
- * High-reliability, real-time emergency healthcare operations software
- */
-
 import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BedLinkProvider, useBedLink } from './context/BedLinkContext';
 import { Header } from './components/Header';
-import { LoginPage } from './components/auth/LoginPage';
-import { PatientDashboard } from './components/patient/PatientDashboard';
-import { AmbulanceDashboard } from './components/ambulance/AmbulanceDashboard';
+import { HomePage } from './components/home/HomePage';
+import { AmbulanceDispatchView } from './components/dispatch/AmbulanceDispatchView';
 import { NurseBedUpdateView } from './components/nurse/NurseBedUpdateView';
-import { HospitalDashboard } from './components/hospital/HospitalDashboard';
+import { ERConfirmHoldView } from './components/er/ERConfirmHoldView';
+import { PatientDashboard } from './components/patient/PatientDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { NotificationToast } from './components/common/NotificationToast';
 
-const DashboardContent: React.FC = () => {
+interface DashboardContentProps {
+  onReturnHome: () => void;
+}
+
+const DashboardContent: React.FC<DashboardContentProps> = ({ onReturnHome }) => {
   const { user } = useAuth();
   const { role, setRole } = useBedLink();
+  const initializedUserRef = React.useRef<string | null>(null);
 
-  // Sync context role with auth role
+  // Set initial screen based on login role once, without overriding manual clicks
   React.useEffect(() => {
-    if (user && user.role !== role) {
-      setRole(user.role);
+    if (user && user.id !== initializedUserRef.current) {
+      initializedUserRef.current = user.id;
+      if (user.role === 'ambulance') {
+        setRole('dispatch');
+      } else if (user.role === 'hospital') {
+        setRole('er');
+      } else {
+        setRole(user.role);
+      }
     }
-  }, [user, role, setRole]);
+  }, [user, setRole]);
 
-  const currentRole = user?.role || role;
+  const currentRole = role;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Header */}
-      <Header />
+    <div className="min-h-screen bg-[#FBFBFB] text-neutral-900 flex flex-col font-sans">
+      {/* Top Operations Header */}
+      <Header onReturnHome={onReturnHome} />
 
       {/* Main Operations Section */}
-      <main className="flex-1 pb-6">
-        {currentRole === 'patient' && <PatientDashboard />}
-        {currentRole === 'ambulance' && <AmbulanceDashboard />}
+      <main className="flex-1 pb-24 md:pb-12 max-w-7xl w-full mx-auto px-4 sm:px-6">
+        {/* Screen 1: Ambulance Dispatch (Find Hospital & Bed Match) */}
+        {(currentRole === 'dispatch' || currentRole === 'ambulance') && <AmbulanceDispatchView />}
+
+        {/* Screen 2: 10-Second Bed Updates (Ward Nurses) */}
         {currentRole === 'nurse' && <NurseBedUpdateView />}
-        {currentRole === 'hospital' && <HospitalDashboard />}
+
+        {/* Screen 3: 2-Minute Confirm & Hold (Hospital ER Desk) */}
+        {(currentRole === 'er' || currentRole === 'hospital') && <ERConfirmHoldView />}
+
+        {/* Citizen SOS & Regional Admin */}
+        {currentRole === 'patient' && <PatientDashboard />}
         {currentRole === 'admin' && <AdminDashboard />}
       </main>
 
-      {/* Notification Toast */}
+      {/* Real-Time Audio & Visual Alerts */}
       <NotificationToast />
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-3 px-4 text-center text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto">
-          <span className="font-medium text-slate-500">VitaRoute Emergency Operations Platform</span>
-          <span className="mx-1">&middot;</span>
-          <span>Real-Time Bed Allocation & Dispatch</span>
+      {/* Simple Humanized Footer */}
+      <footer className="hidden md:block border-t border-neutral-200/80 bg-white py-4 px-6 text-xs text-neutral-500">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
+            <span className="font-semibold text-neutral-800">VitaRoute Emergency Coordination</span>
+            <span className="text-neutral-400">&middot; Connecting ambulances directly to hospital ERs</span>
+          </div>
+          <span className="text-neutral-400">10s Nurse Updates &middot; Real Travel Times &middot; 2-Min ER Holds</span>
         </div>
       </footer>
     </div>
   );
 };
 
-const AuthenticatedApp: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+const MainApp: React.FC = () => {
+  const { isAuthenticated, login } = useAuth();
+  const [showLanding, setShowLanding] = React.useState<boolean>(false);
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
+  // If unauthenticated or user navigated to home overview, show HomePage
+  if (!isAuthenticated || showLanding) {
+    return (
+      <HomePage
+        onEnterApp={() => {
+          if (isAuthenticated) {
+            setShowLanding(false);
+          } else {
+            login('ambulance@demo.com', 'demo123');
+            setShowLanding(false);
+          }
+        }}
+      />
+    );
   }
 
   return (
     <BedLinkProvider>
-      <DashboardContent />
+      <DashboardContent onReturnHome={() => setShowLanding(true)} />
     </BedLinkProvider>
   );
 };
@@ -74,7 +104,7 @@ const AuthenticatedApp: React.FC = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <AuthenticatedApp />
+      <MainApp />
     </AuthProvider>
   );
 }

@@ -24,6 +24,7 @@ import {
 export const NurseBedUpdateView: React.FC = () => {
   const { logout } = useAuth();
   const {
+    setRole,
     currentHospital,
     hospitals,
     setCurrentHospitalId,
@@ -101,26 +102,26 @@ export const NurseBedUpdateView: React.FC = () => {
     <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
       
       {/* Top Entity Management Breadcrumb Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white border border-neutral-200 rounded-xl p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button
-            onClick={logout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 transition-colors cursor-pointer"
-            title="Return to Main Portal"
+            onClick={() => setRole('dispatch')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs border border-neutral-200 transition-colors cursor-pointer"
+            title="Switch to Ambulance Dispatch"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>← Back to Home</span>
+            <span>← Ambulance Dispatch</span>
           </button>
-          <div className="h-4 w-px bg-slate-200" />
+          <div className="h-4 w-px bg-neutral-200" />
           <div className="flex items-center gap-2">
             <Stethoscope className="w-4 h-4 text-emerald-700" />
-            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Ward Bed Management System</span>
-            <span className="text-xs font-mono text-slate-500">Ward: {currentHospital.ward}</span>
+            <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Ward Bed Counter</span>
+            <span className="text-xs font-mono text-neutral-500">Ward: {currentHospital.ward}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded bg-neutral-100 text-neutral-800 border border-neutral-200">
             Duty Charge Nurse: {currentHospital.nurseInCharge}
           </span>
           <button
@@ -128,7 +129,7 @@ export const NurseBedUpdateView: React.FC = () => {
             className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer ${
               syncedNotification
                 ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                : 'bg-neutral-900 hover:bg-black text-white border-neutral-900'
             }`}
           >
             <CheckCircle2 className="w-4 h-4" />
@@ -153,8 +154,8 @@ export const NurseBedUpdateView: React.FC = () => {
       )}
 
       {/* Station Header & EHR Auto-Sync Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <div className="bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
               <Stethoscope className="w-5 h-5" />
@@ -165,7 +166,7 @@ export const NurseBedUpdateView: React.FC = () => {
                   value={currentHospital.id}
                   aria-label="Select Hospital Facility"
                   onChange={(e) => setCurrentHospitalId(e.target.value)}
-                  className="bg-white border border-slate-300 rounded-lg font-bold text-slate-900 text-base px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-600 cursor-pointer"
+                  className="bg-white border border-neutral-300 rounded-lg font-bold text-neutral-900 text-base px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-900 cursor-pointer"
                 >
                   {hospitals.map((h) => (
                     <option key={h.id} value={h.id}>
@@ -173,19 +174,19 @@ export const NurseBedUpdateView: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200">
                   {currentHospital.designation}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Ward Station: <strong className="text-slate-900">{currentHospital.ward}</strong> &middot; Direct Radio Channel: {currentHospital.directRadioChannel}
+              <p className="text-xs text-neutral-500 mt-1">
+                Ward Station: <strong className="text-neutral-900">{currentHospital.ward}</strong> &middot; Direct Radio: {currentHospital.directRadioChannel}
               </p>
             </div>
           </div>
         </div>
 
         {/* EHR Feed Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs bg-neutral-50 p-3.5 rounded-xl border border-neutral-200">
           <div className="flex items-center gap-2.5">
             <Database className="w-4 h-4 text-emerald-700 shrink-0" />
             <div>
@@ -288,16 +289,16 @@ export const NurseBedUpdateView: React.FC = () => {
           return (
             <div
               key={key}
-              className={`bg-white border ${statusTheme.cardBorder} rounded-xl p-5 shadow-xs flex flex-col justify-between transition-colors`}
+              className={`bg-white border ${statusTheme.cardBorder} rounded-xl p-5 shadow-xs hover:border-neutral-300 flex flex-col justify-between transition-all`}
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                    <h3 className="text-base font-bold text-neutral-900 tracking-tight">
                       {meta.label}
                     </h3>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-xs font-semibold text-slate-500">
+                      <span className="text-xs font-semibold text-neutral-500">
                         {meta.shortLabel}
                       </span>
                       {held > 0 && (
@@ -314,9 +315,9 @@ export const NurseBedUpdateView: React.FC = () => {
                 </div>
 
                 {/* Metrics */}
-                <div className="my-4 py-3 border-y border-slate-100 flex items-baseline justify-between">
+                <div className="my-4 py-3 border-y border-neutral-100 flex items-baseline justify-between">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">
                       Available Beds
                     </span>
                     <span className={`text-4xl font-black font-mono tracking-tight tabular-nums block mt-0.5 ${statusTheme.numberColor}`}>
@@ -324,19 +325,19 @@ export const NurseBedUpdateView: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="text-right text-xs font-mono text-slate-600 space-y-0.5">
+                  <div className="text-right text-xs font-mono text-neutral-600 space-y-0.5">
                     <div>
-                      Total Beds: <span className="font-bold text-slate-900">{total}</span>
+                      Total Beds: <span className="font-bold text-neutral-900">{total}</span>
                     </div>
                     <div>
-                      Occupied: <span className="font-semibold text-slate-800">{occupied}</span>
+                      Occupied: <span className="font-semibold text-neutral-800">{occupied}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-500 pb-3">
+                <div className="flex items-center justify-between text-xs text-neutral-500 pb-3">
                   <div className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <Clock className="w-3.5 h-3.5 text-neutral-400" />
                     <span>{formatBedFreshness(key)}</span>
                   </div>
 
@@ -350,19 +351,19 @@ export const NurseBedUpdateView: React.FC = () => {
               </div>
 
               {/* 48px Touch Adjuster Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-neutral-100">
                 <button
                   type="button"
                   onClick={() => handleBedUpdate(key, 'decrement')}
                   disabled={available <= 0}
                   className={`min-h-[48px] py-3 px-3 rounded-lg border font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     available > 0
-                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-300 active:bg-slate-300'
-                      : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                      ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border-neutral-300 active:bg-neutral-300'
+                      : 'bg-neutral-50 text-neutral-400 border-neutral-200 cursor-not-allowed opacity-60'
                   }`}
                   aria-label={`Mark bed filled for ${meta.label}`}
                 >
-                  <Minus className="w-4 h-4 text-slate-800 stroke-[2.5]" />
+                  <Minus className="w-4 h-4 text-neutral-800 stroke-[2.5]" />
                   <span>Bed Filled</span>
                 </button>
 
@@ -373,7 +374,7 @@ export const NurseBedUpdateView: React.FC = () => {
                   className={`min-h-[48px] py-3 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 text-white transition-colors cursor-pointer ${
                     available < total
                       ? 'bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 shadow-2xs active:bg-emerald-800'
-                      : 'bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-300'
+                      : 'bg-neutral-300 text-neutral-500 cursor-not-allowed border border-neutral-300'
                   }`}
                   aria-label={`Mark bed free for ${meta.label}`}
                 >

@@ -97,14 +97,14 @@ export const AmbulanceDashboard: React.FC = () => {
           </button>
           <div className="h-4 w-px bg-slate-200" />
           <div className="flex items-center gap-2">
-            <Ambulance className="w-4 h-4 text-sky-700" />
+            <Ambulance className="w-4 h-4 text-neutral-800" />
             <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Paramedic Fleet Operations</span>
             <span className="text-xs font-mono text-slate-500">Unit #{user?.ambulanceId || 'AMB-402'}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-          <span className="px-2.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-mono font-bold">
+          <span className="px-2.5 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-300 font-mono font-bold">
             Radio: EMS-CH 9
           </span>
           <span className="px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono font-bold">
@@ -123,7 +123,7 @@ export const AmbulanceDashboard: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700">
+                <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-900">
                   <Ambulance className="w-5 h-5" />
                 </div>
                 <div>
@@ -194,11 +194,11 @@ export const AmbulanceDashboard: React.FC = () => {
               <div className="pt-2 border-t border-slate-100">
                 <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1.5">Required ER Beds & Specialists</span>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-300">
                     {BED_TYPES[currentEmergency.requiredBedType].label}
                   </span>
                   {currentEmergency.requiredSpecialties.map((s) => (
-                    <span key={s} className="text-xs font-bold px-2 py-0.5 rounded bg-violet-50 text-violet-800 border border-violet-200">
+                    <span key={s} className="text-xs font-bold px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-300">
                       {AVAILABLE_SPECIALTIES[s].label}
                     </span>
                   ))}
@@ -219,7 +219,7 @@ export const AmbulanceDashboard: React.FC = () => {
           {assignedHospital && currentEmergency && currentEmergency.status !== 'completed' ? (
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-violet-700" />
+                <Building2 className="w-4 h-4 text-neutral-800" />
                 Target Hospital ER Facility
               </h3>
 
@@ -264,7 +264,7 @@ export const AmbulanceDashboard: React.FC = () => {
               {canNavigate && assignedHospital && (
                 <button
                   onClick={handleNavigate}
-                  className="w-full py-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+                  className="w-full py-4 rounded-xl bg-neutral-900 hover:bg-black text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
                 >
                   <Navigation className="w-5 h-5" />
                   NAVIGATE TO HOSPITAL (GOOGLE MAPS)

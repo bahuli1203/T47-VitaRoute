@@ -157,7 +157,7 @@ export const PatientDashboard: React.FC = () => {
           {/* GPS Telematics Status Card */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex items-center justify-between text-xs">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700 shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-800 shrink-0">
                 <MapPin className="w-4 h-4" />
               </div>
               <div>
@@ -267,26 +267,26 @@ export const PatientDashboard: React.FC = () => {
 
                 {/* Key Status Metrics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Ambulance Unit</span>
-                    <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mt-1">
-                      <Ambulance className="w-4 h-4 text-sky-600" />
+                  <div className="bg-neutral-50 rounded-xl p-3.5 border border-neutral-200">
+                    <span className="text-[10px] font-bold text-neutral-500 uppercase block">Ambulance Unit</span>
+                    <span className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 mt-1">
+                      <Ambulance className="w-4 h-4 text-neutral-800" />
                       {activeEmergency.assignedAmbulance}
                     </span>
                   </div>
 
-                  <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Inbound ETA</span>
+                  <div className="bg-neutral-50 rounded-xl p-3.5 border border-neutral-200">
+                    <span className="text-[10px] font-bold text-neutral-500 uppercase block">Inbound ETA</span>
                     <span className="text-sm font-bold text-rose-700 font-mono flex items-center gap-1.5 mt-1">
                       <Clock className="w-4 h-4" />
                       ~{activeEmergency.etaMinutes} mins
                     </span>
                   </div>
 
-                  <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Destination ER</span>
-                    <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mt-1 truncate">
-                      <Building2 className="w-4 h-4 text-violet-600 shrink-0" />
+                  <div className="bg-neutral-50 rounded-xl p-3.5 border border-neutral-200">
+                    <span className="text-[10px] font-bold text-neutral-500 uppercase block">Destination ER</span>
+                    <span className="text-sm font-bold text-neutral-900 flex items-center gap-1.5 mt-1 truncate">
+                      <Building2 className="w-4 h-4 text-neutral-800 shrink-0" />
                       {activeEmergency.assignedHospitalName || 'Matching Hospital...'}
                     </span>
                   </div>
@@ -313,7 +313,7 @@ export const PatientDashboard: React.FC = () => {
                 {/* Match Reasons Explanation */}
                 {activeEmergency.matchReasons.length > 0 && (
                   <div className="pt-3 border-t border-slate-100">
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Matching Algorithm Rationale</p>
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Clinical Matching Rationale</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                       {activeEmergency.matchReasons.slice(0, 6).map((reason, i) => (
                         <div key={i} className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">

@@ -29,6 +29,7 @@ import {
   calculateHaversineDistance,
   estimateEmergencyTravelTime,
 } from '../utils/geo';
+import { fetchRealWorldHospitals, reverseGeocodeLocation } from '../services/hospitalApi';
 
 interface BedLinkContextType {
   role: AppRole;
@@ -45,6 +46,12 @@ interface BedLinkContextType {
   isMuted: boolean;
   toggleMute: () => void;
   lastSyncTimestamp: number;
+
+  // Real-World Hospital API and Road Routing
+  isLoadingRealHospitals: boolean;
+  realHospitalSource: 'live_osm' | 'local_fallback' | null;
+  loadRealHospitalsForLocation: (lat: number, lng: number) => Promise<void>;
+  activeLocationName: string;
 
   // Geolocation and Connectivity
   liveCoordinates: { lat: number; lng: number };
@@ -132,7 +139,19 @@ const DEFAULT_COORDS = { lat: 40.7128, lng: -74.006 };
 const BedLinkContext = createContext<BedLinkContextType | null>(null);
 
 export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [role, setRole] = useState<AppRole>('patient');
+  // Read initial role from URL query param (?role=nurse | ?role=dispatch | ?role=er)
+  const [role, setRole] = useState<AppRole>(() => {
+    if (typeof window !== 'undefined') {
+      const param = new URLSearchParams(window.location.search).get('role');
+      if (param === 'nurse') return 'nurse';
+      if (param === 'dispatch' || param === 'ambulance') return 'dispatch';
+      if (param === 'er' || param === 'hospital') return 'er';
+      if (param === 'patient' || param === 'citizen') return 'patient';
+      if (param === 'admin') return 'admin';
+    }
+    return 'dispatch';
+  });
+
   const [currentHospitalId, setCurrentHospitalId] = useState<string>('sjm-01');
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(Date.now());
@@ -141,6 +160,11 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     text: string;
     type: 'success' | 'warning' | 'alert' | 'info';
   } | null>(null);
+
+  // Real-world OpenStreetMap and Geocoding state
+  const [isLoadingRealHospitals, setIsLoadingRealHospitals] = useState<boolean>(false);
+  const [realHospitalSource, setRealHospitalSource] = useState<'live_osm' | 'local_fallback' | null>(null);
+  const [activeLocationName, setActiveLocationName] = useState<string>('Downtown Metro Core');
 
   // Connectivity and Offline Sync
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
@@ -250,6 +274,26 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   }, []);
 
+  // Load real-world hospitals near a coordinate
+  const loadRealHospitalsForLocation = useCallback(async (lat: number, lng: number) => {
+    setIsLoadingRealHospitals(true);
+    try {
+      const locName = await reverseGeocodeLocation(lat, lng);
+      setActiveLocationName(locName);
+
+      const result = await fetchRealWorldHospitals(lat, lng);
+      setRealHospitalSource(result.source);
+      if (result.hospitals && result.hospitals.length > 0) {
+        setHospitals(result.hospitals);
+        setCurrentHospitalId(result.hospitals[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to load real hospitals:', err);
+    } finally {
+      setIsLoadingRealHospitals(false);
+    }
+  }, []);
+
   // Request browser geolocation
   const requestLiveLocation = useCallback(() => {
     if (!('geolocation' in navigator)) {
@@ -262,12 +306,13 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLiveCoordinates({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setLiveCoordinates({ lat, lng });
         setGpsAccuracy(Math.round(position.coords.accuracy));
         setIsLocating(false);
+        // Automatically fetch real hospitals around this live location
+        loadRealHospitalsForLocation(lat, lng);
       },
       (error) => {
         setGpsError(error.message || 'Unable to retrieve location.');
@@ -279,7 +324,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         maximumAge: 30000,
       }
     );
-  }, []);
+  }, [loadRealHospitalsForLocation]);
 
   // Listen to geolocation and online status
   useEffect(() => {
@@ -821,6 +866,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         assignedBay: `Bay ${Math.floor(Math.random() * 5) + 1}`,
         doctorInCharge: 'Dr. Katherine Vance, MD',
         emergencyId: emergencyId,
+        rejectedHospitalIds: [],
       };
 
       setActiveHolds((prev) => [newHold, ...prev]);
@@ -895,6 +941,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         prev.map((h) => {
           if (h.id !== rejectedHold.hospitalId) return h;
           const currentBeds = h.beds[rejectedHold.bedType];
+          if (!currentBeds) return h;
           return {
             ...h,
             activeHoldCount: Math.max(0, h.activeHoldCount - 1),
@@ -902,7 +949,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
               ...h.beds,
               [rejectedHold.bedType]: {
                 ...currentBeds,
-                available: currentBeds.available + 1,
+                available: Math.min(currentBeds.total, currentBeds.available + 1),
                 held: Math.max(0, currentBeds.held - 1),
               },
             },
@@ -912,31 +959,58 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // Update emergency timeline if linked
       if (rejectedHold.emergencyId) {
-        addTimelineEvent(rejectedHold.emergencyId, 'hospital_rejected', `${rejectedHold.hospitalName}: ${reason}`);
+        addTimelineEvent(
+          rejectedHold.emergencyId,
+          'hospital_rejected',
+          `${rejectedHold.hospitalName}: ${reason}`
+        );
       }
 
-      // Find next best eligible hospital with available bed
-      const candidateHospitals = hospitals.filter(
-        (h) => h.id !== rejectedHold.hospitalId && h.beds[rejectedHold.bedType].available > 0
-      );
+      // Track all hospitals that have already been offered or rejected
+      const visitedIds = new Set<string>([
+        ...(rejectedHold.rejectedHospitalIds || []),
+        rejectedHold.hospitalId,
+      ]);
 
-      candidateHospitals.sort((a, b) => a.travelTimeMins - b.travelTimeMins);
+      // Rank all remaining unvisited regional hospitals using multi-constraint criteria
+      const unvisitedHospitals = hospitals.filter((h) => !visitedIds.has(h.id));
 
-      const nextHospital = candidateHospitals[0] || (hospitals.find((h) => h.id !== rejectedHold.hospitalId) ?? hospitals[1]);
+      const scoredCandidates = unvisitedHospitals.map((h) => {
+        const bed = h.beds[rejectedHold.bedType];
+        const available = bed?.available ?? 0;
+        const dist = calculateHaversineDistance(liveCoordinates.lat, liveCoordinates.lng, h.lat, h.lng);
+        const eta = estimateEmergencyTravelTime(dist, h.erLoad);
 
-      if (nextHospital) {
+        let penalty = 0;
+        if (available <= 0) penalty += 1500;
+        else penalty -= available * 10;
+        penalty += eta * 4;
+        if (h.erLoad === 'Surge') penalty += 40;
+        if (h.erLoad === 'Medium') penalty += 15;
+        if (h.lastUpdatedMinutesAgo > 45) penalty += 50;
+        if (h.diversionStatus === 'Diversion') penalty += 600;
+
+        return { hospital: h, penalty, eta, dist, available };
+      });
+
+      scoredCandidates.sort((a, b) => a.penalty - b.penalty);
+      const bestCandidate = scoredCandidates.find((c) => c.available > 0);
+      const nextHospital = bestCandidate?.hospital;
+
+      if (nextHospital && bestCandidate.available > 0) {
         const escalatedHoldId = `hold-esc-${Date.now()}`;
         const newEscalatedHold: HoldRequest = {
           ...rejectedHold,
           id: escalatedHoldId,
           hospitalId: nextHospital.id,
           hospitalName: nextHospital.name,
-          etaMinutes: nextHospital.travelTimeMins + 3,
-          distanceKm: nextHospital.distanceKm + 1.1,
+          etaMinutes: bestCandidate.eta,
+          distanceKm: bestCandidate.dist,
           createdAt: Date.now(),
           expiresAt: Date.now() + 120 * 1000,
           status: 'pending',
           assignedBay: `Bay ${Math.floor(Math.random() * 4) + 1}`,
+          rejectedHospitalIds: Array.from(visitedIds),
         };
 
         // Decrement next hospital bed
@@ -969,14 +1043,14 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 assignedHospitalId: nextHospital.id,
                 assignedHospitalName: nextHospital.name,
                 holdRequestId: escalatedHoldId,
-                etaMinutes: nextHospital.travelTimeMins + 3,
+                etaMinutes: bestCandidate.eta,
                 timeline: [
                   ...e.timeline,
                   {
                     step: 'hospital_selected' as EmergencyTimelineStep,
                     timestamp: Date.now(),
                     label: TIMELINE_STEP_LABELS.hospital_selected,
-                    detail: `Escalated to ${nextHospital.name}`,
+                    detail: `Auto-escalated to next-best: ${nextHospital.name}`,
                   },
                 ],
               };
@@ -999,7 +1073,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         ]);
 
         showNotification(
-          `Hospital did not confirm. Contacting next available hospital (${nextHospital.name})...`,
+          `Hospital did not confirm within 2 minutes. Auto-offering next-best hospital: ${nextHospital.name} (120s window active).`,
           'alert'
         );
       } else {
@@ -1008,8 +1082,8 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
             h.id === rejectedHold.id
               ? {
                   ...h,
-                  status: 'expired',
-                  rejectionReason: 'All regional facilities at capacity',
+                  status: (reason === 'Hold Expired' ? 'expired' : 'rejected') as 'expired' | 'rejected',
+                  rejectionReason: `${reason}: All regional facilities at capacity`,
                 }
               : h
           )
@@ -1021,7 +1095,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         );
       }
     },
-    [hospitals, showNotification, addTimelineEvent]
+    [hospitals, liveCoordinates, showNotification, addTimelineEvent]
   );
 
   const rejectHold = useCallback(
@@ -1081,24 +1155,28 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       soundManager.playTap();
 
-      setHospitals((prev) =>
-        prev.map((h) => {
-          if (h.id !== target.hospitalId) return h;
-          const currentBeds = h.beds[target.bedType];
-          return {
-            ...h,
-            activeHoldCount: Math.max(0, h.activeHoldCount - 1),
-            beds: {
-              ...h.beds,
-              [target.bedType]: {
-                ...currentBeds,
-                available: currentBeds.available + 1,
-                held: Math.max(0, currentBeds.held - 1),
+      // Only restore bed inventory if hold was active (pending or accepted)
+      if (target.status === 'pending' || target.status === 'accepted') {
+        setHospitals((prev) =>
+          prev.map((h) => {
+            if (h.id !== target.hospitalId) return h;
+            const currentBeds = h.beds[target.bedType];
+            if (!currentBeds) return h;
+            return {
+              ...h,
+              activeHoldCount: Math.max(0, h.activeHoldCount - 1),
+              beds: {
+                ...h.beds,
+                [target.bedType]: {
+                  ...currentBeds,
+                  available: Math.min(currentBeds.total, currentBeds.available + 1),
+                  held: Math.max(0, currentBeds.held - 1),
+                },
               },
-            },
-          };
-        })
-      );
+            };
+          })
+        );
+      }
 
       setActiveHolds((prev) => prev.filter((h) => h.id !== holdId));
       showNotification('Hold request cancelled.', 'info');
@@ -1384,48 +1462,54 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     showNotification('System demo data reset to default.', 'info');
   }, [showNotification]);
 
+  // Keep refs for latest holds & hospitals for timer efficiency without stale closures
+  const holdsRef = React.useRef(activeHolds);
+  holdsRef.current = activeHolds;
+  const hospitalsRef = React.useRef(hospitals);
+  hospitalsRef.current = hospitals;
+
   // Master countdown timer interval running every second
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
+      const currentHolds = holdsRef.current;
 
-      setActiveHolds((prevHolds) => {
-        let hasExpiredHold = false;
-        const updated = prevHolds.map((hold) => {
-          if (hold.status === 'pending') {
-            const timeLeft = Math.max(0, Math.floor((hold.expiresAt - now) / 1000));
-            if (timeLeft <= 0) {
-              hasExpiredHold = true;
-              return { ...hold, status: 'expired' as const, rejectionReason: 'Hold Expired (120s timeout)' };
-            }
-          }
-          return hold;
-        });
-
-        if (hasExpiredHold) {
-          prevHolds.forEach((hold) => {
-            if (hold.status === 'pending' && hold.expiresAt <= now) {
-              escalateHoldToNextHospital(hold, 'Hold Expired');
-            }
-          });
-        }
-
-        return updated;
-      });
-
-      // Periodically update hospital minutes ago
-      setHospitals((prevHospitals) =>
-        prevHospitals.map((h) => {
-          const diffMinutes = Math.floor((now - h.lastUpdatedTimestamp) / 60000);
-          if (diffMinutes !== h.lastUpdatedMinutesAgo) {
-            return {
-              ...h,
-              lastUpdatedMinutesAgo: diffMinutes,
-            };
-          }
-          return h;
-        })
+      // Identify expired pending holds (exceeded 120s window)
+      const expiredPending = currentHolds.filter(
+        (h) => h.status === 'pending' && h.expiresAt <= now
       );
+
+      if (expiredPending.length > 0) {
+        expiredPending.forEach((hold) => {
+          escalateHoldToNextHospital(hold, 'Hold Expired');
+        });
+      }
+
+      // Periodically update hospital minutes ago ONLY when minute value changes
+      const currentHospitals = hospitalsRef.current;
+      let anyChanged = false;
+      for (const h of currentHospitals) {
+        const diffMinutes = Math.floor((now - h.lastUpdatedTimestamp) / 60000);
+        if (diffMinutes !== h.lastUpdatedMinutesAgo) {
+          anyChanged = true;
+          break;
+        }
+      }
+
+      if (anyChanged) {
+        setHospitals((prevHospitals) =>
+          prevHospitals.map((h) => {
+            const diffMinutes = Math.floor((now - h.lastUpdatedTimestamp) / 60000);
+            if (diffMinutes !== h.lastUpdatedMinutesAgo) {
+              return {
+                ...h,
+                lastUpdatedMinutesAgo: diffMinutes,
+              };
+            }
+            return h;
+          })
+        );
+      }
     }, 1000);
 
     return () => clearInterval(timer);
@@ -1448,6 +1532,10 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         isMuted,
         toggleMute,
         lastSyncTimestamp,
+        isLoadingRealHospitals,
+        realHospitalSource,
+        loadRealHospitalsForLocation,
+        activeLocationName,
         liveCoordinates,
         gpsAccuracy,
         gpsError,

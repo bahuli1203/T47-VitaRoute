@@ -1,7 +1,7 @@
 {
-  "name": "VitaRoute - Emergency Medical Bed Allocation",
+  "name": "VitaRoute - Emergency Hospital Bed Allocation & Dispatch",
   "short_name": "VitaRoute",
-  "description": "Real-time emergency medical dispatch, 10-second hospital bed updates, and 120-second ER hold confirmations.",
+  "description": "VitaRoute: Real-time 10-second hospital bed updates, multi-constraint ambulance dispatch matrix, and 2-minute ER bed hold confirmations with automatic cascading escalation.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -25,19 +25,24 @@
   "categories": ["medical", "health", "productivity"],
   "shortcuts": [
     {
-      "name": "Citizen SOS",
-      "url": "/?role=citizen",
-      "description": "Trigger immediate emergency medical SOS"
-    },
-    {
-      "name": "Nurse Bed Update",
-      "url": "/?role=nurse",
-      "description": "10-second bed inventory update"
-    },
-    {
-      "name": "Ambulance CAD",
+      "name": "Ambulance Dispatch Matrix",
       "url": "/?role=dispatch",
-      "description": "Computer-aided hospital matching"
+      "description": "Rank regional facilities by bed match, ETA, freshness, and load"
+    },
+    {
+      "name": "10s Nurse Bed Update",
+      "url": "/?role=nurse",
+      "description": "10-second tactile bed inventory update for ward nurses"
+    },
+    {
+      "name": "ER Confirm & Hold",
+      "url": "/?role=er",
+      "description": "120-second ER receiving bed hold confirmation"
+    },
+    {
+      "name": "Citizen SOS Trigger",
+      "url": "/?role=patient",
+      "description": "1-tap emergency medical SOS trigger"
     }
   ]
 }

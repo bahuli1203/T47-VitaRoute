@@ -226,10 +226,14 @@ export interface HoldRequest {
   assignedBay?: string;
   doctorInCharge?: string;
   emergencyId?: string; // link to emergency
+  rejectedHospitalIds?: string[]; // history of hospitals that rejected/expired this hold
 }
 
-// Updated 5-role system
-export type AppRole = 'patient' | 'ambulance' | 'nurse' | 'hospital' | 'admin';
+// 3 Core BedLink Screens + Legacy Role Support
+export type AppRole = 'dispatch' | 'nurse' | 'er' | 'patient' | 'ambulance' | 'hospital' | 'admin';
+
+// Primary 3 parts of the BedLink system
+export type BedLinkCorePart = 'dispatch' | 'nurse' | 'er';
 
 // Legacy role mapping (for backward compat in context)
 export type LegacyAppRole = 'citizen' | 'nurse' | 'dispatch' | 'er';
