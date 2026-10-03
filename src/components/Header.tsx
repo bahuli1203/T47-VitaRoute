@@ -70,20 +70,20 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none"
               title="Return to VitaRoute Overview"
             >
-              <div className="w-8 h-8 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-sm tracking-tight shadow-xs group-hover:bg-neutral-800 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-red-600 text-white flex items-center justify-center font-black text-sm tracking-tight shadow-xs group-hover:bg-red-700 transition-colors">
                 VR
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-base font-bold text-neutral-950 tracking-tight leading-none">
+                  <span className="text-base font-extrabold text-neutral-950 tracking-tight leading-none">
                     VitaRoute
                   </span>
-                  <span className="text-[10px] font-semibold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full border border-neutral-200">
+                  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
                     Emergency Bed Ops
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-neutral-500 mt-0.5 font-medium">
-                  <MapPin className="w-3 h-3 text-rose-600 shrink-0" />
+                  <MapPin className="w-3 h-3 text-red-600 shrink-0" />
                   <span className="truncate max-w-[150px] sm:max-w-xs">{activeLocationName}</span>
                   {realHospitalSource === 'live_osm' && (
                     <span className="text-[9px] font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 font-semibold">
@@ -96,15 +96,15 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
           </div>
 
           {/* Center: The Core Hospital Operations Tabs (Desktop) */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <nav className="hidden md:flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200">
             {/* 1. Ambulance Dispatch */}
             <button
               type="button"
               onClick={() => handleSwitchTab('dispatch')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
                 isDispatchActive
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
               }`}
             >
               <Ambulance className="w-4 h-4" />
@@ -117,14 +117,14 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               onClick={() => handleSwitchTab('er')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none relative ${
                 isERActive
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
               }`}
             >
               <Clock className="w-4 h-4" />
               <span>{t.erConfirmHold}</span>
               {pendingHoldsCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-mono font-bold leading-none animate-pulse">
+                <span className="px-1.5 py-0.2 rounded-full bg-white text-red-600 text-[10px] font-mono font-bold leading-none animate-pulse">
                   {pendingHoldsCount}
                 </span>
               )}
@@ -136,8 +136,8 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               onClick={() => handleSwitchTab('tracking')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
                 isTrackingActive
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
               }`}
             >
               <Radio className="w-4 h-4" />
@@ -150,8 +150,8 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               onClick={() => handleSwitchTab('doctors')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
                 isDoctorsActive
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
               }`}
             >
               <Stethoscope className="w-4 h-4" />
@@ -164,8 +164,8 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               onClick={() => handleSwitchTab('nurse')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
                 isNurseActive
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
               }`}
             >
               <Building2 className="w-4 h-4" />
@@ -283,14 +283,14 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
       </header>
 
       {/* MOBILE BOTTOM NAVIGATION DOCK (Clean White, 48px touch targets) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 py-1 flex items-center justify-around shadow-sm overflow-x-auto">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-neutral-200 px-1 py-1 flex items-center justify-around shadow-sm overflow-x-auto">
         <button
           type="button"
           onClick={() => handleSwitchTab('patient')}
-          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-xl transition-colors cursor-pointer active:scale-95 ${
             isPatientActive
-              ? 'text-rose-700 font-bold bg-rose-50'
-              : 'text-slate-500 hover:text-rose-600'
+              ? 'text-red-700 font-bold bg-red-50'
+              : 'text-neutral-500 hover:text-red-600'
           }`}
         >
           <AlertCircle className="w-4 h-4" />
@@ -300,10 +300,10 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
         <button
           type="button"
           onClick={() => handleSwitchTab('dispatch')}
-          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-xl transition-colors cursor-pointer active:scale-95 ${
             isDispatchActive
-              ? 'text-slate-950 font-bold bg-slate-100'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'text-red-700 font-bold bg-red-50'
+              : 'text-neutral-500 hover:text-neutral-800'
           }`}
         >
           <Ambulance className="w-4 h-4" />
@@ -313,16 +313,16 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
         <button
           type="button"
           onClick={() => handleSwitchTab('er')}
-          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 relative ${
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-xl transition-colors cursor-pointer active:scale-95 relative ${
             isERActive
-              ? 'text-slate-950 font-bold bg-slate-100'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'text-red-700 font-bold bg-red-50'
+              : 'text-neutral-500 hover:text-neutral-800'
           }`}
         >
           <Clock className="w-4 h-4" />
           <span className="text-[9px] mt-0.5 truncate max-w-[50px]">{language === 'hi' ? 'ईआर होल्ड' : language === 'mr' ? 'ईआर होल्ड' : 'ER Hold'}</span>
           {pendingHoldsCount > 0 && (
-            <span className="absolute top-1 right-2 w-3.5 h-3.5 rounded-full bg-rose-600 text-white text-[8px] font-mono font-bold flex items-center justify-center animate-pulse">
+            <span className="absolute top-1 right-2 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[8px] font-mono font-bold flex items-center justify-center animate-pulse">
               {pendingHoldsCount}
             </span>
           )}
@@ -331,10 +331,10 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
         <button
           type="button"
           onClick={() => handleSwitchTab('tracking')}
-          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-xl transition-colors cursor-pointer active:scale-95 ${
             isTrackingActive
-              ? 'text-slate-950 font-bold bg-slate-100'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'text-red-700 font-bold bg-red-50'
+              : 'text-neutral-500 hover:text-neutral-800'
           }`}
         >
           <Radio className="w-4 h-4" />
@@ -344,10 +344,10 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
         <button
           type="button"
           onClick={() => handleSwitchTab('doctors')}
-          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-xl transition-colors cursor-pointer active:scale-95 ${
             isDoctorsActive
-              ? 'text-slate-950 font-bold bg-slate-100'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'text-red-700 font-bold bg-red-50'
+              : 'text-neutral-500 hover:text-neutral-800'
           }`}
         >
           <Stethoscope className="w-4 h-4" />
@@ -357,10 +357,10 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
         <button
           type="button"
           onClick={() => handleSwitchTab('nurse')}
-          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-xl transition-colors cursor-pointer active:scale-95 ${
             isNurseActive
-              ? 'text-slate-950 font-bold bg-slate-100'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'text-red-700 font-bold bg-red-50'
+              : 'text-neutral-500 hover:text-neutral-800'
           }`}
         >
           <Building2 className="w-4 h-4" />

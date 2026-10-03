@@ -730,8 +730,8 @@ export const AmbulanceDispatchView: React.FC = () => {
                     const hospDocs = doctors.filter((d) => d.hospitalId === hospital.id);
                     return (
                       <div className="flex flex-wrap items-center gap-2 mt-2.5 pt-2 border-t border-slate-100 text-[11px]">
-                        <div className="flex items-center gap-1 font-semibold text-slate-700">
-                          <Stethoscope className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+                        <div className="flex items-center gap-1 font-semibold text-neutral-700">
+                          <Stethoscope className="w-3.5 h-3.5 text-red-600 shrink-0" />
                           <span>Specialists On Duty:</span>
                         </div>
                         {hospDocs.length > 0 ? (
@@ -744,7 +744,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                                     ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                                     : doc.status === 'in_surgery'
                                     ? 'bg-amber-50 text-amber-800 border-amber-300'
-                                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                                    : 'bg-neutral-100 text-neutral-600 border-neutral-200'
                                 }`}
                               >
                                 {doc.name.split(',')[0]} ({doc.status === 'available' ? 'Available' : doc.status === 'in_surgery' ? `Surgery ~${doc.nextAvailableEstimateMinutes || 30}m` : 'On-Call'})
@@ -752,7 +752,7 @@ export const AmbulanceDispatchView: React.FC = () => {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-500 font-mono text-[10px]">Trauma Resuscitation Team On Standby</span>
+                          <span className="text-neutral-500 font-mono text-[10px]">Trauma Resuscitation Team On Standby</span>
                         )}
                       </div>
                     );
@@ -765,12 +765,12 @@ export const AmbulanceDispatchView: React.FC = () => {
                 <button
                   onClick={() => handleRequestBedHold(hospital)}
                   disabled={availableBeds <= 0}
-                  className={`w-full py-2.5 px-4 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer ${
+                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer ${
                     availableBeds <= 0
                       ? 'bg-neutral-100 text-neutral-400 border border-neutral-200 cursor-not-allowed'
                       : isBestMatch
-                      ? 'bg-neutral-900 hover:bg-black text-white'
-                      : 'bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300'
+                      ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20 active:scale-98'
+                      : 'bg-white hover:bg-red-50 text-neutral-900 border border-neutral-300 hover:border-red-300'
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4" />

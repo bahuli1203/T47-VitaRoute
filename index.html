@@ -16,10 +16,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Leaflet OpenStreetMap CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   </head>
   <body class="bg-neutral-50 text-neutral-900 font-sans antialiased selection:bg-neutral-200 selection:text-neutral-900">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- OmniDimension Web Widget Agent -->
+    <script id="omnidimension-web-widget" async src="https://omnidim.io/web_widget.js?secret_key=1476679170e10771854423529c043b91"></script>
     <script>
       if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
         window.addEventListener('load', () => {

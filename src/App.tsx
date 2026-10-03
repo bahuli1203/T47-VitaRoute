@@ -12,7 +12,6 @@ import { LiveAmbulanceTrackerView } from './components/tracking/LiveAmbulanceTra
 import { DoctorRosterView } from './components/doctors/DoctorRosterView';
 import { LiveEmergencyWorkflowBar } from './components/common/LiveEmergencyWorkflowBar';
 import { NotificationToast } from './components/common/NotificationToast';
-import { OmnidimensionVoiceAgent } from './components/common/OmnidimensionVoiceAgent';
 
 interface DashboardContentProps {
   onReturnHome: () => void;
@@ -110,8 +109,6 @@ const MainApp: React.FC = () => {
         <DashboardContent onReturnHome={() => setShowLanding(true)} />
       )}
 
-      {/* Omnidimension Voice Agent Floating Assistant available everywhere */}
-      <OmnidimensionVoiceAgent language={language} t={t} />
     </>
   );
 };

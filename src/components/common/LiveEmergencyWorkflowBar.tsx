@@ -94,26 +94,26 @@ export const LiveEmergencyWorkflowBar: React.FC<LiveEmergencyWorkflowBarProps> =
   ];
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 mb-5 shadow-xs space-y-3">
+    <div className="bg-white border border-neutral-200 rounded-2xl p-3 sm:p-4 mb-5 shadow-xs space-y-3">
       {/* Live System Operational State Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100 text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-neutral-100 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-          <span className="font-bold text-slate-900 uppercase tracking-wider font-mono">
+          <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+          <span className="font-bold text-neutral-900 uppercase tracking-wider font-mono">
             {language === 'hi' ? 'सक्रिय आपातकालीन स्थिति:' : language === 'mr' ? 'सक्रिय आणीबाणी स्थिती:' : 'LIVE EMERGENCY DISPATCH STATUS:'}
           </span>
-          <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-900 border border-sky-200 font-semibold font-mono">
+          <span className="px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-200 font-semibold font-mono">
             CASE #VR-{activeHold ? activeHold.id.slice(-4).toUpperCase() : '9021'}
           </span>
-          <span className="text-slate-600 font-medium">
+          <span className="text-neutral-600 font-medium">
             {activeHold?.chiefComplaint || 'Acute Respiratory Distress / Severe Hypoxemia'}
           </span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-slate-500 font-medium">Assigned Bed:</span>
-          <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-            {targetHospital.name.replace('Hospital', '')} · {activeHold?.assignedBay || 'Resuscitation Bay 1'}
+          <span className="text-neutral-500 font-medium">Assigned Bed:</span>
+          <span className="font-bold text-neutral-900 bg-neutral-100 px-2 py-0.5 rounded-lg border border-neutral-200">
+            {targetHospital.name.replace('Hospital', '')} &middot; {activeHold?.assignedBay || 'Resuscitation Bay 1'}
           </span>
         </div>
       </div>
@@ -128,21 +128,21 @@ export const LiveEmergencyWorkflowBar: React.FC<LiveEmergencyWorkflowBarProps> =
                 key={step.role}
                 type="button"
                 onClick={() => onSelectRole(step.role)}
-                className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer relative group flex items-start gap-2.5 ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative group flex items-start gap-2.5 ${
                   step.isActive
-                    ? 'bg-sky-50 border-sky-600 ring-1 ring-sky-500'
+                    ? 'bg-red-50/70 border-red-500 ring-1 ring-red-400'
                     : step.isCompleted
-                    ? 'bg-emerald-50/50 border-emerald-300 hover:border-emerald-400'
-                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                    ? 'bg-neutral-50 border-neutral-300 hover:border-red-300'
+                    : 'bg-white border-neutral-200 hover:border-neutral-300'
                 }`}
               >
                 <div
-                  className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold ${
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold ${
                     step.isActive
-                      ? 'bg-sky-700 text-white'
+                      ? 'bg-red-600 text-white shadow-xs'
                       : step.isCompleted
-                      ? 'bg-emerald-700 text-white'
-                      : 'bg-slate-200 text-slate-700'
+                      ? 'bg-neutral-800 text-white'
+                      : 'bg-neutral-100 text-neutral-600'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -150,21 +150,21 @@ export const LiveEmergencyWorkflowBar: React.FC<LiveEmergencyWorkflowBarProps> =
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold text-slate-500">
+                    <span className="text-[10px] font-mono font-bold text-neutral-400">
                       Step {step.stepNumber}
                     </span>
                     {step.isCompleted && (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <CheckCircle2 className="w-3 h-3 text-red-600 shrink-0" />
                     )}
                   </div>
                   <span
                     className={`text-xs font-bold block truncate leading-tight mt-0.5 ${
-                      step.isActive ? 'text-sky-950 font-black' : 'text-slate-900'
+                      step.isActive ? 'text-red-950 font-black' : 'text-neutral-900'
                     }`}
                   >
                     {step.title}
                   </span>
-                  <span className="text-[10px] text-slate-500 truncate block">
+                  <span className="text-[10px] text-neutral-500 truncate block">
                     {step.subtitle}
                   </span>
                 </div>

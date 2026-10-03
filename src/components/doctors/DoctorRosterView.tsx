@@ -64,18 +64,18 @@ export const DoctorRosterView: React.FC = () => {
       <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-700 inline-block" />
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block" />
+            <span className="text-xs font-bold text-neutral-800 uppercase tracking-wider">
               {language === 'hi' ? 'अस्पताल डॉक्टर उपलब्धता एवं रोस्टर' : language === 'mr' ? 'रुग्णालय डॉक्टर उपलब्धता आणि रोस्टर' : 'Hospital Attending Doctor & Specialist Roster'}
             </span>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-semibold">
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200 font-semibold">
               EHR ON-CALL ROSTER
             </span>
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mt-1">
+          <h2 className="text-xl font-bold text-neutral-950 mt-1">
             {language === 'hi' ? 'विशेषज्ञ डॉक्टर उपलब्धता एवं शिफ्ट कैलेंडर' : language === 'mr' ? 'तज्ज्ञ डॉक्टर उपलब्धता आणि शिफ्ट कॅलेंडर' : 'Emergency Specialist Availability & Shift Calendar'}
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-neutral-500 mt-0.5">
             {language === 'hi' ? 'आपातकालीन मामलों के लिए ऑन-कॉल सर्जन व डॉक्टरों की रीयल-टाइम स्थिति (स्वचालित व मैनुअल अद्यतन)' : language === 'mr' ? 'आणीबाणीसाठी ऑन-कॉल सर्जन आणि डॉक्टरांची थेट स्थिती (स्वयंचलित आणि मॅन्युअल अद्यतन)' : 'Live duty status, surgical availability, and 7-day shift coverage linked to ambulance dispatch.'}
           </p>
         </div>
@@ -85,10 +85,10 @@ export const DoctorRosterView: React.FC = () => {
           <button
             type="button"
             onClick={toggleAutoUpdateDoctors}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
               autoUpdateDoctors
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                : 'bg-slate-100 text-slate-700 border-slate-300'
+                : 'bg-neutral-100 text-neutral-700 border-neutral-300'
             }`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${autoUpdateDoctors ? 'animate-spin' : ''}`} />
@@ -103,35 +103,35 @@ export const DoctorRosterView: React.FC = () => {
 
       {/* Clinical Metrics Summary Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+        <div className="bg-white border border-neutral-200 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Available Now</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">Available Now</span>
             <span className="text-2xl font-black font-mono text-emerald-700">{availableCount}</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">Ready for ER Triage</span>
+            <span className="text-[10px] text-neutral-400 block mt-0.5">Ready for ER Triage</span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
             <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+        <div className="bg-white border border-neutral-200 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">In Surgery / Busy</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">In Surgery / Busy</span>
             <span className="text-2xl font-black font-mono text-amber-700">{inSurgeryCount}</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">Operating Room Active</span>
+            <span className="text-[10px] text-neutral-400 block mt-0.5">Operating Room Active</span>
           </div>
           <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
             <Activity className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+        <div className="bg-white border border-neutral-200 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">On-Call Standby</span>
-            <span className="text-2xl font-black font-mono text-sky-700">{onCallCount}</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">15-Min Response ETA</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">On-Call Standby</span>
+            <span className="text-2xl font-black font-mono text-neutral-900">{onCallCount}</span>
+            <span className="text-[10px] text-neutral-400 block mt-0.5">15-Min Response ETA</span>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700">
+          <div className="w-9 h-9 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-600">
             <Radio className="w-5 h-5" />
           </div>
         </div>
@@ -185,8 +185,8 @@ export const DoctorRosterView: React.FC = () => {
               onClick={() => setSelectedSpecialty(spec.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 selectedSpecialty === spec.id
-                  ? 'bg-sky-700 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
               }`}
             >
               {spec.label}
@@ -212,7 +212,7 @@ export const DoctorRosterView: React.FC = () => {
                   ? 'border-emerald-300 ring-1 ring-emerald-200'
                   : isInSurgery
                   ? 'border-amber-300'
-                  : 'border-slate-200'
+                  : 'border-neutral-200'
               }`}
             >
               {/* Doctor Header */}
@@ -225,8 +225,8 @@ export const DoctorRosterView: React.FC = () => {
                         : isInSurgery
                         ? 'bg-amber-100 text-amber-800 border border-amber-300'
                         : isOnCall
-                        ? 'bg-sky-100 text-sky-800 border border-sky-300'
-                        : 'bg-slate-100 text-slate-600 border border-slate-300'
+                        ? 'bg-red-50 text-red-700 border border-red-200'
+                        : 'bg-neutral-100 text-neutral-600 border border-neutral-300'
                     }`}
                   >
                     <Stethoscope className="w-5 h-5" />
@@ -234,16 +234,16 @@ export const DoctorRosterView: React.FC = () => {
 
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h3 className="text-sm font-bold text-slate-900 leading-tight">
+                      <h3 className="text-sm font-bold text-neutral-900 leading-tight">
                         {doc.name}
                       </h3>
-                      <BadgeCheck className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+                      <BadgeCheck className="w-3.5 h-3.5 text-red-600 shrink-0" />
                     </div>
-                    <span className="text-xs font-semibold text-slate-600 block mt-0.5">
+                    <span className="text-xs font-semibold text-neutral-600 block mt-0.5">
                       {doc.specialty}
                     </span>
-                    <span className="text-[11px] text-slate-500 font-mono block">
-                      Badge: {doc.badgeNumber} · {doc.phoneExtension}
+                    <span className="text-[11px] text-neutral-500 font-mono block">
+                      Badge: {doc.badgeNumber} &middot; {doc.phoneExtension}
                     </span>
                   </div>
                 </div>
@@ -314,7 +314,7 @@ export const DoctorRosterView: React.FC = () => {
                     onClick={() =>
                       setSelectedDoctorForCalendar(showCalendar ? null : doc.id)
                     }
-                    className="text-sky-700 hover:text-sky-900 font-bold flex items-center gap-1 cursor-pointer"
+                    className="text-red-600 hover:text-red-700 font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Calendar className="w-3 h-3" />
                     <span>{showCalendar ? 'Hide Calendar' : 'Weekly Calendar'}</span>
