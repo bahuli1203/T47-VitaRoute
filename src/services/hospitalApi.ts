@@ -233,20 +233,20 @@ export async function fetchRealWorldHospitals(
     }
   }
 
-  // High-fidelity fallback adapted to the current coordinates if far from NY
-  const isNearNewYork = Math.abs(centerLat - 40.71) < 1.0 && Math.abs(centerLng - (-74.0)) < 1.0;
+  // High-fidelity fallback adapted to the current coordinates if near Mumbai Metropolitan Region
+  const isNearMumbai = Math.abs(centerLat - 19.07) < 1.5 && Math.abs(centerLng - 72.87) < 1.5;
   
-  if (isNearNewYork) {
+  if (isNearMumbai) {
     return { hospitals: INITIAL_HOSPITALS, source: 'local_fallback' };
   }
 
   // Dynamically place realistic emergency facilities in the vicinity of user's coordinates
   const offsets = [
-    { dLat: 0.015, dLng: 0.012, name: 'Metropolitan General Hospital', code: 'MGH-01' },
-    { dLat: -0.022, dLng: 0.018, name: 'University Medical Center', code: 'UMC-02' },
-    { dLat: 0.035, dLng: -0.024, name: 'St. Jude Regional Trauma Center', code: 'SJR-03' },
-    { dLat: -0.018, dLng: -0.035, name: 'North Shore Emergency Hospital', code: 'NSE-04' },
-    { dLat: 0.045, dLng: 0.038, name: 'Harbor Community Medical', code: 'HCM-05' },
+    { dLat: 0.015, dLng: 0.012, name: 'Apex Municipal Trauma Hospital', code: 'AMH-01' },
+    { dLat: -0.022, dLng: 0.018, name: 'Sanjivani Super Speciality Medical', code: 'SSM-02' },
+    { dLat: 0.035, dLng: -0.024, name: 'City Central Emergency Medical Hub', code: 'CCM-03' },
+    { dLat: -0.018, dLng: -0.035, name: 'National Polytrauma & Resuscitation Center', code: 'NPR-04' },
+    { dLat: 0.045, dLng: 0.038, name: 'Metro Health Emergency Institute', code: 'MHE-05' },
   ];
 
   const adaptedHospitals: Hospital[] = INITIAL_HOSPITALS.map((base, idx) => {

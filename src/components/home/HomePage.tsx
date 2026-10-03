@@ -16,14 +16,13 @@ import {
   ArrowRight,
   ChevronRight,
   ShieldCheck,
-  Navigation,
   Lock,
-  Play,
-  Check,
   Globe,
   Radio,
   MapPin,
   Calendar,
+  Mic,
+  X,
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -38,25 +37,26 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
   const humanDemoAccounts = [
     {
       role: 'ambulance' as AppRole,
       title: t.roleAmbulance,
-      subtitle: 'Arjun Singh · Unit 104',
+      subtitle: 'Arjun Singh · Unit 104 (Bandra Station)',
       email: 'ambulance@demo.com',
       icon: Ambulance,
       scenario: language === 'hi' 
         ? 'वेंटिलेटर पर मरीज के लिए निकटतम आईसीयू बेड और कैथ लैब की खोज'
         : language === 'mr'
         ? 'व्हेंटिलेटरवरील रुग्णासाठी जवळचे आयसीयू बेड आणि कॅथ लॅब शोधणे'
-        : 'Finding nearest hospital with open ICU ventilator for an intubated patient',
+        : 'Finding nearest Mumbai hospital with open ICU ventilator for an intubated patient',
       badgeText: language === 'hi' ? 'डिस्पैच व्यू' : language === 'mr' ? 'डिस्पॅच दृश्य' : 'Dispatch CAD',
     },
     {
       role: 'nurse' as AppRole,
       title: t.roleNurse,
-      subtitle: 'Sarah Kowalski · Ward Station 3',
+      subtitle: 'Sister Anjali Deshmukh · KEM Hospital Ward 3',
       email: 'nurse@demo.com',
       icon: Stethoscope,
       scenario: language === 'hi'
@@ -69,7 +69,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
     {
       role: 'hospital' as AppRole,
       title: t.roleERDoctor,
-      subtitle: 'Dr. Katherine Vance · City General ER',
+      subtitle: 'Dr. Rohan Merchant · KEM Hospital ER Desk',
       email: 'hospital@demo.com',
       icon: Clock,
       scenario: language === 'hi'
@@ -82,27 +82,40 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
     {
       role: 'patient' as AppRole,
       title: t.roleCitizen,
-      subtitle: 'Rajesh Kumar · Citizen Profile',
+      subtitle: 'Rajesh Kumar · Mumbai Citizen Profile',
       email: 'patient@demo.com',
       icon: Heart,
       scenario: language === 'hi'
-        ? '1-टैप में तत्काल जीपीएस के साथ आपातकालीन एसओएस भेजना'
+        ? '1-टैप में तत्काल जीपीएस व आवाज से आपातकालीन एसओएस भेजना'
         : language === 'mr'
-        ? '1-टॅपमध्ये थेट जीपीएससह आणीबाणी एसओएस सुरू करणे'
-        : 'Triggering 1-tap medical SOS with bundled allergies and cardiac history',
+        ? '1-टॅपमध्ये थेट जीपीएस व आवाजाने आणीबाणी एसओएस सुरू करणे'
+        : 'Triggering 1-tap medical voice/triage SOS with Mumbai GPS coordinates',
       badgeText: language === 'hi' ? 'नागरिक एसओएस' : language === 'mr' ? 'नागरिक एसओएस' : 'Citizen SOS',
+    },
+    {
+      role: 'doctors' as AppRole,
+      title: language === 'hi' ? 'ऑन-कॉल डॉक्टर' : language === 'mr' ? 'ऑन-कॉल डॉक्टर' : 'Doctor Roster',
+      subtitle: 'Dr. Sneha Kulkarni · KEM Trauma Surgeon',
+      email: 'doctor@demo.com',
+      icon: Calendar,
+      scenario: language === 'hi'
+        ? 'अस्पताल शिफ्ट कैलेंडर और ऑन-ड्यूटी स्थिति देखना'
+        : language === 'mr'
+        ? 'रुग्णालय शिफ्ट वेळापत्रक आणि ड्युटी स्थिती तपासणे'
+        : 'Hospital shift calendar and real-time duty status toggle',
+      badgeText: language === 'hi' ? 'डॉक्टर कैलेंडर' : language === 'mr' ? 'डॉक्टर कॅलेंडर' : 'Doctor Roster',
     },
     {
       role: 'admin' as AppRole,
       title: t.roleAdmin,
-      subtitle: 'Regional Operations Center',
+      subtitle: 'Mumbai Emergency Operations Command',
       email: 'admin@demo.com',
       icon: UserCog,
       scenario: language === 'hi'
         ? 'क्षेत्रीय अस्पतालों की स्थिति और एम्बुलेंस फ्लीट की निगरानी'
         : language === 'mr'
         ? 'प्रादेशिक रुग्णालयांची स्थिती आणि रुग्णवाहिकांचे नियंत्रण'
-        : 'Monitoring regional hospital diversion statuses and city-wide ambulance fleet',
+        : 'Monitoring regional hospital diversion statuses and Mumbai ambulance fleet',
       badgeText: language === 'hi' ? 'एडमिन कमांड' : language === 'mr' ? 'ॲडमिन कमांड' : 'Admin Command',
     },
   ];
@@ -117,6 +130,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
       if (!result.success) {
         setError(result.error || 'Login failed');
       } else {
+        setIsSignInModalOpen(false);
         onEnterApp?.();
       }
       setIsLoading(false);
@@ -131,6 +145,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
       if (!result.success) {
         setError(result.error || 'Login failed');
       } else {
+        setIsSignInModalOpen(false);
         onEnterApp?.();
       }
       setIsLoading(false);
@@ -147,7 +162,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
   return (
     <div className="min-h-screen bg-white text-neutral-900 flex flex-col font-sans">
       {/* Crisp Medical White & Red Top Navigation */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-red-100 sticky top-0 z-50">
+      <header className="bg-white/95 backdrop-blur-md border-b border-red-100 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center font-black text-sm tracking-tight shadow-sm">
@@ -166,8 +181,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
             <button onClick={() => scrollToSection('clinical-parts')} className="hover:text-red-600 transition-colors cursor-pointer">
               {t.partsTitle}
             </button>
-            <button onClick={() => scrollToSection('login-portal')} className="hover:text-red-600 transition-colors cursor-pointer">
-              {t.loginPortalTitle}
+            <button onClick={() => setIsSignInModalOpen(true)} className="hover:text-red-600 transition-colors cursor-pointer">
+              {language === 'hi' ? 'लॉगिन पोर्टल' : language === 'mr' ? 'लॉगिन पोर्टल' : 'Sign In'}
             </button>
           </nav>
 
@@ -187,12 +202,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
               </select>
             </div>
 
+            {/* Replaced Paramedic Demo with Clean Login with Role */}
             <button
-              onClick={() => handleQuickLogin('ambulance@demo.com')}
+              onClick={() => setIsSignInModalOpen(true)}
               className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{t.openParamedicDemo}</span>
+              <Lock className="w-3.5 h-3.5" />
+              <span>{language === 'hi' ? 'भूमिका अनुसार लॉगिन' : language === 'mr' ? 'भूमिकेनुसार लॉगिन' : 'Sign In'}</span>
             </button>
           </div>
         </div>
@@ -221,26 +237,36 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
             {t.heroSubtitle}
           </p>
 
-          {/* Simple Direct 3-Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          {/* Simple Direct Action Buttons including SOS Voice Input */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => handleQuickLogin('patient@demo.com')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              className="px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               <Heart className="w-4 h-4 fill-white" />
               <span>{t.heroSOSButton}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+
+            <button
+              onClick={() => handleQuickLogin('patient@demo.com')}
+              className="px-5 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-sm transition-all shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+            >
+              <Mic className="w-4 h-4" />
+              <span>{language === 'hi' ? 'आवाज से सहायता' : language === 'mr' ? 'आवाजाने मदत' : 'Voice SOS'}</span>
+            </button>
+
             <button
               onClick={() => handleQuickLogin('ambulance@demo.com')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              className="px-5 py-3.5 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               <Ambulance className="w-4 h-4" />
               <span>{t.ambulanceDispatch}</span>
             </button>
+
             <button
               onClick={() => handleQuickLogin('nurse@demo.com')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white hover:bg-red-50 text-red-700 border-2 border-red-200 font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
+              className="px-5 py-3.5 rounded-xl bg-white hover:bg-red-50 text-red-700 border-2 border-red-200 font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
             >
               <Stethoscope className="w-4 h-4" />
               <span>{t.nurseUpdate}</span>
@@ -250,84 +276,84 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
 
         {/* 4-Step Emergency Pipeline Track - Clean Red & White */}
         <div className="relative z-10 my-8 max-w-3xl mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-left">
-              {/* Step 1: Citizen SOS */}
-              <div 
-                onClick={() => handleQuickLogin('patient@demo.com')}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-red-200 shadow-xs hover:border-red-400 transition-all cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 shrink-0 group-hover:scale-105 transition-transform">
-                  <Heart className="w-5 h-5 fill-red-100" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-red-600 block">Step 01</span>
-                  <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep1}</span>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-left">
+            {/* Step 1: Citizen SOS */}
+            <div 
+              onClick={() => handleQuickLogin('patient@demo.com')}
+              className="flex items-center gap-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-red-200 shadow-xs hover:border-red-400 transition-all cursor-pointer group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 shrink-0 group-hover:scale-105 transition-transform">
+                <Heart className="w-5 h-5 fill-red-100" />
               </div>
-
-              {/* Step 2: Ambulance CAD */}
-              <div 
-                onClick={() => handleQuickLogin('ambulance@demo.com')}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-neutral-200 shadow-xs hover:border-red-400 transition-all cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Radio className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500 block">Step 02</span>
-                  <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep2}</span>
-                </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-red-600 block">Step 01</span>
+                <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep1}</span>
               </div>
+            </div>
 
-              {/* Step 3: ER 2-Min Hold */}
-              <div 
-                onClick={() => handleQuickLogin('hospital@demo.com')}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-amber-300 shadow-xs hover:border-amber-400 transition-all cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700 block">Step 03</span>
-                  <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep3}</span>
-                </div>
+            {/* Step 2: Ambulance CAD */}
+            <div 
+              onClick={() => handleQuickLogin('ambulance@demo.com')}
+              className="flex items-center gap-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-neutral-200 shadow-xs hover:border-red-400 transition-all cursor-pointer group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Radio className="w-5 h-5" />
               </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500 block">Step 02</span>
+                <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep2}</span>
+              </div>
+            </div>
 
-              {/* Step 4: ICU Reserved */}
-              <div 
-                onClick={() => handleQuickLogin('nurse@demo.com')}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-emerald-300 shadow-xs hover:border-emerald-400 transition-all cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700 block">Step 04</span>
-                  <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep4}</span>
-                </div>
+            {/* Step 3: ER 2-Min Hold */}
+            <div 
+              onClick={() => handleQuickLogin('hospital@demo.com')}
+              className="flex items-center gap-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-amber-300 shadow-xs hover:border-amber-400 transition-all cursor-pointer group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700 block">Step 03</span>
+                <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep3}</span>
+              </div>
+            </div>
+
+            {/* Step 4: ICU Reserved */}
+            <div 
+              onClick={() => handleQuickLogin('nurse@demo.com')}
+              className="flex items-center gap-3 p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-emerald-300 shadow-xs hover:border-emerald-400 transition-all cursor-pointer group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700 block">Step 04</span>
+                <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep4}</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Simple Metrics Cards */}
-          <div className="pt-6 border-t border-red-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-            <div className="bg-red-50/50 p-3 rounded-xl border border-red-100">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-red-600 block">&lt; 10 sec</span>
-              <span className="text-xs text-neutral-600 font-medium">{t.nurseBedUpdateStat}</span>
-            </div>
-            <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">4 Constraints</span>
-              <span className="text-xs text-neutral-600 font-medium">{t.constraintsStat}</span>
-            </div>
-            <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-amber-700 block">120 sec</span>
-              <span className="text-xs text-neutral-600 font-medium">{t.holdTimerStat}</span>
-            </div>
-            <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-700 block">Auto-Reroute</span>
-              <span className="text-xs text-neutral-600 font-medium">{t.autoRerouteStat}</span>
-            </div>
+        {/* Simple Metrics Cards */}
+        <div className="pt-6 border-t border-red-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center max-w-4xl mx-auto">
+          <div className="bg-red-50/50 p-3 rounded-xl border border-red-100">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-red-600 block">&lt; 10 sec</span>
+            <span className="text-xs text-neutral-600 font-medium">{t.nurseBedUpdateStat}</span>
           </div>
+          <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">4 Constraints</span>
+            <span className="text-xs text-neutral-600 font-medium">{t.constraintsStat}</span>
+          </div>
+          <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-amber-700 block">120 sec</span>
+            <span className="text-xs text-neutral-600 font-medium">{t.holdTimerStat}</span>
+          </div>
+          <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-700 block">Auto-Reroute</span>
+            <span className="text-xs text-neutral-600 font-medium">{t.autoRerouteStat}</span>
+          </div>
+        </div>
       </section>
 
       {/* Simplest Flow Section (Zero Clutter) */}
@@ -494,127 +520,152 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
         </div>
       </section>
 
-      {/* Login & Instant Role Access Section in Clean Red & White */}
-      <section id="login-portal" className="py-14 px-4 sm:px-6 lg:px-8 bg-neutral-50/50">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center max-w-xl mx-auto mb-8">
-            <h2 className="text-2xl font-bold text-neutral-950 tracking-tight">{t.loginPortalTitle}</h2>
-            <p className="text-xs text-neutral-600 mt-1">
-              {t.loginPortalSubtitle}
-            </p>
-          </div>
+      {/* Dedicated Sign In Modal (Clean Hospital Aesthetics, All Options) */}
+      {isSignInModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-4xl bg-white rounded-3xl border border-neutral-200 shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsSignInModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors cursor-pointer"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Quick 1-Tap Role Demo Cards */}
-            <div className="lg:col-span-7 space-y-2.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 block mb-1">
-                {t.oneTapDemoLogin}
-              </span>
-
-              {humanDemoAccounts.map((acc) => {
-                const Icon = acc.icon;
-                return (
-                  <button
-                    key={acc.role}
-                    type="button"
-                    onClick={() => handleQuickLogin(acc.email)}
-                    disabled={isLoading}
-                    className="w-full p-3.5 rounded-xl bg-white hover:bg-red-50/50 border border-neutral-200 hover:border-red-300 transition-all text-left flex items-center justify-between gap-3 group cursor-pointer shadow-xs active:scale-[0.99]"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs sm:text-sm font-bold text-neutral-950 group-hover:text-red-700 transition-colors">
-                            {acc.title}
-                          </h4>
-                          <span className="text-[10px] font-semibold px-2 py-0.2 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200">
-                            {acc.badgeText}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-neutral-500 font-medium">{acc.subtitle}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 shrink-0 text-neutral-400 group-hover:text-red-600 transition-colors">
-                      <span className="text-xs font-bold hidden sm:inline">{t.signIn}</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="text-center max-w-xl mx-auto mb-6">
+              <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center mx-auto mb-2 font-bold shadow-xs">
+                <Lock className="w-5 h-5" />
+              </div>
+              <h2 className="text-2xl font-bold text-neutral-950 tracking-tight">
+                {language === 'hi' ? 'विटारूट आपातकालीन प्रणाली में लॉगिन' : language === 'mr' ? 'विटारूट आणीबाणी प्रणालीत लॉगिन' : 'Sign In to VitaRoute Mumbai'}
+              </h2>
+              <p className="text-xs text-neutral-500 mt-1">
+                {language === 'hi' 
+                  ? 'तत्काल 1-टैप डेमो भूमिका चुनें या अधिकृत क्रेडेंशियल्स से साइन इन करें' 
+                  : language === 'mr' 
+                  ? 'त्वरित १-टॅप डेमो भूमिका निवडा किंवा अधिकृत खात्याने साइन इन करा' 
+                  : 'Select an authorized operational role for 1-tap demo access, or sign in below.'}
+              </p>
             </div>
 
-            {/* Standard Login Box */}
-            <div className="lg:col-span-5 bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-xs">
-              <div className="text-center mb-4">
-                <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center mx-auto mb-2 font-bold shadow-xs">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-bold text-neutral-950">{t.signIn}</h3>
-                <p className="text-xs text-neutral-500">Sign in with an authorized account</p>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Quick 1-Tap Role Demo Cards */}
+              <div className="lg:col-span-7 space-y-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 block mb-1">
+                  {t.oneTapDemoLogin} (Mumbai EMS Network)
+                </span>
+
+                {humanDemoAccounts.map((acc) => {
+                  const Icon = acc.icon;
+                  return (
+                    <button
+                      key={acc.role}
+                      type="button"
+                      onClick={() => handleQuickLogin(acc.email)}
+                      disabled={isLoading}
+                      className="w-full p-3.5 rounded-xl bg-white hover:bg-red-50/50 border border-neutral-200 hover:border-red-300 transition-all text-left flex items-center justify-between gap-3 group cursor-pointer shadow-xs active:scale-[0.99]"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs sm:text-sm font-bold text-neutral-950 group-hover:text-red-700 transition-colors">
+                              {acc.title}
+                            </h4>
+                            <span className="text-[10px] font-semibold px-2 py-0.2 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200">
+                              {acc.badgeText}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-neutral-500 font-medium">{acc.subtitle}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 text-neutral-400 group-hover:text-red-600 transition-colors">
+                        <span className="text-xs font-bold hidden sm:inline">{t.signIn}</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              {error && (
-                <div className="mb-4 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div>
-                  <label className="text-xs font-bold text-neutral-700 block mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 focus:outline-none focus:border-red-500 bg-neutral-50/50"
-                  />
+              {/* Standard Email/Password Login Box */}
+              <div className="lg:col-span-5 bg-neutral-50 border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-xs">
+                <div className="text-center mb-4">
+                  <h3 className="text-sm font-bold text-neutral-950">Authorized Account Login</h3>
+                  <p className="text-xs text-neutral-500">Sign in with system credentials</p>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-neutral-700 block mb-1">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 focus:outline-none focus:border-red-500 bg-neutral-50/50 pr-8"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                {error && (
+                  <div className="mb-4 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{error}</span>
                   </div>
-                </div>
+                )}
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer mt-2"
-                >
-                  {isLoading ? 'Signing In...' : t.signIn}
-                </button>
-              </form>
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-neutral-700 block mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="e.g. ambulance@demo.com"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 focus:outline-none focus:border-red-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-neutral-700 block mb-1">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        placeholder="demo123"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-200 focus:outline-none focus:border-red-500 bg-white pr-8"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer mt-2"
+                  >
+                    {isLoading ? 'Signing In...' : t.signIn}
+                  </button>
+                </form>
+
+                <div className="mt-4 pt-3 border-t border-neutral-200 text-center">
+                  <p className="text-[11px] text-neutral-500">
+                    Demo password: <code className="font-mono font-bold text-neutral-800">demo123</code>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      )}
 
       {/* Humanized Hospital Footer */}
       <footer className="border-t border-neutral-200 bg-white py-4 px-4 sm:px-6 text-xs text-neutral-500 mt-auto">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-600 inline-block" />
-            <span className="font-bold text-neutral-900">VitaRoute Medical Coordination</span>
+            <span className="font-bold text-neutral-900">VitaRoute Mumbai Medical Coordination</span>
             <span className="hidden sm:inline">&middot; Hospital Bed Allocation & CAD Dispatch</span>
           </div>
           <span className="text-neutral-400">10s Updates &middot; Real Road Travel Times &middot; 2-Min ER Holds</span>

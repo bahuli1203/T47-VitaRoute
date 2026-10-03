@@ -34,6 +34,22 @@ import {
 } from '../utils/geo';
 import { fetchRealWorldHospitals, reverseGeocodeLocation } from '../services/hospitalApi';
 import { SupportedLanguage, TranslationDictionary, getTranslation } from '../utils/translations';
+import {
+  dbSaveEmergency,
+  dbSaveEmergencies,
+  dbGetEmergencies,
+  dbSaveHold,
+  dbSaveHolds,
+  dbGetHolds,
+  dbSaveCitizenSOS,
+  dbSaveCitizenSOSRequests,
+  dbGetCitizenSOSRequests,
+  dbSaveHospitals,
+  dbGetHospitals,
+  dbSaveDoctors,
+  dbGetDoctors,
+  dbResetAll,
+} from '../services/indexedDb';
 
 interface BedLinkContextType {
   language: SupportedLanguage;
@@ -148,7 +164,7 @@ const STORAGE_KEY_CITIZEN_SOS = 'vitaroute_citizen_sos_v1';
 const STORAGE_KEY_EMERGENCIES = 'vitaroute_emergencies_v1';
 const STORAGE_KEY_DOCTORS = 'vitaroute_doctors_v2';
 
-const DEFAULT_COORDS = { lat: 40.7128, lng: -74.006 };
+const DEFAULT_COORDS = { lat: 19.0596, lng: 72.8295 }; // Bandra West / BKC Corridor, Mumbai
 
 const BedLinkContext = createContext<BedLinkContextType | null>(null);
 
@@ -184,7 +200,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return 'dispatch';
   });
 
-  const [currentHospitalId, setCurrentHospitalId] = useState<string>('sjm-01');
+  const [currentHospitalId, setCurrentHospitalId] = useState<string>('kem-01');
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(Date.now());
   const [bedLastUpdatedMap, setBedLastUpdatedMap] = useState<Record<string, number>>({});
@@ -196,7 +212,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Real-world OpenStreetMap and Geocoding state
   const [isLoadingRealHospitals, setIsLoadingRealHospitals] = useState<boolean>(false);
   const [realHospitalSource, setRealHospitalSource] = useState<'live_osm' | 'local_fallback' | null>(null);
-  const [activeLocationName, setActiveLocationName] = useState<string>('Downtown Metro Core');
+  const [activeLocationName, setActiveLocationName] = useState<string>('Bandra West / BKC Corridor, Mumbai');
 
   // Connectivity and Offline Sync
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
@@ -338,9 +354,9 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return [
       {
         id: 'hold-demo-104',
-        ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
-        hospitalId: 'sjm-01',
-        hospitalName: 'St. Jude Metropolitan Hospital',
+        ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
+        hospitalId: 'kem-01',
+        hospitalName: 'King Edward Memorial Hospital (KEM)',
         bedType: 'icu_ventilator',
         triageAcuity: 'Red',
         patientAgeGender: '62M',
@@ -351,16 +367,60 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           spo2: 82,
           gcs: 9,
         },
-        etaMinutes: 6,
-        distanceKm: 2.4,
+        etaMinutes: 7,
+        distanceKm: 2.8,
         createdAt: Date.now() - 5 * 1000,
         expiresAt: initialExpiry,
         status: 'pending',
-        assignedBay: 'Trauma Bay 2 - ICU',
-        doctorInCharge: 'Dr. Katherine Vance, MD (Attending)',
+        assignedBay: 'Resuscitation Bay 1 - ICU',
+        doctorInCharge: 'Dr. Rohan Merchant, MD (Attending)',
       },
     ];
   });
+
+  // IndexedDB Hydration on Mount: Load real persisted data from IndexedDB
+  useEffect(() => {
+    let isMounted = true;
+    async function hydrateDB() {
+      try {
+        const [storedEmgs, storedHolds, storedSOS, storedHosp, storedDocs] = await Promise.all([
+          dbGetEmergencies(),
+          dbGetHolds(),
+          dbGetCitizenSOSRequests(),
+          dbGetHospitals(),
+          dbGetDoctors(),
+        ]);
+
+        if (!isMounted) return;
+
+        if (storedEmgs && storedEmgs.length > 0) {
+          setEmergencies(storedEmgs);
+        }
+        if (storedHolds && storedHolds.length > 0) {
+          setActiveHolds(storedHolds);
+        }
+        if (storedSOS && storedSOS.length > 0) {
+          setCitizenSOSRequests(storedSOS);
+        }
+        if (storedHosp && storedHosp.length > 0) {
+          setHospitals(storedHosp);
+        } else {
+          dbSaveHospitals(INITIAL_HOSPITALS);
+        }
+        if (storedDocs && storedDocs.length > 0) {
+          setDoctors(storedDocs);
+        } else {
+          dbSaveDoctors(INITIAL_DOCTORS);
+        }
+      } catch (e) {
+        console.warn('IndexedDB initial sync note:', e);
+      }
+    }
+    hydrateDB();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Dispatch filter state with multi-specialty selection and live GPS toggle
   const [dispatchFilter, setDispatchFilter] = useState<DispatchFilterState>({
@@ -485,37 +545,49 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     soundManager.setMuted(isMuted);
   }, [isMuted]);
 
-  // Persist hospitals to localStorage
+  // Persist hospitals to localStorage and IndexedDB
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_HOSPITALS, JSON.stringify(hospitals));
+      if (hospitals.length > 0) {
+        dbSaveHospitals(hospitals);
+      }
     } catch {
       // ignore
     }
   }, [hospitals]);
 
-  // Persist holds to localStorage
+  // Persist holds to localStorage and IndexedDB
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_HOLDS, JSON.stringify(activeHolds));
+      if (activeHolds.length > 0) {
+        dbSaveHolds(activeHolds);
+      }
     } catch {
       // ignore
     }
   }, [activeHolds]);
 
-  // Persist citizen SOS
+  // Persist citizen SOS to localStorage and IndexedDB
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_CITIZEN_SOS, JSON.stringify(citizenSOSRequests));
+      if (citizenSOSRequests.length > 0) {
+        dbSaveCitizenSOSRequests(citizenSOSRequests);
+      }
     } catch {
       // ignore
     }
   }, [citizenSOSRequests]);
 
-  // Persist emergencies
+  // Persist emergencies to localStorage and IndexedDB
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_EMERGENCIES, JSON.stringify(emergencies));
+      if (emergencies.length > 0) {
+        dbSaveEmergencies(emergencies);
+      }
     } catch {
       // ignore
     }
@@ -1303,18 +1375,21 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         id: `sos-${Date.now()}`,
         timestamp: Date.now(),
         category,
-        callerPhone: phone || 'Emergency Caller',
+        callerPhone: phone || '+91 98200 12345',
         patientCount: 1,
         notes: notes || 'Citizen SOS trigger, urgent response required',
         lat: liveCoordinates.lat,
         lng: liveCoordinates.lng,
-        addressApprox: 'GPS Location Verified (Sector Core)',
-        assignedAmbulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
+        addressApprox: 'Bandra-Worli Sea Link / SV Road, Mumbai',
+        assignedAmbulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
         status: 'dispatched',
         etaMinutes: 5,
       };
 
       setCitizenSOSRequests((prev) => [newRequest, ...prev]);
+
+      // Automatically create the linked emergency case in system & IndexedDB
+      createEmergency(category, newRequest.id, phone || 'Citizen Caller (Mumbai SOS)');
 
       // Pre-configure dispatch filter to match the emergency
       let mappedBed: BedTypeId = 'oxygen_bed';
@@ -1354,16 +1429,16 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const fastPin = Math.floor(1000 + Math.random() * 9000).toString();
       setSosVerification({
         verifiedImmediately: true,
-        callbackPhone: phone || 'Emergency Caller (Auto-Locked)',
+        callbackPhone: phone || '+91 98200 12345 (Auto-Locked)',
         verificationPin: fastPin,
         teleTriageAudioConnected: false,
         dispatchConfirmedTimestamp: Date.now(),
       });
 
-      showNotification('Emergency SOS transmitted. ALS Ambulance 104 dispatched.', 'alert');
+      showNotification('Emergency SOS transmitted. ALS Unit 104 dispatched & hospital hold initiated.', 'alert');
       return newRequest;
     },
-    [liveCoordinates, showNotification]
+    [liveCoordinates, createEmergency, showNotification]
   );
 
   // EHR Ingestion Mode (Connected generic webhook vs alternate autonomous schedule)
@@ -1449,9 +1524,9 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // SIMULATION HELPERS
   const simulateIncomingAmbulance = useCallback(() => {
     requestHold(
-      'sjm-01',
+      'kem-01',
       'icu_ventilator',
-      'Ambulance 104 (ALS Paramedic Unit)',
+      'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
       'Red',
       { bp: '82/50', hr: 132, spo2: 80, gcs: 8 }
     );
@@ -1472,7 +1547,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return {
           ...h,
           erLoad: 'Surge',
-          diversionStatus: h.id === 'hch-04' ? 'Diversion' : 'Advisory',
+          diversionStatus: h.id === 'ltm-05' ? 'Diversion' : 'Advisory',
           lastUpdatedMinutesAgo: 1,
           beds: surgeBeds,
         };
@@ -1533,12 +1608,15 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 
   const resetAllData = useCallback(() => {
+    dbResetAll();
     localStorage.removeItem(STORAGE_KEY_HOSPITALS);
     localStorage.removeItem(STORAGE_KEY_HOLDS);
     localStorage.removeItem(STORAGE_KEY_OFFLINE_QUEUE);
     localStorage.removeItem(STORAGE_KEY_CITIZEN_SOS);
     localStorage.removeItem(STORAGE_KEY_EMERGENCIES);
+    localStorage.removeItem(STORAGE_KEY_DOCTORS);
     setHospitals(INITIAL_HOSPITALS);
+    setDoctors(INITIAL_DOCTORS);
     setCitizenSOSRequests([]);
     setOfflineQueue([]);
     setEmergencies([]);
@@ -1546,9 +1624,9 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setActiveHolds([
       {
         id: 'hold-demo-104',
-        ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
-        hospitalId: 'sjm-01',
-        hospitalName: 'St. Jude Metropolitan Hospital',
+        ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
+        hospitalId: 'kem-01',
+        hospitalName: 'King Edward Memorial Hospital (KEM)',
         bedType: 'icu_ventilator',
         triageAcuity: 'Red',
         patientAgeGender: '62M',
@@ -1559,16 +1637,16 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           spo2: 82,
           gcs: 9,
         },
-        etaMinutes: 6,
-        distanceKm: 2.4,
+        etaMinutes: 7,
+        distanceKm: 2.8,
         createdAt: Date.now() - 2 * 1000,
         expiresAt: initialExpiry,
         status: 'pending',
-        assignedBay: 'Trauma Bay 2 - ICU',
-        doctorInCharge: 'Dr. Katherine Vance, MD (Attending)',
+        assignedBay: 'Resuscitation Bay 1 - ICU',
+        doctorInCharge: 'Dr. Rohan Merchant, MD (Attending)',
       },
     ]);
-    showNotification('System demo data reset to default.', 'info');
+    showNotification('System demo data reset to Mumbai network defaults.', 'info');
   }, [showNotification]);
 
   // Keep refs for latest holds & hospitals for timer efficiency without stale closures

@@ -43,7 +43,7 @@ const DEMO_USERS: { email: string; password: string; user: AuthUser }[] = [
       email: 'ambulance@demo.com',
       name: 'Paramedic Arjun Singh',
       role: 'ambulance',
-      ambulanceId: 'Ambulance 104 (ALS Paramedic Unit)',
+      ambulanceId: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
     },
   },
   {
@@ -52,9 +52,9 @@ const DEMO_USERS: { email: string; password: string; user: AuthUser }[] = [
     user: {
       id: 'user-nurse-01',
       email: 'nurse@demo.com',
-      name: 'Nurse Sarah Kowalski',
+      name: 'Sister Anjali Deshmukh, RN',
       role: 'nurse',
-      hospitalId: 'sjm-01',
+      hospitalId: 'kem-01',
     },
   },
   {
@@ -63,9 +63,20 @@ const DEMO_USERS: { email: string; password: string; user: AuthUser }[] = [
     user: {
       id: 'user-hospital-01',
       email: 'hospital@demo.com',
-      name: 'Dr. Katherine Vance',
+      name: 'Dr. Rohan Merchant, MD',
       role: 'hospital',
-      hospitalId: 'sjm-01',
+      hospitalId: 'kem-01',
+    },
+  },
+  {
+    email: 'doctor@demo.com',
+    password: 'demo123',
+    user: {
+      id: 'user-doctor-01',
+      email: 'doctor@demo.com',
+      name: 'Dr. Sneha Kulkarni, MS',
+      role: 'doctors',
+      hospitalId: 'kem-01',
     },
   },
   {
@@ -74,7 +85,7 @@ const DEMO_USERS: { email: string; password: string; user: AuthUser }[] = [
     user: {
       id: 'user-admin-01',
       email: 'admin@demo.com',
-      name: 'Admin Control',
+      name: 'Mumbai Emergency Operations Command',
       role: 'admin',
     },
   },

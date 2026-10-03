@@ -51,7 +51,7 @@ export const CitizenSOSView: React.FC = () => {
     setSelectedCategory(result.category);
     triggerCitizenSOS(
       result.category,
-      callerPhone || '555-0199',
+      callerPhone || '+91 98200 12345',
       transcript || 'Voice classified emergency'
     );
   };
@@ -344,7 +344,7 @@ export const CitizenSOSView: React.FC = () => {
                     type="tel"
                     value={callerPhone}
                     onChange={(e) => setCallerPhone(e.target.value)}
-                    placeholder={language === 'hi' ? 'उदा. 9876543210' : language === 'mr' ? 'उदा. 9876543210' : 'e.g. 555-0199 / 9876543210'}
+                    placeholder={language === 'hi' ? 'उदा. +91 98200 12345' : language === 'mr' ? 'उदा. +91 98200 12345' : 'e.g. +91 98200 12345'}
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
                   />
                 </div>

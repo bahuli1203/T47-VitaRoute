@@ -358,12 +358,12 @@ export const PatientDashboard: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <span className="font-bold text-slate-900 block mb-1">🏥 Nearest ER Hospitals</span>
-                  <span className="text-slate-600 block">St. Jude Medical (~3.2 km)</span>
-                  <span className="text-slate-600 block">General City Hospital (~5.1 km)</span>
+                  <span className="font-bold text-slate-900 block mb-1">Nearest Mumbai ER Hospitals</span>
+                  <span className="text-slate-600 block">KEM Hospital Parel (~2.8 km)</span>
+                  <span className="text-slate-600 block">Lilavati Hospital Bandra (~4.2 km)</span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <span className="font-bold text-slate-900 block mb-1">🚨 Emergency Protocol</span>
+                  <span className="font-bold text-slate-900 block mb-1">Emergency Protocol</span>
                   <span className="text-slate-600 block">Press SOS button above for immediate ambulance dispatch.</span>
                 </div>
               </div>

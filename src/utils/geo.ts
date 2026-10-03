@@ -1,6 +1,6 @@
 /**
  * VitaRoute Geolocation and Route Time Utilities
- * Accurate Haversine distance and emergency vehicle travel time modeling
+ * Accurate Haversine distance and emergency vehicle travel time modeling for Mumbai Metropolitan Region
  */
 
 export interface GeoCoordinate {
@@ -32,8 +32,8 @@ export function calculateHaversineDistance(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const rawDistance = earthRadiusKm * c;
 
-  // Road circuitousness factor in metropolitan grid (~1.25x straight-line distance)
-  const roadNetworkDistance = rawDistance * 1.28;
+  // Road circuitousness factor in Mumbai road network (~1.32x straight-line distance)
+  const roadNetworkDistance = rawDistance * 1.32;
   return Number(roadNetworkDistance.toFixed(1));
 }
 
@@ -48,40 +48,66 @@ export function estimateEmergencyTravelTime(
   distanceKm: number,
   erLoad: 'Low' | 'Medium' | 'Surge'
 ): number {
-  // Average urban ambulance speed under lights and sirens: ~42 km/h
+  // Average Mumbai emergency vehicle speed under siren clearance: ~38 km/h
   // Traffic congestion multiplier based on hospital district load
   let congestionMultiplier = 1.0;
-  if (erLoad === 'Medium') congestionMultiplier = 1.15;
-  if (erLoad === 'Surge') congestionMultiplier = 1.35;
+  if (erLoad === 'Medium') congestionMultiplier = 1.18;
+  if (erLoad === 'Surge') congestionMultiplier = 1.38;
 
-  const baseMinutes = (distanceKm / 42) * 60 * congestionMultiplier;
-  // Add 1.5 minutes baseline for intersection clearance and bay maneuvering
+  const baseMinutes = (distanceKm / 38) * 60 * congestionMultiplier;
+  // Baseline intersection clearance and bay maneuvering
   const totalMinutes = Math.round(baseMinutes + 1.5);
   return Math.max(3, totalMinutes);
 }
 
 /**
- * Known metropolitan sector reference coordinates
+ * Mumbai Metropolitan Region sector reference coordinates
  */
 export const METRO_SECTORS: Record<string, { label: string; coords: GeoCoordinate }> = {
+  'sec-bandra': {
+    label: 'Bandra West / BKC Corridor (SV Road Junction)',
+    coords: { lat: 19.0596, lng: 72.8295 },
+  },
+  'sec-parel': {
+    label: 'Parel Medical Hub (Dr. Babasaheb Ambedkar Road)',
+    coords: { lat: 18.9986, lng: 72.8427 },
+  },
+  'sec-andheri': {
+    label: 'Andheri West (New Link Road / Four Bungalows)',
+    coords: { lat: 19.1314, lng: 72.8252 },
+  },
+  'sec-sion': {
+    label: 'Sion Circle (Eastern Express Highway Interchange)',
+    coords: { lat: 19.0390, lng: 72.8600 },
+  },
+  'sec-southmumbai': {
+    label: 'Marine Lines / Fort (South Mumbai District)',
+    coords: { lat: 18.9388, lng: 72.8286 },
+  },
+  'sec-mahim': {
+    label: 'Mahim Bay / Cadell Road Junction',
+    coords: { lat: 19.0330, lng: 72.8397 },
+  },
+
+  // Aliases for backward compatibility
   'sec-downtown': {
-    label: 'Downtown Metro Core (Broadway / 5th Ave)',
-    coords: { lat: 40.7128, lng: -74.006 },
+    label: 'Bandra West / BKC Core (SV Road)',
+    coords: { lat: 19.0596, lng: 72.8295 },
   },
   'sec-hwy101': {
-    label: 'Expressway Interchange (Mile Marker 24)',
-    coords: { lat: 40.735, lng: -74.04 },
+    label: 'Western Express Highway (Kalanagar Junction)',
+    coords: { lat: 19.0620, lng: 72.8480 },
   },
   'sec-harbor': {
-    label: 'South Harbor Marine Terminal (Pier 19)',
-    coords: { lat: 40.682, lng: -74.015 },
+    label: 'Eastern Freeway Hub (Sewri / Docklands)',
+    coords: { lat: 19.0010, lng: 72.8580 },
   },
   'sec-northridge': {
-    label: 'North Heights Residential (Route 8 North)',
-    coords: { lat: 40.785, lng: -73.975 },
+    label: 'Andheri West Link Road (Four Bungalows)',
+    coords: { lat: 19.1314, lng: 72.8252 },
   },
   'sec-industrial': {
-    label: 'West Logistics Park (Gate 3)',
-    coords: { lat: 40.745, lng: -74.065 },
+    label: 'Parel Medical Hub (King Edward Memorial Precinct)',
+    coords: { lat: 18.9986, lng: 72.8427 },
   },
 };
