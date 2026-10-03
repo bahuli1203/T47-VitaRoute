@@ -3,19 +3,11 @@ import { useBedLink } from '../../context/BedLinkContext';
 import { LeafletEmergencyMap } from './LeafletEmergencyMap';
 import {
   Ambulance,
-  MapPin,
+  Building2,
   Clock,
   Phone,
-  Activity,
   CheckCircle2,
-  Building2,
   Navigation,
-  Shield,
-  Radio,
-  UserCheck,
-  AlertTriangle,
-  ArrowRight,
-  RefreshCw,
 } from 'lucide-react';
 
 interface LiveAmbulanceTrackerViewProps {
@@ -92,7 +84,7 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
   const patientCoords = {
     lat: activeCitizenSOS?.lat || liveCoordinates?.lat || (destinationHospital.lat - 0.024),
     lng: activeCitizenSOS?.lng || liveCoordinates?.lng || (destinationHospital.lng - 0.018),
-    label: activeCitizenSOS?.addressApprox || 'Incident Scene (Emergency SOS)',
+    label: activeCitizenSOS?.addressApprox || (language === 'hi' ? 'घटनास्थल पिकअप' : language === 'mr' ? 'घटनास्थळ पिकअप' : 'Incident Scene Pickup'),
   };
 
   const hospitalCoords = {
@@ -104,6 +96,35 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
   const speedKmH = progressPercent >= 100 ? 0 : 54;
   const distanceRemainingKm = progressPercent >= 100 ? '0.0' : (Math.max(0.2, (1 - progressPercent / 100) * 4.2)).toFixed(1);
 
+  const txt = {
+    headerBadge: language === 'hi' ? 'लाइव एम्बुलेंस जीपीएस नक्शा' : language === 'mr' ? 'थेट रुग्णवाहिका जीपीएस नकाशा' : 'Live Ambulance Telematics & GPS Map',
+    headerCad: language === 'hi' ? 'सीएडी जीपीएस सक्रिय' : language === 'mr' ? 'सीएडी जीपीएस सुरू' : 'CAD GPS ACTIVE',
+    headerTitle: language === 'hi' ? 'एम्बुलेंस मार्ग और ईआर आगमन मॉनिटर' : language === 'mr' ? 'रुग्णवाहिका मार्ग आणि ईआर आगमन मॉनिटर' : 'Live Road Route & ER Arrival Monitor',
+    headerSubtitle: language === 'hi' ? 'मरीज और अस्पताल दोनों के लिए लाइव जीपीएस नक्शा और समय गणना।' : language === 'mr' ? 'रुग्ण आणि रुग्णालय दोघांसाठी थेट जीपीएस नकाशा आणि वेळ गणना.' : 'Real-time GPS OpenStreetMap tracking, speed telemetry, and hospital ER bay coordination.',
+    tabPatient: language === 'hi' ? 'मरीज दृश्य' : language === 'mr' ? 'रुग्ण दृश्य' : 'Patient View',
+    tabHospital: language === 'hi' ? 'अस्पताल ईआर बोर्ड' : language === 'mr' ? 'रुग्णालय ईआर बोर्ड' : 'Hospital ER Board',
+    estTime: language === 'hi' ? 'अनुमानित समय' : language === 'mr' ? 'अंदाजित वेळ' : 'Estimated Time',
+    minSec: language === 'hi' ? 'मिनट : सेकंड' : language === 'mr' ? 'मिनिटे : सेकंद' : 'Minutes : Seconds',
+    arrivedText: language === 'hi' ? 'पहुंच गए' : language === 'mr' ? 'पोहोचले' : 'Arrived',
+    distLeft: language === 'hi' ? 'दूरी शेष' : language === 'mr' ? 'अंतर शिल्लक' : 'Distance Left',
+    fastRoute: language === 'hi' ? 'फास्ट इमरजेंसी रूट' : language === 'mr' ? 'फास्ट इमर्जन्सी मार्ग' : 'Fast Emergency Route',
+    speed: language === 'hi' ? 'गाड़ी की गति' : language === 'mr' ? 'वाहनाचा वेग' : 'Vehicle Speed',
+    greenWave: language === 'hi' ? 'ग्रीन वेव सीएडी' : language === 'mr' ? 'ग्रीन वेव्ह सीएडी' : 'Green Wave CAD',
+    unitName: activeHold?.ambulanceCallSign || (language === 'hi' ? 'यूनिट 104 (एएलएस पैरामेडिक)' : language === 'mr' ? 'युनिट १०४ (एएलएस पॅरामेडिक)' : 'Unit 104 (ALS Paramedic)'),
+    driverMedic: language === 'hi' ? 'पैरामेडिक माइक इवांस · डायरेक्ट रेडियो चैनल 4' : language === 'mr' ? 'पॅरामेडिक माइक इव्हान्स · थेट रेडिओ चॅनेल ४' : 'Paramedic Mike Evans · Direct Radio Channel 4',
+    btnCallMedic: language === 'hi' ? 'कॉल करें' : language === 'mr' ? 'कॉल करा' : 'Call Medic',
+    hospDestTitle: language === 'hi' ? 'आरक्षित अस्पताल विवरण' : language === 'mr' ? 'आरक्षित रुग्णालय तपशील' : 'Hospital Destination & Bed',
+    confirmedBadge: language === 'hi' ? '100% आरक्षित' : language === 'mr' ? '१००% निश्चित' : '100% Confirmed',
+    designation: language === 'hi' ? 'मान्यता:' : language === 'mr' ? 'मान्यता:' : 'Designation:',
+    reservedBed: language === 'hi' ? 'आरक्षित बेड' : language === 'mr' ? 'आरक्षित बेड' : 'Reserved Bed',
+    erTargetBay: language === 'hi' ? 'ईआर लक्ष्य बे' : language === 'mr' ? 'ईआर लक्ष्य बे' : 'ER Target Bay',
+    receivingDoc: language === 'hi' ? 'उपस्थित डॉक्टर' : language === 'mr' ? 'उपस्थित डॉक्टर' : 'Receiving Doctor',
+    telemetryTitle: language === 'hi' ? 'रास्ते में मरीज टेलीमेट्री' : language === 'mr' ? 'प्रवासातील रुग्ण टेलिमेट्री' : 'In-Transit Patient Telemetry',
+    btnConfirmArrival: language === 'hi' ? 'मरीज आगमन व ईआर में हैंडओवर की पुष्टि करें' : language === 'mr' ? 'रुग्ण आगमन व ईआर दाखल पुष्टी करा' : 'Confirm Patient Arrival & Handover to ER',
+    btnErBoard: language === 'hi' ? 'ईआर होल्ड स्क्रीन' : language === 'mr' ? 'ईआर होल्ड स्क्रीन' : 'ER Hold Screen',
+    btnDoctorRoster: language === 'hi' ? 'डॉक्टर रोस्टर' : language === 'mr' ? 'डॉक्टर रोस्टर' : 'Doctor Roster',
+  };
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto py-2">
       {/* Top Clinical Header & Mode Switcher in Crisp Red & White */}
@@ -112,17 +133,17 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
             <span className="text-xs font-extrabold text-red-700 uppercase tracking-wider">
-              {language === 'hi' ? 'लाइव एम्बुलेंस जीपीएस नक्शा' : language === 'mr' ? 'थेट रुग्णवाहिका जीपीएस नकाशा' : 'Live Ambulance Telematics & GPS Map'}
+              {txt.headerBadge}
             </span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 font-bold">
-              CAD GPS ACTIVE
+              {txt.headerCad}
             </span>
           </div>
           <h2 className="text-xl font-bold text-neutral-900 mt-1">
-            {language === 'hi' ? 'एम्बुलेंस मार्ग और ईआर आगमन मॉनिटर' : language === 'mr' ? 'रुग्णवाहिका मार्ग आणि ईआर आगमन मॉनिटर' : 'Live Road Route & ER Arrival Monitor'}
+            {txt.headerTitle}
           </h2>
           <p className="text-xs text-neutral-500 mt-0.5">
-            {language === 'hi' ? 'मरीज और अस्पताल दोनों के लिए लाइव जीपीएस नक्शा और समय गणना।' : language === 'mr' ? 'रुग्ण आणि रुग्णालय दोघांसाठी थेट जीपीएस नकाशा आणि वेळ गणना.' : 'Real-time GPS OpenStreetMap tracking, speed telemetry, and hospital ER bay coordination.'}
+            {txt.headerSubtitle}
           </p>
         </div>
 
@@ -137,7 +158,7 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                 : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
-            {language === 'hi' ? 'मरीज दृश्य' : language === 'mr' ? 'रुग्ण दृश्य' : 'Patient View'}
+            {txt.tabPatient}
           </button>
           <button
             type="button"
@@ -148,7 +169,7 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                 : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
-            {language === 'hi' ? 'अस्पताल ईआर बोर्ड' : language === 'mr' ? 'रुग्णालय ईआर बोर्ड' : 'Hospital ER Board'}
+            {txt.tabHospital}
           </button>
         </div>
       </div>
@@ -166,38 +187,39 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
             progressPercent={progressPercent}
             speedKmH={speedKmH}
             etaFormatted={formatCountdown(etaSeconds)}
+            language={language}
           />
 
           {/* Telemetry Metrics Grid in Red & White */}
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="bg-white p-3 rounded-xl border border-neutral-200 shadow-xs">
               <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                {language === 'hi' ? 'अनुमानित समय' : language === 'mr' ? 'अंदाजित वेळ' : 'Estimated Time'}
+                {txt.estTime}
               </span>
               <span className="text-xl sm:text-2xl font-black font-mono text-red-600 mt-0.5 block">
                 {formatCountdown(etaSeconds)}
               </span>
-              <span className="text-[10px] text-neutral-500 font-medium">{etaSeconds > 0 ? 'Minutes : Seconds' : 'Arrived'}</span>
+              <span className="text-[10px] text-neutral-500 font-medium">{etaSeconds > 0 ? txt.minSec : txt.arrivedText}</span>
             </div>
 
             <div className="bg-white p-3 rounded-xl border border-neutral-200 shadow-xs">
               <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                {language === 'hi' ? 'दूरी' : language === 'mr' ? 'अंतर' : 'Distance Left'}
+                {txt.distLeft}
               </span>
               <span className="text-xl sm:text-2xl font-black font-mono text-neutral-900 mt-0.5 block">
                 {distanceRemainingKm} km
               </span>
-              <span className="text-[10px] text-neutral-500 font-medium">Fast Emergency Route</span>
+              <span className="text-[10px] text-neutral-500 font-medium">{txt.fastRoute}</span>
             </div>
 
             <div className="bg-white p-3 rounded-xl border border-neutral-200 shadow-xs">
               <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                {language === 'hi' ? 'गति' : language === 'mr' ? 'वेग' : 'Vehicle Speed'}
+                {txt.speed}
               </span>
               <span className="text-xl sm:text-2xl font-black font-mono text-emerald-600 mt-0.5 block">
                 {speedKmH} km/h
               </span>
-              <span className="text-[10px] text-neutral-500 font-medium">Green Wave CAD</span>
+              <span className="text-[10px] text-neutral-500 font-medium">{txt.greenWave}</span>
             </div>
           </div>
 
@@ -209,9 +231,9 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
               </div>
               <div>
                 <span className="font-bold text-neutral-900 block">
-                  {activeHold?.ambulanceCallSign || 'Unit 104 (ALS Paramedic)'}
+                  {txt.unitName}
                 </span>
-                <span className="text-neutral-500 text-[11px]">Paramedic Mike Evans &middot; Direct Radio Channel 4</span>
+                <span className="text-neutral-500 text-[11px]">{txt.driverMedic}</span>
               </div>
             </div>
 
@@ -220,7 +242,7 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
               className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
             >
               <Phone className="w-3.5 h-3.5" />
-              <span>Call Medic</span>
+              <span>{txt.btnCallMedic}</span>
             </a>
           </div>
         </div>
@@ -233,10 +255,10 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
               <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
                 <Building2 className="w-4 h-4 text-red-600" />
-                <span>{language === 'hi' ? 'आरक्षित अस्पताल विवरण' : language === 'mr' ? 'आरक्षित रुग्णालय तपशील' : 'Hospital Destination & Bed'}</span>
+                <span>{txt.hospDestTitle}</span>
               </h3>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                100% Confirmed
+                {txt.confirmedBadge}
               </span>
             </div>
 
@@ -249,19 +271,19 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                   {destinationHospital.address}
                 </span>
                 <span className="text-[11px] text-red-700 font-mono block mt-1 font-semibold">
-                  Designation: {destinationHospital.designation}
+                  {txt.designation} {destinationHospital.designation}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
-                  <span className="text-[10px] font-bold text-neutral-500 uppercase block">Reserved Bed</span>
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase block">{txt.reservedBed}</span>
                   <span className="font-bold text-neutral-900 mt-0.5 block">
-                    {activeHold?.bedType === 'icu_ventilator' ? 'ICU (Ventilator Bay)' : activeHold?.bedType || 'ICU Ventilator'}
+                    {activeHold?.bedType === 'icu_ventilator' ? 'ICU Ventilator' : activeHold?.bedType || 'ICU Ventilator'}
                   </span>
                 </div>
                 <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
-                  <span className="text-[10px] font-bold text-neutral-500 uppercase block">ER Target Bay</span>
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase block">{txt.erTargetBay}</span>
                   <span className="font-mono font-bold text-emerald-700 mt-0.5 block">
                     {activeHold?.assignedBay || 'Resuscitation Bay 2'}
                   </span>
@@ -271,7 +293,7 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
               {/* Attending Specialist */}
               <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-[10px] font-bold text-neutral-500 uppercase block">Receiving Doctor</span>
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase block">{txt.receivingDoc}</span>
                   <span className="font-bold text-neutral-900 block mt-0.5">{assignedDoctor.name}</span>
                   <span className="text-[11px] text-neutral-500">{assignedDoctor.specialty} &middot; Ext. {assignedDoctor.phoneExtension}</span>
                 </div>
@@ -283,7 +305,7 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
               {/* Critical Clinical Vitals Summary */}
               <div className="border border-neutral-200 rounded-xl p-3 space-y-2 text-xs bg-white">
                 <span className="text-[10px] font-bold text-neutral-500 uppercase block">
-                  In-Transit Patient Telemetry
+                  {txt.telemetryTitle}
                 </span>
                 <div className="grid grid-cols-4 gap-1.5 text-center font-mono">
                   <div className="bg-neutral-100 p-1.5 rounded-lg">
@@ -313,7 +335,7 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                   className="w-full py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-98 transition-all"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{language === 'hi' ? 'मरीज आगमन व आईसीयू में प्रवेश की पुष्टि करें' : language === 'mr' ? 'रुग्ण आगमन व आयसीयू दाखल पुष्टी करा' : 'Confirm Patient Arrival & Handover to ER'}</span>
+                  <span>{txt.btnConfirmArrival}</span>
                 </button>
 
                 {onNavigateTab && (
@@ -323,14 +345,14 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                       onClick={() => onNavigateTab('er')}
                       className="py-2 px-3 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-800 text-xs font-semibold cursor-pointer text-center"
                     >
-                      {language === 'hi' ? 'ईआर होल्ड बोर्ड' : language === 'mr' ? 'ईआर होल्ड बोर्ड' : 'ER Hold Screen'}
+                      {txt.btnErBoard}
                     </button>
                     <button
                       type="button"
                       onClick={() => onNavigateTab('doctors')}
                       className="py-2 px-3 rounded-lg border border-neutral-300 hover:bg-neutral-50 text-neutral-800 text-xs font-semibold cursor-pointer text-center"
                     >
-                      {language === 'hi' ? 'डॉक्टर रोस्टर' : language === 'mr' ? 'डॉक्टर रोस्टर' : 'Doctor Roster'}
+                      {txt.btnDoctorRoster}
                     </button>
                   </div>
                 )}

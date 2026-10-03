@@ -7,14 +7,18 @@ interface CountdownRingProps {
   size?: number;
   strokeWidth?: number;
   onExpire?: () => void;
+  showLabel?: boolean;
+  language?: 'en' | 'hi' | 'mr';
 }
 
 export const CountdownRing: React.FC<CountdownRingProps> = ({
   expiresAt,
   totalDurationSeconds = 120,
-  size = 120,
-  strokeWidth = 8,
+  size = 64,
+  strokeWidth = 5,
   onExpire,
+  showLabel = false,
+  language = 'en',
 }) => {
   const [remainingSeconds, setRemainingSeconds] = useState<number>(() => {
     return Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
@@ -53,27 +57,45 @@ export const CountdownRing: React.FC<CountdownRingProps> = ({
   const formattedMinutes = String(minutes).padStart(2, '0');
   const formattedSeconds = String(seconds).padStart(2, '0');
 
-  // Strictly functional status colors
+  // Functional status colors
   let colorStroke = '#059669'; // emerald-600
-  let textColorClass = 'text-slate-900';
+  let textColorClass = 'text-neutral-900';
 
   if (remainingSeconds <= 30) {
     colorStroke = '#dc2626'; // red-600
-    textColorClass = 'text-red-700';
+    textColorClass = 'text-red-600';
   } else if (remainingSeconds <= 60) {
     colorStroke = '#d97706'; // amber-600
-    textColorClass = 'text-amber-800';
+    textColorClass = 'text-amber-700';
   }
 
+  // Label translations
+  const labelText =
+    remainingSeconds === 0
+      ? language === 'hi'
+        ? 'समाप्त'
+        : language === 'mr'
+        ? 'समाप्त'
+        : 'Expired'
+      : language === 'hi'
+      ? 'शेष'
+      : language === 'mr'
+      ? 'शिल्लक'
+      : 'Left';
+
+  // Responsive font sizes so text never overflows the circle
+  const isCompact = size <= 70;
+  const fontSizeClass = size < 55 ? 'text-[11px]' : size < 80 ? 'text-xs sm:text-sm' : 'text-xl sm:text-2xl';
+
   return (
-    <div className="relative inline-flex items-center justify-center">
+    <div className="relative inline-flex items-center justify-center shrink-0">
       <svg width={size} height={size} className="transform -rotate-90">
         {/* Track circle */}
         <circle
           cx={center}
           cy={center}
           r={radius}
-          stroke="#e2e8f0" // slate-200
+          stroke="#f1f5f9"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -94,14 +116,16 @@ export const CountdownRing: React.FC<CountdownRingProps> = ({
         />
       </svg>
 
-      {/* Digital readout */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className={`font-mono text-2xl font-bold tracking-tight tabular-nums ${textColorClass}`}>
+      {/* Digital readout - perfectly centered and never overflowing */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none p-1">
+        <span className={`font-mono font-black tracking-tight tabular-nums leading-none ${fontSizeClass} ${textColorClass}`}>
           {formattedMinutes}:{formattedSeconds}
         </span>
-        <span className="text-[10px] tracking-wider text-slate-500 font-semibold uppercase mt-0.5">
-          {remainingSeconds === 0 ? 'Expired' : 'Remaining'}
-        </span>
+        {showLabel && !isCompact && (
+          <span className="text-[9px] tracking-wider text-neutral-400 font-bold uppercase mt-1 leading-none">
+            {labelText}
+          </span>
+        )}
       </div>
     </div>
   );

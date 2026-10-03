@@ -9,6 +9,7 @@ interface LeafletEmergencyMapProps {
   progressPercent: number; // 0 to 100
   speedKmH: number;
   etaFormatted: string;
+  language?: 'en' | 'hi' | 'mr';
 }
 
 export const LeafletEmergencyMap: React.FC<LeafletEmergencyMapProps> = ({
@@ -17,12 +18,23 @@ export const LeafletEmergencyMap: React.FC<LeafletEmergencyMapProps> = ({
   progressPercent,
   speedKmH,
   etaFormatted,
+  language = 'en',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const ambulanceMarkerRef = useRef<L.Marker | null>(null);
   const polylineTraversedRef = useRef<L.Polyline | null>(null);
   const polylineRemainingRef = useRef<L.Polyline | null>(null);
+
+  // Multilingual translations for map elements
+  const txt = {
+    telemetryTitle: language === 'hi' ? 'लाइव जीपीएस टेलीमेट्री' : language === 'mr' ? 'थेट जीपीएस टेलिमेट्री' : 'Live GPS Telemetry',
+    centerRoute: language === 'hi' ? 'मार्ग केंद्रित करें' : language === 'mr' ? 'मार्ग मध्यवर्ती करा' : 'Center Route',
+    patientIncident: language === 'hi' ? 'मरीज घटना स्थल' : language === 'mr' ? 'रुग्ण घटनास्थळ' : 'Patient Incident',
+    ambulanceUnit: language === 'hi' ? 'एम्बुलेंस 104' : language === 'mr' ? 'रुग्णवाहिका १०४' : 'Ambulance 104',
+    hospitalEr: language === 'hi' ? 'अस्पताल ईआर' : language === 'mr' ? 'रुग्णालय ईआर' : 'Hospital ER',
+    etaPrefix: language === 'hi' ? 'ईटीए' : language === 'mr' ? 'ईटीए' : 'ETA',
+  };
 
   // Calculate interpolated ambulance coordinates along the direct road vector
   const clampedProgress = Math.min(100, Math.max(0, progressPercent)) / 100;
@@ -64,7 +76,7 @@ export const LeafletEmergencyMap: React.FC<LeafletEmergencyMapProps> = ({
         .addTo(map)
         .bindPopup(
           `<div style="font-family:sans-serif;font-size:12px;font-weight:bold;color:#1e293b;">
-            <div style="color:#dc2626;font-size:10px;text-transform:uppercase;font-weight:800;">Emergency Incident Location</div>
+            <div style="color:#dc2626;font-size:10px;text-transform:uppercase;font-weight:800;">Emergency Incident Scene</div>
             <div>${patientCoords.label || 'Patient Scene Pickup'}</div>
             <div style="font-size:10px;color:#64748b;margin-top:2px;">${patientCoords.lat.toFixed(4)}, ${patientCoords.lng.toFixed(4)}</div>
           </div>`
@@ -208,11 +220,11 @@ export const LeafletEmergencyMap: React.FC<LeafletEmergencyMapProps> = ({
       <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
         <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-red-100 shadow-sm flex items-center gap-2 text-xs">
           <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
-          <span className="font-extrabold text-red-700 uppercase tracking-wider text-[11px]">Live GPS Telemetry</span>
+          <span className="font-extrabold text-red-700 uppercase tracking-wider text-[11px]">{txt.telemetryTitle}</span>
           <span className="text-neutral-300">|</span>
           <span className="font-mono text-neutral-700 font-bold">{speedKmH} km/h</span>
           <span className="text-neutral-300">|</span>
-          <span className="font-mono text-red-600 font-extrabold">ETA {etaFormatted}</span>
+          <span className="font-mono text-red-600 font-extrabold">{txt.etaPrefix} {etaFormatted}</span>
         </div>
 
         <button
@@ -221,7 +233,7 @@ export const LeafletEmergencyMap: React.FC<LeafletEmergencyMapProps> = ({
           className="pointer-events-auto px-2.5 py-1.5 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-neutral-800 border border-neutral-200 shadow-sm text-xs font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
         >
           <Navigation className="w-3.5 h-3.5 text-red-600" />
-          <span>Center Route</span>
+          <span>{txt.centerRoute}</span>
         </button>
       </div>
 
@@ -230,15 +242,15 @@ export const LeafletEmergencyMap: React.FC<LeafletEmergencyMapProps> = ({
         <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-neutral-200 shadow-sm flex items-center gap-3 text-[11px] text-neutral-700 font-medium">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-red-600 border border-white shadow-xs inline-block" />
-            <span className="font-bold">Patient Incident</span>
+            <span className="font-bold">{txt.patientIncident}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-md bg-neutral-900 border border-white shadow-xs inline-block" />
-            <span className="font-bold">Ambulance 104</span>
+            <span className="font-bold">{txt.ambulanceUnit}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-md bg-white border border-red-600 text-red-600 text-[9px] font-black flex items-center justify-center">H</span>
-            <span className="font-bold">Hospital ER</span>
+            <span className="font-bold">{txt.hospitalEr}</span>
           </div>
         </div>
       </div>

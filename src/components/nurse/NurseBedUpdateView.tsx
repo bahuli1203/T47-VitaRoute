@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useBedLink } from '../../context/BedLinkContext';
 import { BED_TYPES, BedTypeId } from '../../types/bedlink';
 import {
@@ -6,10 +6,8 @@ import {
   Clock,
   Plus,
   Minus,
-  Building2,
   WifiOff,
   Stethoscope,
-  ShieldCheck,
 } from 'lucide-react';
 
 export const NurseBedUpdateView: React.FC = () => {
@@ -18,7 +16,6 @@ export const NurseBedUpdateView: React.FC = () => {
     incrementBed,
     decrementBed,
     syncAllBeds,
-    lastSyncTimestamp,
     bedLastUpdatedMap,
     isOnline,
     pendingOfflineSyncCount,
@@ -76,6 +73,20 @@ export const NurseBedUpdateView: React.FC = () => {
       : `Updated ${currentHospital.lastUpdatedMinutesAgo}m ago`;
   };
 
+  const txt = {
+    offlineTitle: language === 'hi' ? 'ऑफलाइन मोड:' : language === 'mr' ? 'ऑफलाइन मोड:' : 'Offline Mode:',
+    offlineDesc: (c: number) => language === 'hi' ? `${c} बेड अपडेट स्थानीय रूप से सुरक्षित हैं।` : language === 'mr' ? `${c} बेड अद्यतने स्थानिक पातळीवर जतन आहेत.` : `${c} bed update(s) cached locally.`,
+    pwaCache: language === 'hi' ? 'पीडब्ल्यूए कैश' : language === 'mr' ? 'पीडब्ल्यूए कॅश' : 'PWA Local Cache',
+    wardLabel: language === 'hi' ? 'वार्ड' : language === 'mr' ? 'वॉर्ड' : 'Ward',
+    nurseLabel: language === 'hi' ? 'नर्स' : language === 'mr' ? 'परिचारिका' : 'Nurse',
+    syncBtn: language === 'hi' ? 'सभी बेड डेटा सिंक करें' : language === 'mr' ? 'सर्व बेड डेटा सिंक करा' : 'Sync All Bed Data',
+    syncedBtn: language === 'hi' ? 'एम्बुलेंस को सिंक हुआ!' : language === 'mr' ? 'रुग्णवाहिकांना सिंक झाले!' : 'Synced to Ambulances!',
+    totalBeds: language === 'hi' ? 'कुल बेड' : language === 'mr' ? 'एकूण बेड्स' : 'Total Beds',
+    heldBadge: language === 'hi' ? 'आरक्षित' : language === 'mr' ? 'राखून ठेवलेले' : 'Held',
+    btnDec: language === 'hi' ? '-1 बेड' : language === 'mr' ? '-1 बेड' : '-1 Bed',
+    btnInc: language === 'hi' ? '+1 बेड' : language === 'mr' ? '+1 बेड' : '+1 Bed',
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-4 py-2">
       {/* Offline Alert Bar */}
@@ -84,11 +95,11 @@ export const NurseBedUpdateView: React.FC = () => {
           <div className="flex items-center gap-2">
             <WifiOff className="w-4 h-4 text-amber-700 shrink-0" />
             <span>
-              <strong>Offline Mode:</strong> {pendingOfflineSyncCount} bed update(s) cached locally.
+              <strong>{txt.offlineTitle}</strong> {txt.offlineDesc(pendingOfflineSyncCount)}
             </span>
           </div>
           <span className="font-mono text-amber-800 font-bold px-2 py-0.5 bg-amber-100 rounded text-[11px]">
-            PWA Local Cache
+            {txt.pwaCache}
           </span>
         </div>
       )}
@@ -109,7 +120,7 @@ export const NurseBedUpdateView: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Ward: <strong className="text-neutral-800">{currentHospital.ward}</strong> &middot; Nurse: <span className="text-neutral-700">{currentHospital.nurseInCharge}</span>
+              {txt.wardLabel}: <strong className="text-neutral-800">{currentHospital.ward}</strong> &middot; {txt.nurseLabel}: <span className="text-neutral-700">{currentHospital.nurseInCharge}</span>
             </p>
           </div>
         </div>
@@ -123,7 +134,7 @@ export const NurseBedUpdateView: React.FC = () => {
           }`}
         >
           <CheckCircle2 className="w-4 h-4" />
-          <span>{syncedNotification ? (language === 'hi' ? 'एम्बुलेंस को सिंक हुआ!' : language === 'mr' ? 'सिंक झाले!' : 'Synced to Ambulances!') : (language === 'hi' ? 'सभी बेड डेटा सिंक करें' : language === 'mr' ? 'सर्व बेड डेटा सिंक करा' : 'Sync All Bed Data')}</span>
+          <span>{syncedNotification ? txt.syncedBtn : txt.syncBtn}</span>
         </button>
       </div>
 
@@ -149,7 +160,7 @@ export const NurseBedUpdateView: React.FC = () => {
                   </h3>
                   {bedData.held > 0 && (
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
-                      +{bedData.held} Held
+                      +{bedData.held} {txt.heldBadge}
                     </span>
                   )}
                 </div>
@@ -164,7 +175,7 @@ export const NurseBedUpdateView: React.FC = () => {
                     {bedData.available}
                   </span>
                   <span className="text-xs text-neutral-500 font-medium">
-                    / {bedData.total} Total Beds
+                    / {bedData.total} {txt.totalBeds}
                   </span>
                 </div>
 
@@ -183,7 +194,7 @@ export const NurseBedUpdateView: React.FC = () => {
                   className="min-h-[48px] py-2 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed text-neutral-900 font-black text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95"
                 >
                   <Minus className="w-4 h-4 stroke-[3]" />
-                  <span>-1 Bed</span>
+                  <span>{txt.btnDec}</span>
                 </button>
 
                 <button
@@ -192,7 +203,7 @@ export const NurseBedUpdateView: React.FC = () => {
                   className="min-h-[48px] py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer active:scale-95"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>+1 Bed</span>
+                  <span>{txt.btnInc}</span>
                 </button>
               </div>
             </div>

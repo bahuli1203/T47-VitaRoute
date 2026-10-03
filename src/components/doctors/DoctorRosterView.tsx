@@ -8,13 +8,8 @@ import {
   Clock,
   Activity,
   CheckCircle2,
-  Building2,
-  Phone,
   Radio,
   BadgeCheck,
-  UserCheck,
-  ChevronRight,
-  Shield,
 } from 'lucide-react';
 
 export const DoctorRosterView: React.FC = () => {
@@ -34,14 +29,75 @@ export const DoctorRosterView: React.FC = () => {
 
   const currentDoctor = doctors.find((d) => d.id === selectedDoctorId) || activeDoctor;
 
+  const txt = {
+    badge: language === 'hi' ? 'बैज' : language === 'mr' ? 'बॅज' : 'Badge',
+    ext: language === 'hi' ? 'एक्सटेंशन' : language === 'mr' ? 'विस्तार' : 'Ext',
+    tabMySchedule: language === 'hi' ? 'मेरा शेड्यूल और ड्यूटी' : language === 'mr' ? 'माझे वेळापत्रक आणि ड्युटी' : 'My Schedule & Duty',
+    tabOnDutyTeam: (count: number) => language === 'hi' ? `ऑन-ड्यूटी टीम (${count})` : language === 'mr' ? `ड्युटीवरील चमू (${count})` : `On-Duty Team (${count})`,
+    statusHeading: language === 'hi' ? 'वर्तमान ड्यूटी स्थिति (1-टैप बदलें)' : language === 'mr' ? 'सध्याची ड्युटी स्थिती (१-टॅप बदला)' : 'Current Duty Status (1-Tap Toggle)',
+    statusAvailable: language === 'hi' ? 'उपलब्ध' : language === 'mr' ? 'उपलब्ध' : 'AVAILABLE',
+    descAvailable: language === 'hi' ? 'आपातकालीन मामलों हेतु तैयार' : language === 'mr' ? 'नवीन रुग्णांसाठी सज्ज' : 'Ready for incoming ER cases',
+    statusInSurgery: language === 'hi' ? 'सर्जरी में' : language === 'mr' ? 'शस्त्रक्रियेत' : 'IN SURGERY',
+    descInSurgery: language === 'hi' ? 'ऑपरेशन थियेटर में सक्रिय (~30 मिनट)' : language === 'mr' ? 'ऑपरेशन थिएटरमध्ये व्यस्त (~३० मिनिटे)' : 'Operating theatre active (~30m)',
+    statusOnCall: language === 'hi' ? 'ऑन-कॉल' : language === 'mr' ? 'ऑन-कॉल' : 'ON-CALL',
+    descOnCall: language === 'hi' ? '15 मिनट में तत्काल रिस्पांस' : language === 'mr' ? '१५ मिनिटांत तात्काळ प्रतिसाद' : 'Rapid 15-minute response standby',
+    statusOffDuty: language === 'hi' ? 'ड्यूटी समाप्त' : language === 'mr' ? 'ड्युटी संपली' : 'OFF-DUTY',
+    descOffDuty: language === 'hi' ? 'शिफ्ट पूरी / विश्राम' : language === 'mr' ? 'शिफ्ट पूर्ण / विश्रांती' : 'Shift completed / Resting',
+    calendarTitle: language === 'hi' ? 'साप्ताहिक अस्पताल शिफ्ट कैलेंडर' : language === 'mr' ? 'साप्ताहिक रुग्णालय शिफ्ट वेळापत्रक' : 'Weekly Hospital Shift Schedule',
+    calendarDateRange: language === 'hi' ? '06 अक्टूबर - 12 अक्टूबर, 2026' : language === 'mr' ? '०६ ऑक्टोबर - १२ ऑक्टोबर, २०२६' : 'Oct 06 - Oct 12, 2026',
+    offDutyText: language === 'hi' ? 'ड्यूटी नहीं' : language === 'mr' ? 'रजा' : 'Off Duty',
+  };
+
   const daysOfWeek = [
-    { day: 'Mon', date: 'Oct 06', shift: '08:00 - 16:00', type: 'Day ER Triage', bay: 'Resus Bay 1', onCall: true },
-    { day: 'Tue', date: 'Oct 07', shift: '08:00 - 16:00', type: 'Day ER Triage', bay: 'Resus Bay 1', onCall: false },
-    { day: 'Wed', date: 'Oct 08', shift: '16:00 - 00:00', type: 'Evening Trauma', bay: 'Trauma OR 2', onCall: true },
-    { day: 'Thu', date: 'Oct 09', shift: 'Off Duty', type: 'Scheduled Rest', bay: 'None', onCall: false },
-    { day: 'Fri', date: 'Oct 10', shift: '08:00 - 16:00', type: 'Day ER Triage', bay: 'Resus Bay 2', onCall: true },
-    { day: 'Sat', date: 'Oct 11', shift: '00:00 - 08:00', type: 'Night Emergency', bay: 'ICU Resus', onCall: true },
-    { day: 'Sun', date: 'Oct 12', shift: 'On-Call Standby', type: 'Home Standby', bay: 'Rapid 15m', onCall: true },
+    {
+      day: language === 'hi' ? 'सोम' : language === 'mr' ? 'सोम' : 'Mon',
+      date: 'Oct 06',
+      shift: '08:00 - 16:00',
+      type: language === 'hi' ? 'डे ईआर ट्राइएज' : language === 'mr' ? 'डे ईआर ट्रायज' : 'Day ER Triage',
+      bay: 'Resus Bay 1',
+    },
+    {
+      day: language === 'hi' ? 'मंगल' : language === 'mr' ? 'मंगळ' : 'Tue',
+      date: 'Oct 07',
+      shift: '08:00 - 16:00',
+      type: language === 'hi' ? 'डे ईआर ट्राइएज' : language === 'mr' ? 'डे ईआर ट्रायज' : 'Day ER Triage',
+      bay: 'Resus Bay 1',
+    },
+    {
+      day: language === 'hi' ? 'बुध' : language === 'mr' ? 'बुध' : 'Wed',
+      date: 'Oct 08',
+      shift: '16:00 - 00:00',
+      type: language === 'hi' ? 'इवनिंग ट्रामा' : language === 'mr' ? 'इव्हिनिंग ट्रॉमा' : 'Evening Trauma',
+      bay: 'Trauma OR 2',
+    },
+    {
+      day: language === 'hi' ? 'गुरु' : language === 'mr' ? 'गुरु' : 'Thu',
+      date: 'Oct 09',
+      shift: txt.offDutyText,
+      type: language === 'hi' ? 'विश्राम' : language === 'mr' ? 'विश्रांती' : 'Scheduled Rest',
+      bay: 'None',
+    },
+    {
+      day: language === 'hi' ? 'शुक्र' : language === 'mr' ? 'शुक्र' : 'Fri',
+      date: 'Oct 10',
+      shift: '08:00 - 16:00',
+      type: language === 'hi' ? 'डे ईआर ट्राइएज' : language === 'mr' ? 'डे ईआर ट्रायज' : 'Day ER Triage',
+      bay: 'Resus Bay 2',
+    },
+    {
+      day: language === 'hi' ? 'शनि' : language === 'mr' ? 'शनि' : 'Sat',
+      date: 'Oct 11',
+      shift: '00:00 - 08:00',
+      type: language === 'hi' ? 'नाइट इमरजेंसी' : language === 'mr' ? 'नाइट इमर्जन्सी' : 'Night Emergency',
+      bay: 'ICU Resus',
+    },
+    {
+      day: language === 'hi' ? 'रवि' : language === 'mr' ? 'रवि' : 'Sun',
+      date: 'Oct 12',
+      shift: language === 'hi' ? 'ऑन-कॉल स्टैंडबाय' : language === 'mr' ? 'ऑन-कॉल स्टँडबाय' : 'On-Call Standby',
+      type: language === 'hi' ? 'होम स्टैंडबाय' : language === 'mr' ? 'होम स्टँडबाय' : 'Home Standby',
+      bay: 'Rapid 15m',
+    },
   ];
 
   const handleStatusChange = (status: DoctorStatus) => {
@@ -71,7 +127,7 @@ export const DoctorRosterView: React.FC = () => {
               <strong className="text-neutral-800">{currentDoctor.specialty}</strong> &middot; {currentDoctor.hospitalName}
             </p>
             <span className="text-[11px] font-mono text-neutral-400">
-              Badge: {currentDoctor.badgeNumber} &middot; Ext: {currentDoctor.phoneExtension}
+              {txt.badge}: {currentDoctor.badgeNumber} &middot; {txt.ext}: {currentDoctor.phoneExtension}
             </span>
           </div>
         </div>
@@ -87,7 +143,7 @@ export const DoctorRosterView: React.FC = () => {
                 : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
-            My Schedule & Duty
+            {txt.tabMySchedule}
           </button>
           <button
             type="button"
@@ -98,7 +154,7 @@ export const DoctorRosterView: React.FC = () => {
                 : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
-            On-Duty Team ({doctors.filter((d) => d.hospitalId === currentHospital.id).length})
+            {txt.tabOnDutyTeam(doctors.filter((d) => d.hospitalId === currentHospital.id).length)}
           </button>
         </div>
       </div>
@@ -108,7 +164,7 @@ export const DoctorRosterView: React.FC = () => {
           {/* Quick Duty Status Control Bar */}
           <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-xs space-y-3">
             <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
-              Current Duty Status (1-Tap Toggle)
+              {txt.statusHeading}
             </span>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -122,10 +178,10 @@ export const DoctorRosterView: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-black text-emerald-800">AVAILABLE</span>
+                  <span className="text-xs font-black text-emerald-800">{txt.statusAvailable}</span>
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 </div>
-                <span className="text-[11px] text-neutral-600 block">Ready for incoming ER cases</span>
+                <span className="text-[11px] text-neutral-600 block">{txt.descAvailable}</span>
               </button>
 
               <button
@@ -138,10 +194,10 @@ export const DoctorRosterView: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-black text-amber-800">IN SURGERY</span>
+                  <span className="text-xs font-black text-amber-800">{txt.statusInSurgery}</span>
                   <Activity className="w-4 h-4 text-amber-600" />
                 </div>
-                <span className="text-[11px] text-neutral-600 block">Operating theatre active (~30m)</span>
+                <span className="text-[11px] text-neutral-600 block">{txt.descInSurgery}</span>
               </button>
 
               <button
@@ -154,10 +210,10 @@ export const DoctorRosterView: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-black text-red-700">ON-CALL</span>
+                  <span className="text-xs font-black text-red-700">{txt.statusOnCall}</span>
                   <Radio className="w-4 h-4 text-red-600" />
                 </div>
-                <span className="text-[11px] text-neutral-600 block">Rapid 15-minute response standby</span>
+                <span className="text-[11px] text-neutral-600 block">{txt.descOnCall}</span>
               </button>
 
               <button
@@ -170,10 +226,10 @@ export const DoctorRosterView: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-black text-neutral-700">OFF-DUTY</span>
+                  <span className="text-xs font-black text-neutral-700">{txt.statusOffDuty}</span>
                   <Clock className="w-4 h-4 text-neutral-500" />
                 </div>
-                <span className="text-[11px] text-neutral-500 block">Shift completed / Resting</span>
+                <span className="text-[11px] text-neutral-500 block">{txt.descOffDuty}</span>
               </button>
             </div>
           </div>
@@ -184,11 +240,11 @@ export const DoctorRosterView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-red-600" />
                 <h3 className="text-sm font-bold text-neutral-900">
-                  Weekly Hospital Shift Schedule
+                  {txt.calendarTitle}
                 </h3>
               </div>
               <span className="text-xs font-mono font-bold text-neutral-500">
-                Oct 06 &ndash; Oct 12, 2026
+                {txt.calendarDateRange}
               </span>
             </div>
 
@@ -208,7 +264,7 @@ export const DoctorRosterView: React.FC = () => {
                     <span className="text-[10px] text-neutral-400 block mb-1.5">{item.date}</span>
                     <div className="space-y-1">
                       <span className={`text-[11px] font-bold block ${
-                        item.shift === 'Off Duty' ? 'text-neutral-400' : 'text-neutral-950 font-mono'
+                        item.shift === txt.offDutyText ? 'text-neutral-400' : 'text-neutral-950 font-mono'
                       }`}>
                         {item.shift}
                       </span>
@@ -240,7 +296,7 @@ export const DoctorRosterView: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-bold text-neutral-900">{doc.name}</h4>
                   <p className="text-xs text-neutral-500">{doc.specialty}</p>
-                  <span className="text-[10px] font-mono text-neutral-400">Ext: {doc.phoneExtension}</span>
+                  <span className="text-[10px] font-mono text-neutral-400">{txt.ext}: {doc.phoneExtension}</span>
                 </div>
                 <span
                   className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
