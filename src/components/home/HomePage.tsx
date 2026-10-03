@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth, DEMO_USERS } from '../../context/AuthContext';
+import { useBedLink } from '../../context/BedLinkContext';
+import { AnimatedRouteHero } from './AnimatedRouteHero';
 import { AppRole } from '../../types/bedlink';
 import {
   Heart,
@@ -18,6 +20,8 @@ import {
   Lock,
   Play,
   Check,
+  Globe,
+  Sparkles,
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -74,6 +78,7 @@ const HUMAN_DEMO_ACCOUNTS = [
 
 export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
   const { login } = useAuth();
+  const { language, setLanguage, t } = useBedLink();
   const [email, setEmail] = useState('ambulance@demo.com');
   const [password, setPassword] = useState('demo123');
   const [showPassword, setShowPassword] = useState(false);
@@ -134,75 +139,103 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-neutral-600">
             <button onClick={() => scrollToSection('problem-parts')} className="hover:text-neutral-950 transition-colors cursor-pointer">
-              How It Works
+              {t.flowTitle}
             </button>
             <button onClick={() => scrollToSection('scenarios')} className="hover:text-neutral-950 transition-colors cursor-pointer">
-              Patient Scenarios
+              Clinical Scenarios
             </button>
             <button onClick={() => scrollToSection('login-portal')} className="hover:text-neutral-950 transition-colors cursor-pointer">
-              Sign In
+              {t.loginPortalTitle}
             </button>
           </nav>
 
           <div className="flex items-center gap-2.5">
+            {/* Language Selector */}
+            <div className="flex items-center gap-1 bg-neutral-100 p-0.5 rounded-lg border border-neutral-200">
+              <Globe className="w-3.5 h-3.5 text-neutral-600 ml-1.5 shrink-0" />
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                aria-label="Select Interface Language"
+                className="bg-transparent text-xs font-bold text-neutral-900 pr-1 py-1 focus:outline-none cursor-pointer"
+              >
+                <option value="en">English</option>
+                <option value="hi">हिंदी</option>
+                <option value="mr">मराठी</option>
+              </select>
+            </div>
+
             <button
               onClick={() => handleQuickLogin('ambulance@demo.com')}
               className="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-black text-white font-semibold text-xs transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Open Paramedic Demo</span>
+              <span>Paramedic Demo</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Human-Centered Hero Section */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white border-b border-neutral-200">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 border border-neutral-200 text-xs font-medium text-neutral-700 mb-6">
-            <span className="w-2 h-2 rounded-full bg-emerald-600" />
-            <span>Built for Paramedics, Ward Nurses &amp; ER Receiving Desks</span>
+      {/* Human-Centered Liquid Glass Hero Section with Animated Route Graph */}
+      <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white border-b border-neutral-200 overflow-hidden">
+        {/* Animated Background Vector Routes & Monochrome Glass Nodes */}
+        <AnimatedRouteHero />
+
+        {/* Liquid Glass Frosted Card */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center backdrop-blur-[2px] bg-white/70 p-6 sm:p-10 rounded-3xl border border-white/80 shadow-xs">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-neutral-200 text-xs font-semibold text-neutral-800 mb-6 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span>{t.tagline}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-neutral-950 mb-6 leading-tight">
-            Get critical patients to the right bed. <span className="underline decoration-rose-500 decoration-4 underline-offset-6">Right now.</span>
+            {t.heroTitle} <br className="hidden sm:inline" />
+            <span className="underline decoration-rose-500 decoration-4 underline-offset-6 text-neutral-900">
+              {t.heroHighlight}
+            </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto leading-relaxed mb-8">
-            An ambulance crew with a patient in cardiac arrest or respiratory failure can’t afford to drive 20 minutes to a hospital that has no open ICU beds. VitaRoute matches patient needs with live bed counts, road travel times, and guarantees a 2-minute bed hold.
+          <p className="text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
+            {t.heroSubtitle}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
-              onClick={() => handleQuickLogin('ambulance@demo.com')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              onClick={() => handleQuickLogin('patient@demo.com')}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
-              <span>Launch Ambulance Dispatch</span>
+              <span>{t.heroSOSButton}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
-              onClick={() => handleQuickLogin('nurse@demo.com')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              onClick={() => handleQuickLogin('ambulance@demo.com')}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
-              <span>Test 10s Nurse Bed Counter</span>
+              <span>{t.ambulanceDispatch}</span>
+            </button>
+            <button
+              onClick={() => handleQuickLogin('nurse@demo.com')}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>{t.nurseUpdate}</span>
             </button>
           </div>
 
           {/* Real Operational Numbers */}
-          <div className="mt-14 pt-8 border-t border-neutral-200 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-            <div>
+          <div className="mt-14 pt-8 border-t border-neutral-200/80 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+            <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
               <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">&lt; 10 sec</span>
-              <span className="text-xs text-neutral-500 font-medium">Nurse Bed Update</span>
+              <span className="text-xs text-neutral-500 font-medium">{t.nurseUpdate}</span>
             </div>
-            <div>
+            <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
               <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">4 Constraints</span>
               <span className="text-xs text-neutral-500 font-medium">Beds, ETA, Freshness &amp; Load</span>
             </div>
-            <div>
+            <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
               <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">120 sec</span>
-              <span className="text-xs text-neutral-500 font-medium">ER Bed Hold Timer</span>
+              <span className="text-xs text-neutral-500 font-medium">{t.erConfirmHold}</span>
             </div>
-            <div>
+            <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
               <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">Automatic</span>
               <span className="text-xs text-neutral-500 font-medium">Cascading Re-route on Reject</span>
             </div>

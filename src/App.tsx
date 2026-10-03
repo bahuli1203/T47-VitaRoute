@@ -9,6 +9,7 @@ import { ERConfirmHoldView } from './components/er/ERConfirmHoldView';
 import { PatientDashboard } from './components/patient/PatientDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { NotificationToast } from './components/common/NotificationToast';
+import { OmnidimensionVoiceAgent } from './components/common/OmnidimensionVoiceAgent';
 
 interface DashboardContentProps {
   onReturnHome: () => void;
@@ -76,35 +77,39 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onReturnHome }) => 
 
 const MainApp: React.FC = () => {
   const { isAuthenticated, login } = useAuth();
+  const { language, t } = useBedLink();
   const [showLanding, setShowLanding] = React.useState<boolean>(false);
 
-  // If unauthenticated or user navigated to home overview, show HomePage
-  if (!isAuthenticated || showLanding) {
-    return (
-      <HomePage
-        onEnterApp={() => {
-          if (isAuthenticated) {
-            setShowLanding(false);
-          } else {
-            login('ambulance@demo.com', 'demo123');
-            setShowLanding(false);
-          }
-        }}
-      />
-    );
-  }
-
   return (
-    <BedLinkProvider>
-      <DashboardContent onReturnHome={() => setShowLanding(true)} />
-    </BedLinkProvider>
+    <>
+      {/* If unauthenticated or user clicked home, show HomePage */}
+      {!isAuthenticated || showLanding ? (
+        <HomePage
+          onEnterApp={() => {
+            if (isAuthenticated) {
+              setShowLanding(false);
+            } else {
+              login('ambulance@demo.com', 'demo123');
+              setShowLanding(false);
+            }
+          }}
+        />
+      ) : (
+        <DashboardContent onReturnHome={() => setShowLanding(true)} />
+      )}
+
+      {/* Omnidimension Voice Agent Floating Assistant available everywhere */}
+      <OmnidimensionVoiceAgent language={language} t={t} />
+    </>
   );
 };
 
 export default function App() {
   return (
     <AuthProvider>
-      <MainApp />
+      <BedLinkProvider>
+        <MainApp />
+      </BedLinkProvider>
     </AuthProvider>
   );
 }

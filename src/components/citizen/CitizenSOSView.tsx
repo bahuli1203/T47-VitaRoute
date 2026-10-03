@@ -16,6 +16,7 @@ import {
   Radio,
   KeyRound,
 } from 'lucide-react';
+import { CitizenVoiceClassifier, ClassifiedEmergency } from './CitizenVoiceClassifier';
 
 export const CitizenSOSView: React.FC = () => {
   const {
@@ -30,12 +31,30 @@ export const CitizenSOSView: React.FC = () => {
     isLocating,
     requestLiveLocation,
     setRole,
+    language,
+    t,
   } = useBedLink();
 
   const [selectedCategory, setSelectedCategory] = useState<EmergencyCategory>('cardiac');
   const [callerPhone, setCallerPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
+
+  const handleVoiceClassified = (result: ClassifiedEmergency, transcript: string) => {
+    setSelectedCategory(result.category);
+    if (!notes) {
+      setNotes(transcript);
+    }
+  };
+
+  const handleVoiceAutoConfirm = (result: ClassifiedEmergency, transcript: string) => {
+    setSelectedCategory(result.category);
+    triggerCitizenSOS(
+      result.category,
+      callerPhone || '555-0199',
+      transcript || 'Voice classified emergency'
+    );
+  };
 
   const emergencyCategories: {
     id: EmergencyCategory;
@@ -44,33 +63,28 @@ export const CitizenSOSView: React.FC = () => {
   }[] = [
     {
       id: 'cardiac',
-      title: 'Chest Pain / Cardiac Arrest',
-      description: 'Severe chest tightness, radiating arm pain, unresponsive',
+      title: t.catCardiac,
+      description: t.catCardiacDesc,
     },
     {
       id: 'respiratory',
-      title: 'Severe Breathing Distress',
-      description: 'Choking, severe asthma, cyanosis, inability to speak',
+      title: t.catRespiratory,
+      description: t.catRespiratoryDesc,
     },
     {
       id: 'trauma',
-      title: 'Major Trauma / Bleeding',
-      description: 'Motor collision, severe fall, penetrating wound, heavy bleeding',
+      title: t.catTrauma,
+      description: t.catTraumaDesc,
     },
     {
       id: 'stroke',
-      title: 'Stroke / Sudden Paralysis',
-      description: 'Facial droop, arm weakness, slurred speech, confusion',
+      title: t.catStroke,
+      description: t.catStrokeDesc,
     },
     {
       id: 'burn',
-      title: 'Severe Burn Injury',
-      description: 'Extensive thermal or chemical burn requiring isolation',
-    },
-    {
-      id: 'general',
-      title: 'Unconscious / Other Emergency',
-      description: 'Seizure, anaphylaxis, collapse, diabetic emergency',
+      title: t.catBurns,
+      description: t.catBurnsDesc,
     },
   ];
 
@@ -269,116 +283,126 @@ export const CitizenSOSView: React.FC = () => {
         </div>
       ) : (
         /* SOS TRIGGER FORM */
-        <div className="bg-white border border-slate-200 rounded-lg p-5 sm:p-6 shadow-xs flex flex-col gap-5">
-          <div>
-            <label className="text-xs font-bold text-slate-900 uppercase tracking-wider block mb-2">
-              1. Select Emergency Type:
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {emergencyCategories.map((cat) => {
-                const isSelected = selectedCategory === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`p-3 rounded-lg border text-left transition-colors flex flex-col justify-between cursor-pointer ${
-                      isSelected
-                        ? 'border-rose-600 bg-rose-50/60 ring-1 ring-rose-500'
-                        : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`text-xs font-bold ${
-                          isSelected ? 'text-rose-900' : 'text-slate-800'
-                        }`}
-                      >
-                        {cat.title}
+        <div className="flex flex-col gap-5">
+          {/* Multilingual Speech-to-Text & Automatic Emergency Classifier */}
+          <CitizenVoiceClassifier
+            language={language}
+            t={t}
+            onClassified={handleVoiceClassified}
+            onAutoConfirmSOS={handleVoiceAutoConfirm}
+          />
+
+          <div className="bg-white border border-slate-200 rounded-lg p-5 sm:p-6 shadow-xs flex flex-col gap-5">
+            <div>
+              <label className="text-xs font-bold text-slate-900 uppercase tracking-wider block mb-2">
+                {t.selectEmergencyType}
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {emergencyCategories.map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={`p-3 rounded-lg border text-left transition-colors flex flex-col justify-between cursor-pointer ${
+                        isSelected
+                          ? 'border-rose-600 bg-rose-50/60 ring-1 ring-rose-500'
+                          : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-xs font-bold ${
+                            isSelected ? 'text-rose-900' : 'text-slate-800'
+                          }`}
+                        >
+                          {cat.title}
+                        </span>
+                        {isSelected && (
+                          <CheckCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-500 mt-1">
+                        {cat.description}
                       </span>
-                      {isSelected && (
-                        <CheckCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                      )}
-                    </div>
-                    <span className="text-[11px] text-slate-500 mt-1">
-                      {cat.description}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Contact and Notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Callback Phone Number (Auto-Locks to Incident):
-              </label>
-              <div className="relative">
-                <PhoneCall className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="tel"
-                  value={callerPhone}
-                  onChange={(e) => setCallerPhone(e.target.value)}
-                  placeholder="e.g. 555-0199"
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
-                />
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Landmark or Floor / Gate Note:
-              </label>
-              <div className="relative">
-                <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. 2nd floor, Apartment 4B"
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* MAIN BIG RED SOS TRIGGER BUTTON */}
-          <div className="pt-4 border-t border-slate-100 flex flex-col items-center justify-center">
-            {isConfirming ? (
-              <div className="w-full max-w-md bg-rose-50 border border-rose-300 rounded-lg p-4 text-center space-y-3">
-                <p className="text-xs font-bold text-rose-900">
-                  Confirm Immediate Emergency Dispatch
-                </p>
-                <p className="text-xs text-rose-700">
-                  Zero wait: Advanced Life Support ambulance will be routed immediately and hospital bed will be held.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setIsConfirming(false)}
-                    className="py-2.5 rounded border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleTriggerSOS}
-                    className="py-2.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs cursor-pointer"
-                  >
-                    Confirm and Dispatch Now
-                  </button>
+            {/* Contact and Notes */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Callback Phone Number:
+                </label>
+                <div className="relative">
+                  <PhoneCall className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="tel"
+                    value={callerPhone}
+                    onChange={(e) => setCallerPhone(e.target.value)}
+                    placeholder="e.g. 555-0199 / 9876543210"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  />
                 </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsConfirming(true)}
-                className="w-full py-4 px-6 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-[0.99] cursor-pointer"
-              >
-                <AlertCircle className="w-5 h-5 stroke-[2.5]" />
-                <span>TAP TO TRIGGER EMERGENCY SOS (DISPATCH AMBULANCE)</span>
-              </button>
-            )}
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Landmark or Spoken Condition Note:
+                </label>
+                <div className="relative">
+                  <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g. 2nd floor, Apartment 4B or condition details"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* MAIN BIG RED SOS TRIGGER BUTTON */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col items-center justify-center">
+              {isConfirming ? (
+                <div className="w-full max-w-md bg-rose-50 border border-rose-300 rounded-lg p-4 text-center space-y-3">
+                  <p className="text-xs font-bold text-rose-900">
+                    {t.confirmEmergencyDispatch}
+                  </p>
+                  <p className="text-xs text-rose-700">
+                    Zero wait: Advanced Life Support ambulance will be routed immediately and hospital bed will be held.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setIsConfirming(false)}
+                      className="py-2.5 rounded border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                    >
+                      {t.cancel}
+                    </button>
+                    <button
+                      onClick={handleTriggerSOS}
+                      className="py-2.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                    >
+                      {t.sosEmergencyButton}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirming(true)}
+                  className="w-full py-4 px-6 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-[0.99] cursor-pointer"
+                >
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{t.sosEmergencyButton}</span>
+                </button>
+              )}
+            </div>
             <span className="text-[11px] text-slate-500 mt-2 text-center">
               Zero-wait automatic verification. Connects tele-triage audio without delay.
             </span>

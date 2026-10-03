@@ -16,6 +16,7 @@ import {
   User,
   LogOut,
   UserCog,
+  Globe,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -33,6 +34,9 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
     isOnline,
     activeLocationName,
     realHospitalSource,
+    language,
+    setLanguage,
+    t,
   } = useBedLink();
 
   const currentRole = role;
@@ -98,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               }`}
             >
               <Ambulance className="w-4 h-4" />
-              <span>1. Ambulance Dispatch</span>
+              <span>{t.ambulanceDispatch}</span>
             </button>
 
             {/* 2. 10s Nurse Bed Update */}
@@ -112,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               }`}
             >
               <Stethoscope className="w-4 h-4" />
-              <span>2. 10s Bed Counter</span>
+              <span>{t.nurseUpdate}</span>
             </button>
 
             {/* 3. 2m ER Hold */}
@@ -126,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               }`}
             >
               <Clock className="w-4 h-4" />
-              <span>3. ER Hold (2m)</span>
+              <span>{t.erConfirmHold}</span>
               {pendingHoldsCount > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-mono font-bold leading-none animate-pulse">
                   {pendingHoldsCount}
@@ -135,8 +139,23 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
             </button>
           </nav>
 
-          {/* Right: Network, Audio, Patient SOS, Home, User Profile */}
+          {/* Right: Language Selector, Network, Audio, Patient SOS, Home, User Profile */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Multilingual Selector: English, Hindi, Marathi */}
+            <div className="flex items-center gap-1 bg-neutral-100 p-0.5 rounded-lg border border-neutral-200">
+              <Globe className="w-3.5 h-3.5 text-neutral-600 ml-1.5 shrink-0" />
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                aria-label="Select Interface Language"
+                className="bg-transparent text-xs font-bold text-neutral-900 pr-1 py-1 focus:outline-none cursor-pointer"
+              >
+                <option value="en">EN</option>
+                <option value="hi">हिंदी</option>
+                <option value="mr">मराठी</option>
+              </select>
+            </div>
+
             {/* Online / Offline Status */}
             <div
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium ${
@@ -144,10 +163,10 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                   : 'bg-amber-50 text-amber-800 border-amber-200'
               }`}
-              title={isOnline ? 'Online - Live hospital inventory syncing' : 'Offline queue active'}
+              title={isOnline ? t.statusOnline : t.statusOffline}
             >
               {isOnline ? <Wifi className="w-3.5 h-3.5 text-emerald-600" /> : <WifiOff className="w-3.5 h-3.5 text-amber-600" />}
-              <span className="hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
+              <span className="hidden sm:inline">{isOnline ? t.statusOnline : t.statusOffline}</span>
             </div>
 
             {/* Audio Alert Toggle */}
@@ -155,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
               type="button"
               onClick={toggleMute}
               className="p-1.5 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900 text-xs transition-colors cursor-pointer"
-              title={isMuted ? 'Turn Sound On' : 'Mute Audio Alerts'}
+              title={isMuted ? t.soundMuted : t.soundOn}
               aria-label="Toggle Alert Audio"
             >
               {isMuted ? <VolumeX className="w-4 h-4 text-neutral-400" /> : <Volume2 className="w-4 h-4" />}
@@ -185,10 +204,10 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
                   ? 'bg-neutral-900 text-white border-neutral-900'
                   : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50 hover:text-neutral-900'
               }`}
-              title="Regional Admin Operations"
+              title={t.adminDashboard}
             >
               <UserCog className="w-3.5 h-3.5" />
-              <span>Admin</span>
+              <span>{t.adminDashboard}</span>
             </button>
 
             {/* Return to Home / Overview */}
@@ -197,10 +216,10 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
                 type="button"
                 onClick={onReturnHome}
                 className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-700 text-xs font-semibold border border-neutral-200 transition-colors cursor-pointer"
-                title="Overview & Login Portal"
+                title={t.home}
               >
                 <Home className="w-3.5 h-3.5" />
-                <span>Home</span>
+                <span>{t.home}</span>
               </button>
             )}
 
@@ -241,7 +260,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
           }`}
         >
           <Ambulance className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">Dispatch</span>
+          <span className="text-[10px] mt-0.5 truncate max-w-[60px]">{language === 'hi' ? 'डिस्पैच' : language === 'mr' ? 'डिस्पॅच' : 'Dispatch'}</span>
         </button>
 
         <button
@@ -254,7 +273,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
           }`}
         >
           <Stethoscope className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">10s Beds</span>
+          <span className="text-[10px] mt-0.5 truncate max-w-[60px]">{language === 'hi' ? '10s बेड' : language === 'mr' ? '10s बेड्स' : '10s Beds'}</span>
         </button>
 
         <button
@@ -267,7 +286,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
           }`}
         >
           <Clock className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">ER Hold</span>
+          <span className="text-[10px] mt-0.5 truncate max-w-[60px]">{language === 'hi' ? 'ईआर होल्ड' : language === 'mr' ? 'ईआर होल्ड' : 'ER Hold'}</span>
           {pendingHoldsCount > 0 && (
             <span className="absolute top-1 right-2.5 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] font-mono font-bold flex items-center justify-center animate-pulse">
               {pendingHoldsCount}
@@ -285,7 +304,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
           }`}
         >
           <Heart className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">SOS</span>
+          <span className="text-[10px] mt-0.5 truncate max-w-[60px]">SOS</span>
         </button>
 
         {onReturnHome && (
@@ -295,7 +314,7 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
             className="flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer active:scale-95"
           >
             <Home className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Home</span>
+            <span className="text-[10px] mt-0.5 truncate max-w-[60px]">{t.home}</span>
           </button>
         )}
       </nav>

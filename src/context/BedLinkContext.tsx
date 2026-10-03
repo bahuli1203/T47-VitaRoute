@@ -30,8 +30,12 @@ import {
   estimateEmergencyTravelTime,
 } from '../utils/geo';
 import { fetchRealWorldHospitals, reverseGeocodeLocation } from '../services/hospitalApi';
+import { SupportedLanguage, TranslationDictionary, getTranslation } from '../utils/translations';
 
 interface BedLinkContextType {
+  language: SupportedLanguage;
+  setLanguage: (lang: SupportedLanguage) => void;
+  t: TranslationDictionary;
   role: AppRole;
   setRole: (role: AppRole) => void;
   hospitals: Hospital[];
@@ -139,6 +143,24 @@ const DEFAULT_COORDS = { lat: 40.7128, lng: -74.006 };
 const BedLinkContext = createContext<BedLinkContextType | null>(null);
 
 export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Multilingual State: English ('en'), Hindi ('hi'), Marathi ('mr')
+  const [language, setLanguageState] = useState<SupportedLanguage>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vitaroute_lang');
+      if (saved === 'hi' || saved === 'mr' || saved === 'en') return saved;
+    }
+    return 'en';
+  });
+
+  const setLanguage = useCallback((lang: SupportedLanguage) => {
+    setLanguageState(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vitaroute_lang', lang);
+    }
+  }, []);
+
+  const t = useMemo(() => getTranslation(language), [language]);
+
   // Read initial role from URL query param (?role=nurse | ?role=dispatch | ?role=er)
   const [role, setRole] = useState<AppRole>(() => {
     if (typeof window !== 'undefined') {
@@ -1518,6 +1540,9 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <BedLinkContext.Provider
       value={{
+        language,
+        setLanguage,
+        t,
         role,
         setRole,
         hospitals,
