@@ -17,6 +17,10 @@ import {
   LogOut,
   UserCog,
   Globe,
+  Radio,
+  Calendar,
+  Building2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -48,6 +52,8 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
   const isDispatchActive = currentRole === 'dispatch' || currentRole === 'ambulance';
   const isNurseActive = currentRole === 'nurse';
   const isERActive = currentRole === 'er' || currentRole === 'hospital';
+  const isTrackingActive = currentRole === 'tracking';
+  const isDoctorsActive = currentRole === 'doctors';
   const isPatientActive = currentRole === 'patient';
   const isAdminActive = currentRole === 'admin';
 
@@ -89,44 +95,30 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
             </button>
           </div>
 
-          {/* Center: The 3 Core Operations Tabs (Desktop) */}
-          <nav className="hidden md:flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200/80">
+          {/* Center: The Core Hospital Operations Tabs (Desktop) */}
+          <nav className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
             {/* 1. Ambulance Dispatch */}
             <button
               type="button"
               onClick={() => handleSwitchTab('dispatch')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
                 isDispatchActive
-                  ? 'bg-neutral-900 text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
               <Ambulance className="w-4 h-4" />
               <span>{t.ambulanceDispatch}</span>
             </button>
 
-            {/* 2. 10s Nurse Bed Update */}
-            <button
-              type="button"
-              onClick={() => handleSwitchTab('nurse')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none ${
-                isNurseActive
-                  ? 'bg-neutral-900 text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
-              }`}
-            >
-              <Stethoscope className="w-4 h-4" />
-              <span>{t.nurseUpdate}</span>
-            </button>
-
-            {/* 3. 2m ER Hold */}
+            {/* 2. 2m ER Hold */}
             <button
               type="button"
               onClick={() => handleSwitchTab('er')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none relative ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none relative ${
                 isERActive
-                  ? 'bg-neutral-900 text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
               <Clock className="w-4 h-4" />
@@ -136,6 +128,48 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
                   {pendingHoldsCount}
                 </span>
               )}
+            </button>
+
+            {/* 3. Live Ambulance Tracker */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('tracking')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
+                isTrackingActive
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Radio className="w-4 h-4" />
+              <span>{language === 'hi' ? 'लाइव ट्रैकिंग' : language === 'mr' ? 'थेट ट्रॅकिंग' : 'Live Tracker'}</span>
+            </button>
+
+            {/* 4. Doctor Availability Roster */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('doctors')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
+                isDoctorsActive
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Stethoscope className="w-4 h-4" />
+              <span>{language === 'hi' ? 'डॉक्टर रोस्टर' : language === 'mr' ? 'डॉक्टर रोस्टर' : 'Doctor Roster'}</span>
+            </button>
+
+            {/* 5. 10s Nurse Bed Update */}
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('nurse')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
+                isNurseActive
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              <span>{t.nurseUpdate}</span>
             </button>
           </nav>
 
@@ -249,31 +283,31 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
       </header>
 
       {/* MOBILE BOTTOM NAVIGATION DOCK (Clean White, 48px touch targets) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-neutral-200 px-2 py-1 flex items-center justify-around shadow-sm">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 py-1 flex items-center justify-around shadow-sm overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => handleSwitchTab('patient')}
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+            isPatientActive
+              ? 'text-rose-700 font-bold bg-rose-50'
+              : 'text-slate-500 hover:text-rose-600'
+          }`}
+        >
+          <AlertCircle className="w-4 h-4" />
+          <span className="text-[9px] mt-0.5 font-bold">SOS</span>
+        </button>
+
         <button
           type="button"
           onClick={() => handleSwitchTab('dispatch')}
           className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
             isDispatchActive
-              ? 'text-neutral-950 font-bold bg-neutral-100'
-              : 'text-neutral-500 hover:text-neutral-800'
+              ? 'text-slate-950 font-bold bg-slate-100'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          <Ambulance className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 truncate max-w-[60px]">{language === 'hi' ? 'डिस्पैच' : language === 'mr' ? 'डिस्पॅच' : 'Dispatch'}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleSwitchTab('nurse')}
-          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
-            isNurseActive
-              ? 'text-neutral-950 font-bold bg-neutral-100'
-              : 'text-neutral-500 hover:text-neutral-800'
-          }`}
-        >
-          <Stethoscope className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 truncate max-w-[60px]">{language === 'hi' ? '10s बेड' : language === 'mr' ? '10s बेड्स' : '10s Beds'}</span>
+          <Ambulance className="w-4 h-4" />
+          <span className="text-[9px] mt-0.5 truncate max-w-[50px]">{language === 'hi' ? 'डिस्पैच' : language === 'mr' ? 'डिस्पॅच' : 'Dispatch'}</span>
         </button>
 
         <button
@@ -281,14 +315,14 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
           onClick={() => handleSwitchTab('er')}
           className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 relative ${
             isERActive
-              ? 'text-neutral-950 font-bold bg-neutral-100'
-              : 'text-neutral-500 hover:text-neutral-800'
+              ? 'text-slate-950 font-bold bg-slate-100'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          <Clock className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 truncate max-w-[60px]">{language === 'hi' ? 'ईआर होल्ड' : language === 'mr' ? 'ईआर होल्ड' : 'ER Hold'}</span>
+          <Clock className="w-4 h-4" />
+          <span className="text-[9px] mt-0.5 truncate max-w-[50px]">{language === 'hi' ? 'ईआर होल्ड' : language === 'mr' ? 'ईआर होल्ड' : 'ER Hold'}</span>
           {pendingHoldsCount > 0 && (
-            <span className="absolute top-1 right-2.5 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] font-mono font-bold flex items-center justify-center animate-pulse">
+            <span className="absolute top-1 right-2 w-3.5 h-3.5 rounded-full bg-rose-600 text-white text-[8px] font-mono font-bold flex items-center justify-center animate-pulse">
               {pendingHoldsCount}
             </span>
           )}
@@ -296,25 +330,51 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
 
         <button
           type="button"
-          onClick={() => handleSwitchTab('patient')}
+          onClick={() => handleSwitchTab('tracking')}
           className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
-            isPatientActive
-              ? 'text-rose-700 font-bold bg-rose-50'
-              : 'text-neutral-500 hover:text-rose-600'
+            isTrackingActive
+              ? 'text-slate-950 font-bold bg-slate-100'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          <Heart className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5 truncate max-w-[60px]">SOS</span>
+          <Radio className="w-4 h-4" />
+          <span className="text-[9px] mt-0.5 truncate max-w-[50px]">{language === 'hi' ? 'ट्रैकिंग' : language === 'mr' ? 'ट्रॅकिंग' : 'Track'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSwitchTab('doctors')}
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+            isDoctorsActive
+              ? 'text-slate-950 font-bold bg-slate-100'
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Stethoscope className="w-4 h-4" />
+          <span className="text-[9px] mt-0.5 truncate max-w-[50px]">{language === 'hi' ? 'डॉक्टर' : language === 'mr' ? 'डॉक्टर' : 'Doctors'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSwitchTab('nurse')}
+          className={`flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg transition-colors cursor-pointer active:scale-95 ${
+            isNurseActive
+              ? 'text-slate-950 font-bold bg-slate-100'
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          <span className="text-[9px] mt-0.5 truncate max-w-[50px]">{language === 'hi' ? '10s बेड' : language === 'mr' ? '10s बेड्स' : 'Beds'}</span>
         </button>
 
         {onReturnHome && (
           <button
             type="button"
             onClick={onReturnHome}
-            className="flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer active:scale-95"
+            className="flex-1 min-h-[48px] py-1 flex flex-col items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 transition-colors cursor-pointer active:scale-95"
           >
-            <Home className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5 truncate max-w-[60px]">{t.home}</span>
+            <Home className="w-4 h-4" />
+            <span className="text-[9px] mt-0.5 truncate max-w-[50px]">{t.home}</span>
           </button>
         )}
       </nav>

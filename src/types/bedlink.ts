@@ -229,8 +229,8 @@ export interface HoldRequest {
   rejectedHospitalIds?: string[]; // history of hospitals that rejected/expired this hold
 }
 
-// 3 Core BedLink Screens + Legacy Role Support
-export type AppRole = 'dispatch' | 'nurse' | 'er' | 'patient' | 'ambulance' | 'hospital' | 'admin';
+// 3 Core BedLink Screens + Hospital Workflow Roles
+export type AppRole = 'dispatch' | 'nurse' | 'er' | 'patient' | 'ambulance' | 'hospital' | 'admin' | 'doctors' | 'tracking';
 
 // Primary 3 parts of the BedLink system
 export type BedLinkCorePart = 'dispatch' | 'nurse' | 'er';
@@ -408,3 +408,40 @@ export const TIMELINE_STEP_LABELS: Record<EmergencyTimelineStep, string> = {
   patient_handed_over: 'Patient Handed Over',
   emergency_completed: 'Emergency Completed',
 };
+
+// ========== DOCTOR AVAILABILITY & CALENDAR ROSTER TYPES ==========
+
+export type DoctorSpecialty =
+  | 'Cardiology & Cath Lab'
+  | 'Trauma Surgery'
+  | 'Neurosurgery & Stroke'
+  | 'Emergency Medicine'
+  | 'Critical Care & Pulmonology'
+  | 'Burn Care & Reconstruction'
+  | 'Anesthesiology & Resuscitation';
+
+export type DoctorStatus = 'available' | 'in_surgery' | 'on_call' | 'off_duty';
+
+export interface DoctorShiftSlot {
+  day: string;
+  shift: string;
+  status: 'on_duty' | 'on_call' | 'off';
+}
+
+export interface DoctorSchedule {
+  id: string;
+  name: string;
+  badgeNumber: string;
+  hospitalId: string;
+  hospitalName: string;
+  specialty: DoctorSpecialty;
+  status: DoctorStatus;
+  currentRoomOrBay?: string;
+  shiftHours: string;
+  shiftType: 'Day Shift' | 'Evening Shift' | 'Night Shift';
+  phoneExtension: string;
+  nextAvailableEstimateMinutes?: number;
+  patientsInQueue: number;
+  weeklySchedule: DoctorShiftSlot[];
+}
+

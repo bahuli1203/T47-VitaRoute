@@ -32,12 +32,14 @@ import {
   CheckSquare,
   Square,
   Layers,
+  Stethoscope,
 } from 'lucide-react';
 
 export const AmbulanceDispatchView: React.FC = () => {
   const [viewMode, setViewMode] = useState<'mdt' | 'cad'>('cad');
   const {
     hospitals,
+    doctors,
     dispatchFilter,
     setDispatchFilter,
     toggleSpecialtyFilter,
@@ -722,6 +724,39 @@ export const AmbulanceDispatchView: React.FC = () => {
                       </span>
                     </div>
                   </div>
+
+                  {/* Attending Specialist Coverage Linked to Doctor Calendar */}
+                  {(() => {
+                    const hospDocs = doctors.filter((d) => d.hospitalId === hospital.id);
+                    return (
+                      <div className="flex flex-wrap items-center gap-2 mt-2.5 pt-2 border-t border-slate-100 text-[11px]">
+                        <div className="flex items-center gap-1 font-semibold text-slate-700">
+                          <Stethoscope className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+                          <span>Specialists On Duty:</span>
+                        </div>
+                        {hospDocs.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {hospDocs.slice(0, 3).map((doc) => (
+                              <span
+                                key={doc.id}
+                                className={`px-2 py-0.5 rounded border font-mono text-[10px] font-bold ${
+                                  doc.status === 'available'
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                    : doc.status === 'in_surgery'
+                                    ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                                }`}
+                              >
+                                {doc.name.split(',')[0]} ({doc.status === 'available' ? 'Available' : doc.status === 'in_surgery' ? `Surgery ~${doc.nextAvailableEstimateMinutes || 30}m` : 'On-Call'})
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 font-mono text-[10px]">Trauma Resuscitation Team On Standby</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 

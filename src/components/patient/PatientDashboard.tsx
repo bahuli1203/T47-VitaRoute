@@ -25,13 +25,13 @@ import {
   PhoneCall,
 } from 'lucide-react';
 
-const EMERGENCY_CATEGORIES: { id: EmergencyCategory; title: string; icon: string; desc: string }[] = [
-  { id: 'cardiac', title: 'Chest Pain / Cardiac', icon: '❤️', desc: 'Severe pressure, chest pain, arm pain' },
-  { id: 'respiratory', title: 'Breathing Distress', icon: '🫁', desc: 'Shortness of breath, severe asthma' },
-  { id: 'trauma', title: 'Major Trauma', icon: '🩹', desc: 'Severe injury, fall, accident' },
-  { id: 'stroke', title: 'Stroke / Paralysis', icon: '🧠', desc: 'Facial drooping, weakness, speech difficulty' },
-  { id: 'burn', title: 'Severe Burn', icon: '🔥', desc: 'Thermal or chemical burn' },
-  { id: 'general', title: 'Other Emergency', icon: '🚑', desc: 'Acute medical distress requiring ER' },
+const EMERGENCY_CATEGORIES: { id: EmergencyCategory; title: string; tag: string; desc: string }[] = [
+  { id: 'cardiac', title: 'Chest Pain / Cardiac', tag: 'CARD', desc: 'Severe pressure, chest pain, arm pain' },
+  { id: 'respiratory', title: 'Breathing Distress', tag: 'RESP', desc: 'Shortness of breath, severe asthma' },
+  { id: 'trauma', title: 'Major Trauma', tag: 'TRMA', desc: 'Severe injury, fall, accident' },
+  { id: 'stroke', title: 'Stroke / Paralysis', tag: 'STRK', desc: 'Facial drooping, weakness, speech difficulty' },
+  { id: 'burn', title: 'Severe Burn', tag: 'BURN', desc: 'Thermal or chemical burn' },
+  { id: 'general', title: 'Other Emergency', tag: 'EMERG', desc: 'Acute medical distress requiring ER' },
 ];
 
 export const PatientDashboard: React.FC = () => {
@@ -195,7 +195,7 @@ export const PatientDashboard: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-lg">{cat.icon}</span>
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-800">{cat.tag}</span>
                       <span className={`text-xs font-bold ${selectedCategory === cat.id ? 'text-rose-900' : 'text-slate-900'}`}>
                         {cat.title}
                       </span>

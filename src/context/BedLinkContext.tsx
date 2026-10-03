@@ -21,8 +21,11 @@ import {
   EmergencyStatus,
   TIMELINE_STEP_LABELS,
   AVAILABLE_SPECIALTIES,
+  DoctorSchedule,
+  DoctorStatus,
 } from '../types/bedlink';
 import { INITIAL_HOSPITALS } from '../data/mockHospitals';
+import { INITIAL_DOCTORS } from '../data/mockDoctors';
 import { soundManager } from '../utils/audio';
 import { METRO_SECTORS } from '../utils/geo';
 import {
@@ -130,6 +133,12 @@ interface BedLinkContextType {
   assignHospitalToEmergency: (emergencyId: string, hospitalId: string, hospitalName: string, holdId: string, matchReasons: string[]) => void;
   completeEmergency: (emergencyId: string) => void;
   ambulanceAction: (emergencyId: string, action: 'navigate' | 'arrived' | 'handed_over') => void;
+
+  // Doctor Availability & On-Call Roster
+  doctors: DoctorSchedule[];
+  updateDoctorStatus: (doctorId: string, status: DoctorStatus) => void;
+  autoUpdateDoctors: boolean;
+  toggleAutoUpdateDoctors: () => void;
 }
 
 const STORAGE_KEY_HOSPITALS = 'vitaroute_hospitals_v4';
@@ -137,6 +146,7 @@ const STORAGE_KEY_HOLDS = 'vitaroute_holds_v4';
 const STORAGE_KEY_OFFLINE_QUEUE = 'vitaroute_offline_queue_v1';
 const STORAGE_KEY_CITIZEN_SOS = 'vitaroute_citizen_sos_v1';
 const STORAGE_KEY_EMERGENCIES = 'vitaroute_emergencies_v1';
+const STORAGE_KEY_DOCTORS = 'vitaroute_doctors_v2';
 
 const DEFAULT_COORDS = { lat: 40.7128, lng: -74.006 };
 
@@ -238,6 +248,83 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     return INITIAL_HOSPITALS;
   });
+
+  // Initialize doctor availability roster from localStorage or fallback
+  const [doctors, setDoctors] = useState<DoctorSchedule[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_DOCTORS);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return INITIAL_DOCTORS;
+  });
+
+  const [autoUpdateDoctors, setAutoUpdateDoctors] = useState<boolean>(true);
+
+  const toggleAutoUpdateDoctors = useCallback(() => {
+    setAutoUpdateDoctors((prev) => !prev);
+  }, []);
+
+  const updateDoctorStatus = useCallback((doctorId: string, status: DoctorStatus) => {
+    setDoctors((prev) => {
+      const updated = prev.map((doc) => {
+        if (doc.id === doctorId) {
+          const estTime = status === 'available' ? 0 : status === 'in_surgery' ? 45 : status === 'on_call' ? 15 : 480;
+          return {
+            ...doc,
+            status,
+            nextAvailableEstimateMinutes: estTime,
+          };
+        }
+        return doc;
+      });
+      try {
+        localStorage.setItem(STORAGE_KEY_DOCTORS, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
+  // Automatic Doctor Schedule Ticker & Simulation
+  useEffect(() => {
+    if (!autoUpdateDoctors) return;
+
+    const interval = setInterval(() => {
+      setDoctors((prev) => {
+        let changed = false;
+        const updated = prev.map((doc) => {
+          if (doc.status === 'in_surgery' && doc.nextAvailableEstimateMinutes && doc.nextAvailableEstimateMinutes > 0) {
+            const newMinutes = Math.max(0, doc.nextAvailableEstimateMinutes - 1);
+            changed = true;
+            if (newMinutes === 0) {
+              return {
+                ...doc,
+                status: 'available' as DoctorStatus,
+                nextAvailableEstimateMinutes: 0,
+                patientsInQueue: Math.max(0, doc.patientsInQueue - 1),
+              };
+            }
+            return {
+              ...doc,
+              nextAvailableEstimateMinutes: newMinutes,
+            };
+          }
+          return doc;
+        });
+
+        if (changed) {
+          try {
+            localStorage.setItem(STORAGE_KEY_DOCTORS, JSON.stringify(updated));
+          } catch {}
+          return updated;
+        }
+        return prev;
+      });
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [autoUpdateDoctors]);
 
   // Initialize holds with an initial pending hold for demo
   const [activeHolds, setActiveHolds] = useState<HoldRequest[]>(() => {
@@ -541,17 +628,17 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
           // Build match reasons
           const reasons: string[] = [];
-          if (availableBeds > 0) reasons.push(`✓ ${availableBeds} ${mappedBed.replace(/_/g, ' ')} bed(s) available`);
-          else reasons.push(`✗ No ${mappedBed.replace(/_/g, ' ')} beds`);
-          matchedSpecs.forEach((s) => reasons.push(`✓ ${AVAILABLE_SPECIALTIES[s].label}`));
-          missingSpecs.forEach((s) => reasons.push(`✗ Missing: ${AVAILABLE_SPECIALTIES[s].label}`));
-          reasons.push(`✓ ${eta} min ETA (${dist} km)`);
-          if (h.erLoad === 'Low') reasons.push('✓ Low ER load');
-          else if (h.erLoad === 'Medium') reasons.push('⚠ Medium ER load');
-          else reasons.push('⚠ Surge ER load');
-          if (h.lastUpdatedMinutesAgo <= 15) reasons.push('✓ Recently updated data');
-          else if (h.lastUpdatedMinutesAgo <= 45) reasons.push('⚠ Data updated ' + h.lastUpdatedMinutesAgo + ' min ago');
-          else reasons.push('⚠ Stale data (' + h.lastUpdatedMinutesAgo + ' min ago)');
+          if (availableBeds > 0) reasons.push(`${availableBeds} ${mappedBed.replace(/_/g, ' ')} bed(s) available`);
+          else reasons.push(`No ${mappedBed.replace(/_/g, ' ')} beds`);
+          matchedSpecs.forEach((s) => reasons.push(`${AVAILABLE_SPECIALTIES[s].label} available`));
+          missingSpecs.forEach((s) => reasons.push(`Specialty Missing: ${AVAILABLE_SPECIALTIES[s].label}`));
+          reasons.push(`${eta} min ETA (${dist} km road travel)`);
+          if (h.erLoad === 'Low') reasons.push('Low ER load');
+          else if (h.erLoad === 'Medium') reasons.push('Medium ER load');
+          else reasons.push('Surge ER load');
+          if (h.lastUpdatedMinutesAgo <= 15) reasons.push('Live hospital data');
+          else if (h.lastUpdatedMinutesAgo <= 45) reasons.push('Data updated ' + h.lastUpdatedMinutesAgo + ' min ago');
+          else reasons.push('Stale data (' + h.lastUpdatedMinutesAgo + ' min ago)');
 
           return { hospital: h, penalty, eta, dist, reasons, availableBeds };
         })
@@ -1611,6 +1698,11 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         assignHospitalToEmergency,
         completeEmergency,
         ambulanceAction,
+        // Doctor availability and roster
+        doctors,
+        updateDoctorStatus,
+        autoUpdateDoctors,
+        toggleAutoUpdateDoctors,
       }}
     >
       {children}

@@ -8,6 +8,9 @@ import { NurseBedUpdateView } from './components/nurse/NurseBedUpdateView';
 import { ERConfirmHoldView } from './components/er/ERConfirmHoldView';
 import { CitizenSOSView } from './components/citizen/CitizenSOSView';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { LiveAmbulanceTrackerView } from './components/tracking/LiveAmbulanceTrackerView';
+import { DoctorRosterView } from './components/doctors/DoctorRosterView';
+import { LiveEmergencyWorkflowBar } from './components/common/LiveEmergencyWorkflowBar';
 import { NotificationToast } from './components/common/NotificationToast';
 import { OmnidimensionVoiceAgent } from './components/common/OmnidimensionVoiceAgent';
 
@@ -37,12 +40,15 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onReturnHome }) => 
   const currentRole = role;
 
   return (
-    <div className="min-h-screen bg-[#FBFBFB] text-neutral-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans">
       {/* Top Operations Header */}
       <Header onReturnHome={onReturnHome} />
 
       {/* Main Operations Section */}
-      <main className="flex-1 pb-24 md:pb-12 max-w-7xl w-full mx-auto px-4 sm:px-6">
+      <main className="flex-1 pb-24 md:pb-12 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4">
+        {/* Live Emergency Coordination & 1-Click Workflow Progression Bar */}
+        <LiveEmergencyWorkflowBar currentRole={currentRole} onSelectRole={setRole} />
+
         {/* Screen 1: Ambulance Dispatch (Find Hospital & Bed Match) */}
         {(currentRole === 'dispatch' || currentRole === 'ambulance') && <AmbulanceDispatchView />}
 
@@ -51,6 +57,12 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onReturnHome }) => 
 
         {/* Screen 3: 2-Minute Confirm & Hold (Hospital ER Desk) */}
         {(currentRole === 'er' || currentRole === 'hospital') && <ERConfirmHoldView />}
+
+        {/* Screen 4: Live Ambulance Route Tracking (Patient & Hospital Telematics) */}
+        {currentRole === 'tracking' && <LiveAmbulanceTrackerView viewerRole="patient" onNavigateTab={setRole} />}
+
+        {/* Screen 5: Doctor Availability & On-Call Shift Calendar */}
+        {currentRole === 'doctors' && <DoctorRosterView />}
 
         {/* Citizen SOS & Regional Admin */}
         {currentRole === 'patient' && <CitizenSOSView />}
