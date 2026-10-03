@@ -67,10 +67,10 @@ export const HeartbeatHeroBackground: React.FC = () => {
             L 1440,200
           "
           stroke="url(#ecgLineGradient)"
-          strokeWidth="3.2"
+          strokeWidth="2.8"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="opacity-75"
+          className="opacity-35"
         />
 
         {/* Pulsating Glowing Traveling Signal Bead Along ECG Line */}

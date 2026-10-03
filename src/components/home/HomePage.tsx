@@ -203,8 +203,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
         {/* Animated ECG Heartbeat Lifeline Background */}
         <HeartbeatHeroBackground />
 
-        {/* Content Container */}
-        <div className="relative z-10 max-w-4xl mx-auto text-center py-4 sm:py-6">
+        {/* Content Container with Frosted Glassmorphism Card */}
+        <div className="relative z-10 max-w-3xl mx-auto text-center py-8 px-6 sm:px-10 rounded-3xl bg-white/90 backdrop-blur-md border border-neutral-200/80 shadow-xl shadow-neutral-900/5 my-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200 text-xs font-bold text-red-700 mb-6 shadow-xs">
             <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
             <span>{t.tagline}</span>
@@ -246,9 +246,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
               <span>{t.nurseUpdate}</span>
             </button>
           </div>
+        </div>
 
-          {/* 4-Step Emergency Pipeline Track - Clean Red & White */}
-          <div className="my-10 max-w-3xl mx-auto">
+        {/* 4-Step Emergency Pipeline Track - Clean Red & White */}
+        <div className="relative z-10 my-8 max-w-3xl mx-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-left">
               {/* Step 1: Citizen SOS */}
               <div 
@@ -327,7 +328,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
               <span className="text-xs text-neutral-600 font-medium">{t.autoRerouteStat}</span>
             </div>
           </div>
-        </div>
       </section>
 
       {/* Simplest Flow Section (Zero Clutter) */}
