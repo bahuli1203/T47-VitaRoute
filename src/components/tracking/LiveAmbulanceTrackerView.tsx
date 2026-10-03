@@ -114,7 +114,9 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
     speed: language === 'hi' ? 'गाड़ी की गति' : language === 'mr' ? 'वाहनाचा वेग' : 'Vehicle Speed',
     greenWave: language === 'hi' ? 'ग्रीन वेव सीएडी' : language === 'mr' ? 'ग्रीन वेव्ह सीएडी' : 'Green Wave CAD',
     unitName: activeHold?.ambulanceCallSign || (language === 'hi' ? 'यूनिट 104 (एएलएस पैरामेडिक)' : language === 'mr' ? 'युनिट १०४ (एएलएस पॅरामेडिक)' : 'Unit 104 (ALS Paramedic)'),
-    driverMedic: language === 'hi' ? 'पैरामेडिक माइक इवांस · डायरेक्ट रेडियो चैनल 4' : language === 'mr' ? 'पॅरामेडिक माइक इव्हान्स · थेट रेडिओ चॅनेल ४' : 'Paramedic Mike Evans · Direct Radio Channel 4',
+    driverMedic: activeHold?.driverName
+      ? `${activeHold.driverName}${activeHold.driverPhone ? ' · ' + activeHold.driverPhone : ''}`
+      : (language === 'hi' ? 'पैरामेडिक — विवरण लोड हो रहा है' : language === 'mr' ? 'पॅरामेडिक — तपशील लोड होत आहे' : 'Paramedic — details loading'),
     btnCallMedic: language === 'hi' ? 'कॉल करें' : language === 'mr' ? 'कॉल करा' : 'Call Medic',
     hospDestTitle: language === 'hi' ? 'आरक्षित अस्पताल विवरण' : language === 'mr' ? 'आरक्षित रुग्णालय तपशील' : 'Hospital Destination & Bed',
     confirmedBadge: language === 'hi' ? '100% आरक्षित' : language === 'mr' ? '१००% निश्चित' : '100% Confirmed',
@@ -237,19 +239,21 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                   <span className="font-bold text-neutral-900">
                     {activeHold?.ambulanceCallSign || txt.unitName}
                   </span>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.2 rounded bg-neutral-100 text-neutral-800 border border-neutral-200">
-                    {activeHold?.ambulancePlate || 'MH-02-ER-104'}
-                  </span>
+                  {activeHold?.ambulancePlate && (
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.2 rounded bg-neutral-100 text-neutral-800 border border-neutral-200">
+                      {activeHold.ambulancePlate}
+                    </span>
+                  )}
                 </div>
                 <span className="text-neutral-500 text-[11px] block mt-0.5">
-                  {language === 'hi' ? 'चालक:' : language === 'mr' ? 'चालक:' : 'Driver:'} {activeHold?.driverName || 'Paramedic Arjun Singh'} &middot; {activeHold?.driverPhone || '+91 98201 55104'}
+                  {txt.driverMedic}
                 </span>
               </div>
             </div>
 
             <a
-              href={`tel:${(activeHold?.driverPhone || '+919820155104').replace(/[^0-9+]/g, '')}`}
-              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+              href={`tel:${(activeHold?.driverPhone || '').replace(/[^0-9+]/g, '')}`}
+              className={`px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors ${!activeHold?.driverPhone ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <Phone className="w-3.5 h-3.5" />
               <span>{txt.btnCallMedic}</span>
@@ -276,19 +280,23 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm font-extrabold text-neutral-950 block">
-                    {activeHold?.patientName || activeCitizenSOS?.patientName || 'Rajesh Kumar'}
+                    {activeHold?.patientName || activeCitizenSOS?.patientName || (language === 'hi' ? 'मरीज विवरण लोड हो रहा है' : language === 'mr' ? 'रुग्ण तपशील लोड होत आहे' : 'Patient details loading')}
                   </span>
-                  <span className="text-neutral-500 font-mono text-[11px]">
-                    {language === 'hi' ? 'आयु/लिंग:' : language === 'mr' ? 'वय/लिंग:' : 'Age/Gender:'} {activeHold?.patientAgeGender || '58M'}
-                  </span>
+                  {activeHold?.patientAgeGender && activeHold.patientAgeGender !== 'Unknown' && (
+                    <span className="text-neutral-500 font-mono text-[11px]">
+                      {language === 'hi' ? 'आयु/लिंग:' : language === 'mr' ? 'वय/लिंग:' : 'Age/Gender:'} {activeHold.patientAgeGender}
+                    </span>
+                  )}
                 </div>
-                <a
-                  href={`tel:${(activeHold?.patientPhone || activeCitizenSOS?.callerPhone || '+919820012345').replace(/[^0-9+]/g, '')}`}
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-bold flex items-center gap-1 border border-slate-200 transition-colors"
-                >
-                  <Phone className="w-3 h-3 text-red-600" />
-                  <span>{activeHold?.patientPhone || activeCitizenSOS?.callerPhone || '+91 98200 12345'}</span>
-                </a>
+                {(activeHold?.patientPhone || activeCitizenSOS?.callerPhone) && (
+                  <a
+                    href={`tel:${(activeHold?.patientPhone || activeCitizenSOS?.callerPhone || '').replace(/[^0-9+]/g, '')}`}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-bold flex items-center gap-1 border border-slate-200 transition-colors"
+                  >
+                    <Phone className="w-3 h-3 text-red-600" />
+                    <span>{activeHold?.patientPhone || activeCitizenSOS?.callerPhone}</span>
+                  </a>
+                )}
               </div>
 
               <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200">
@@ -296,17 +304,19 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                   {language === 'hi' ? 'प्राथमिक आपातकाल:' : language === 'mr' ? 'प्राथमिक आणीबाणी:' : 'Chief Complaint:'}
                 </span>
                 <p className="text-xs font-bold text-red-900 mt-0.5">
-                  {activeHold?.chiefComplaint || activeCitizenSOS?.notes || 'Acute Respiratory Distress / Severe Hypoxemia'}
+                  {activeHold?.chiefComplaint || activeCitizenSOS?.notes || (language === 'hi' ? 'आपातकालीन चिकित्सा सहायता' : language === 'mr' ? 'आणीबाणी वैद्यकीय मदत' : 'Emergency Medical Assistance')}
                 </p>
               </div>
 
-              <div className="flex items-start gap-1.5 text-neutral-600 pt-1">
-                <MapPin className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
-                <span className="text-[11px] leading-snug">
-                  <strong>{language === 'hi' ? 'पिकअप पता:' : language === 'mr' ? 'पिकअप पत्ता:' : 'Scene Pickup:'}</strong>{' '}
-                  {activeHold?.patientAddress || activeCitizenSOS?.addressApprox || 'Bandra-Worli Sea Link / SV Road, Mumbai'}
-                </span>
-              </div>
+              {(activeHold?.patientAddress || activeCitizenSOS?.addressApprox) && (
+                <div className="flex items-start gap-1.5 text-neutral-600 pt-1">
+                  <MapPin className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
+                  <span className="text-[11px] leading-snug">
+                    <strong>{language === 'hi' ? 'पिकअप पता:' : language === 'mr' ? 'पिकअप पत्ता:' : 'Scene Pickup:'}</strong>{' '}
+                    {activeHold?.patientAddress || activeCitizenSOS?.addressApprox}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -345,7 +355,7 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                 <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
                   <span className="text-[10px] font-bold text-neutral-500 uppercase block">{txt.erTargetBay}</span>
                   <span className="font-mono font-bold text-emerald-700 mt-0.5 block">
-                    {activeHold?.assignedBay || 'Resuscitation Bay 2'}
+                    {activeHold?.assignedBay || (language === 'hi' ? 'आवंटन हो रहा है' : language === 'mr' ? 'नेमणे सुरू आहे' : 'Allocating...')}
                   </span>
                 </div>
               </div>
@@ -370,19 +380,19 @@ export const LiveAmbulanceTrackerView: React.FC<LiveAmbulanceTrackerViewProps> =
                 <div className="grid grid-cols-4 gap-1.5 text-center font-mono">
                   <div className="bg-neutral-100 p-1.5 rounded-lg">
                     <span className="text-[9px] text-neutral-500 block">BP</span>
-                    <span className="font-bold text-neutral-900">88/54</span>
+                    <span className="font-bold text-neutral-900">{activeHold?.vitalsSummary?.bp || '—'}</span>
                   </div>
                   <div className="bg-neutral-100 p-1.5 rounded-lg">
                     <span className="text-[9px] text-neutral-500 block">HR</span>
-                    <span className="font-bold text-red-600">128</span>
+                    <span className="font-bold text-red-600">{activeHold?.vitalsSummary?.hr ?? '—'}</span>
                   </div>
                   <div className="bg-neutral-100 p-1.5 rounded-lg">
                     <span className="text-[9px] text-neutral-500 block">SpO2</span>
-                    <span className="font-bold text-red-600">84%</span>
+                    <span className="font-bold text-red-600">{activeHold?.vitalsSummary?.spo2 != null ? `${activeHold.vitalsSummary.spo2}%` : '—'}</span>
                   </div>
                   <div className="bg-neutral-100 p-1.5 rounded-lg">
                     <span className="text-[9px] text-neutral-500 block">GCS</span>
-                    <span className="font-bold text-neutral-900">9/15</span>
+                    <span className="font-bold text-neutral-900">{activeHold?.vitalsSummary?.gcs != null ? `${activeHold.vitalsSummary.gcs}/15` : '—'}</span>
                   </div>
                 </div>
               </div>

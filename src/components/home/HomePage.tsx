@@ -43,7 +43,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
     {
       role: 'ambulance' as AppRole,
       title: t.roleAmbulance,
-      subtitle: 'Arjun Singh · Unit 104 (Bandra Station)',
+      subtitle: language === 'hi' ? 'यूनिट 104 (बांद्रा स्टेशन) · एएलएस पैरामेडिक' : language === 'mr' ? 'युनिट १०४ (वांद्रे स्टेशन) · एएलएस पॅरामेडिक' : 'Unit 104 (Bandra Station) · ALS Paramedic',
       email: 'ambulance@demo.com',
       icon: Ambulance,
       scenario: language === 'hi' 
@@ -56,7 +56,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
     {
       role: 'nurse' as AppRole,
       title: t.roleNurse,
-      subtitle: 'Sister Anjali Deshmukh · KEM Hospital Ward 3',
+      subtitle: language === 'hi' ? 'नर्सिंग स्टाफ · केईएम अस्पताल वार्ड 3' : language === 'mr' ? 'नर्सिंग स्टाफ · केईएम रुग्णालय वॉर्ड 3' : 'Nursing Staff · KEM Hospital Ward 3',
       email: 'nurse@demo.com',
       icon: Stethoscope,
       scenario: language === 'hi'
@@ -69,7 +69,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
     {
       role: 'hospital' as AppRole,
       title: t.roleERDoctor,
-      subtitle: 'Dr. Rohan Merchant · KEM Hospital ER Desk',
+      subtitle: language === 'hi' ? 'ईआर चिकित्सक · केईएम अस्पताल ईआर डेस्क' : language === 'mr' ? 'ईआर डॉक्टर · केईएम रुग्णालय ईआर डेस्क' : 'ER Physician · KEM Hospital ER Desk',
       email: 'hospital@demo.com',
       icon: Clock,
       scenario: language === 'hi'
@@ -82,7 +82,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
     {
       role: 'patient' as AppRole,
       title: t.roleCitizen,
-      subtitle: 'Rajesh Kumar · Mumbai Citizen Profile',
+      subtitle: language === 'hi' ? 'मुंबई नागरिक · तत्काल एसओएस पोर्टल' : language === 'mr' ? 'मुंबई नागरिक · तात्काळ एसओएस पोर्टल' : 'Mumbai Citizen · Emergency SOS Portal',
       email: 'patient@demo.com',
       icon: Heart,
       scenario: language === 'hi'
@@ -95,7 +95,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
     {
       role: 'doctors' as AppRole,
       title: language === 'hi' ? 'ऑन-कॉल डॉक्टर' : language === 'mr' ? 'ऑन-कॉल डॉक्टर' : 'Doctor Roster',
-      subtitle: 'Dr. Sneha Kulkarni · KEM Trauma Surgeon',
+      subtitle: language === 'hi' ? 'कर्तव्य पर उपस्थित डॉक्टर · केईएम ट्रॉमा सर्जरी' : language === 'mr' ? 'कर्तव्यावर डॉक्टर · केईएम ट्रॉमा सर्जरी' : 'On-duty Doctors · KEM Trauma Surgery',
       email: 'doctor@demo.com',
       icon: Calendar,
       scenario: language === 'hi'

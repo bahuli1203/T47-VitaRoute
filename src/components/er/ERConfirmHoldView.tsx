@@ -200,23 +200,27 @@ export const ERConfirmHoldView: React.FC = () => {
                       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-red-600">
                         {txt.incomingBanner}
                       </span>
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-200">
-                        {hold.ambulancePlate || 'MH-02-ER-104'}
-                      </span>
+                      {hold.ambulancePlate && (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-200">
+                          {hold.ambulancePlate}
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-base font-black text-neutral-950 mt-0.5">
                       {hold.ambulanceCallSign}
                     </h3>
                     <p className="text-xs text-neutral-500 flex items-center gap-2 mt-0.5">
-                      <span>{hold.driverName || 'Paramedic Arjun Singh'}</span>
-                      <span>&middot;</span>
-                      <a
-                        href={`tel:${(hold.driverPhone || '+919820155104').replace(/[^0-9+]/g, '')}`}
-                        className="text-red-600 font-semibold hover:underline flex items-center gap-1"
-                      >
-                        <Phone className="w-3 h-3" />
-                        {hold.driverPhone || '+91 98201 55104'}
-                      </a>
+                      {hold.driverName && <span>{hold.driverName}</span>}
+                      {hold.driverName && hold.driverPhone && <span>&middot;</span>}
+                      {hold.driverPhone && (
+                        <a
+                          href={`tel:${hold.driverPhone.replace(/[^0-9+]/g, '')}`}
+                          className="text-red-600 font-semibold hover:underline flex items-center gap-1"
+                        >
+                          <Phone className="w-3 h-3" />
+                          {hold.driverPhone}
+                        </a>
+                      )}
                     </p>
                     {/* Target hospital badge */}
                     <div className="mt-2 flex items-center gap-1.5 flex-wrap">
@@ -258,18 +262,22 @@ export const ERConfirmHoldView: React.FC = () => {
                   </span>
                   <div>
                     <span className="text-sm font-black text-neutral-950 block">
-                      {hold.patientName || 'Rajesh Kumar'} ({hold.patientAgeGender || '58M'})
+                      {hold.patientName || (language === 'hi' ? 'आपातकालीन मरीज' : language === 'mr' ? 'आणीबाणी रुग्ण' : 'Emergency Patient')} ({hold.patientAgeGender || '?'})
                     </span>
-                    <div className="flex items-center gap-2 text-neutral-600 mt-1">
-                      <Phone className="w-3 h-3 text-neutral-400" />
-                      <a href={`tel:${hold.patientPhone || '+919820012345'}`} className="font-mono text-[11px] text-neutral-800 hover:underline">
-                        {hold.patientPhone || '+91 98200 12345'}
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-2 text-neutral-600 mt-0.5">
-                      <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
-                      <span className="text-[11px] text-neutral-700">{hold.patientAddress || 'Bandra-Worli Sea Link / SV Road, Mumbai'}</span>
-                    </div>
+                    {hold.patientPhone && (
+                      <div className="flex items-center gap-2 text-neutral-600 mt-1">
+                        <Phone className="w-3 h-3 text-neutral-400" />
+                        <a href={`tel:${hold.patientPhone.replace(/[^0-9+]/g, '')}`} className="font-mono text-[11px] text-neutral-800 hover:underline">
+                          {hold.patientPhone}
+                        </a>
+                      </div>
+                    )}
+                    {hold.patientAddress && (
+                      <div className="flex items-center gap-2 text-neutral-600 mt-0.5">
+                        <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
+                        <span className="text-[11px] text-neutral-700">{hold.patientAddress}</span>
+                      </div>
+                    )}
                   </div>
 
                   <p className="text-xs font-bold text-red-900 bg-red-50/70 p-2 rounded-lg border border-red-100 leading-snug">
@@ -291,19 +299,19 @@ export const ERConfirmHoldView: React.FC = () => {
                   <div className="grid grid-cols-4 gap-1.5 text-center font-mono">
                     <div className="bg-white p-2 rounded-xl border border-neutral-200">
                       <span className="text-[9px] text-neutral-400 block">BP</span>
-                      <span className="font-bold text-neutral-900">{hold.vitalsSummary?.bp || '88/54'}</span>
+                      <span className="font-bold text-neutral-900">{hold.vitalsSummary?.bp || '—'}</span>
                     </div>
                     <div className="bg-white p-2 rounded-xl border border-neutral-200">
                       <span className="text-[9px] text-neutral-400 block">HR</span>
-                      <span className="font-bold text-red-600">{hold.vitalsSummary?.hr || 128}</span>
+                      <span className="font-bold text-red-600">{hold.vitalsSummary?.hr ?? '—'}</span>
                     </div>
                     <div className="bg-white p-2 rounded-xl border border-neutral-200">
                       <span className="text-[9px] text-neutral-400 block">SpO2</span>
-                      <span className="font-bold text-red-600">{hold.vitalsSummary?.spo2 || 84}%</span>
+                      <span className="font-bold text-red-600">{hold.vitalsSummary?.spo2 != null ? `${hold.vitalsSummary.spo2}%` : '—'}</span>
                     </div>
                     <div className="bg-white p-2 rounded-xl border border-neutral-200">
                       <span className="text-[9px] text-neutral-400 block">GCS</span>
-                      <span className="font-bold text-neutral-900">{hold.vitalsSummary?.gcs || 9}/15</span>
+                      <span className="font-bold text-neutral-900">{hold.vitalsSummary?.gcs != null ? `${hold.vitalsSummary.gcs}/15` : '—'}</span>
                     </div>
                   </div>
 
@@ -314,7 +322,7 @@ export const ERConfirmHoldView: React.FC = () => {
                     </div>
                     <div className="flex justify-between text-neutral-600">
                       <span>{language === 'hi' ? 'निर्धारित बे:' : language === 'mr' ? 'नेमून दिलेले बे:' : 'Designated Bay:'}</span>
-                      <span className="font-bold text-emerald-700">{hold.assignedBay || 'Resuscitation Bay 1'}</span>
+                      <span className="font-bold text-emerald-700">{hold.assignedBay || (language === 'hi' ? 'आवंटन हो रहा है' : language === 'mr' ? 'नेमणे सुरू आहे' : 'Allocating...')}</span>
                     </div>
                     {hold.hospitalPhone && (
                       <div className="flex justify-between items-center text-neutral-600">
@@ -395,19 +403,26 @@ export const ERConfirmHoldView: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-extrabold text-neutral-900">{acceptedHold.ambulanceCallSign}</span>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">
-                      {acceptedHold.ambulancePlate || 'MH-02-ER-104'}
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-200 text-emerald-900">
-                      {txt.bedHeldBay(acceptedHold.assignedBay || 'Resuscitation Bay 1')}
-                    </span>
+                    {acceptedHold.ambulancePlate && (
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">
+                        {acceptedHold.ambulancePlate}
+                      </span>
+                    )}
+                    {acceptedHold.assignedBay && (
+                      <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-200 text-emerald-900">
+                        {txt.bedHeldBay(acceptedHold.assignedBay)}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-neutral-600 mt-1">
-                    <strong>{acceptedHold.patientName || 'Rajesh Kumar'}</strong> &middot; {acceptedHold.chiefComplaint} &middot; {txt.etaLabel}: {acceptedHold.etaMinutes} {txt.minsText}
+                    {acceptedHold.patientName && <><strong>{acceptedHold.patientName}</strong> &middot; </>}
+                    {acceptedHold.chiefComplaint} &middot; {txt.etaLabel}: {acceptedHold.etaMinutes} {txt.minsText}
                   </p>
-                  <p className="text-[11px] text-neutral-500 mt-0.5">
-                    {language === 'hi' ? 'चालक:' : language === 'mr' ? 'चालक:' : 'Driver:'} {acceptedHold.driverName || 'Paramedic Arjun Singh'} ({acceptedHold.driverPhone || '+91 98201 55104'})
-                  </p>
+                  {(acceptedHold.driverName || acceptedHold.driverPhone) && (
+                    <p className="text-[11px] text-neutral-500 mt-0.5">
+                      {language === 'hi' ? 'चालक:' : language === 'mr' ? 'चालक:' : 'Driver:'} {acceptedHold.driverName}{acceptedHold.driverPhone && ` (${acceptedHold.driverPhone})`}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">

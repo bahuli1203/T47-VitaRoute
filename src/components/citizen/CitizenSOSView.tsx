@@ -22,6 +22,7 @@ import {
   Navigation,
   ArrowRight,
   Phone,
+  User,
 } from 'lucide-react';
 import { CitizenVoiceClassifier, ClassifiedEmergency } from './CitizenVoiceClassifier';
 
@@ -44,6 +45,7 @@ export const CitizenSOSView: React.FC = () => {
   } = useBedLink();
 
   const [selectedCategory, setSelectedCategory] = useState<EmergencyCategory>('cardiac');
+  const [patientName, setPatientName] = useState<string>('');
   const [callerPhone, setCallerPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
@@ -73,11 +75,12 @@ export const CitizenSOSView: React.FC = () => {
     setSelectedCategory(result.category);
     triggerCitizenSOS(
       result.category,
-      callerPhone || '+91 98200 12345',
+      callerPhone || '',
       transcript || 'Voice classified emergency',
       selectedSector.coords.lat,
       selectedSector.coords.lng,
-      selectedSector.label
+      selectedSector.label,
+      patientName
     );
   };
 
@@ -120,7 +123,8 @@ export const CitizenSOSView: React.FC = () => {
       notes,
       selectedSector.coords.lat,
       selectedSector.coords.lng,
-      selectedSector.label
+      selectedSector.label,
+      patientName
     );
     setIsConfirming(false);
   };
@@ -513,36 +517,53 @@ export const CitizenSOSView: React.FC = () => {
             </div>
 
             {/* Contact and Notes */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+            <div className="flex flex-col gap-3 pt-2 border-t border-slate-100">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  {language === 'hi' ? 'संपर्क फोन नंबर:' : language === 'mr' ? 'संपर्क फोन नंबर:' : 'Callback Phone Number:'}
+                  {language === 'hi' ? 'नाम / मरीज का नाम:' : language === 'mr' ? 'नाव / रुग्णाचे नाव:' : 'Name / Patient Name:'}
                 </label>
                 <div className="relative">
-                  <PhoneCall className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
-                    type="tel"
-                    value={callerPhone}
-                    onChange={(e) => setCallerPhone(e.target.value)}
-                    placeholder={language === 'hi' ? 'उदा. +91 98200 12345' : language === 'mr' ? 'उदा. +91 98200 12345' : 'e.g. +91 98200 12345'}
+                    type="text"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    placeholder={language === 'hi' ? 'आपका नाम' : language === 'mr' ? 'आपले नाव' : 'Your full name'}
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    {language === 'hi' ? 'संपर्क फोन नंबर:' : language === 'mr' ? 'संपर्क फोन नंबर:' : 'Callback Phone Number:'}
+                  </label>
+                  <div className="relative">
+                    <PhoneCall className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="tel"
+                      value={callerPhone}
+                      onChange={(e) => setCallerPhone(e.target.value)}
+                      placeholder={language === 'hi' ? 'उदा. +91 98200 12345' : language === 'mr' ? 'उदा. +91 98200 12345' : 'e.g. +91 98200 12345'}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                  </div>
+                </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  {language === 'hi' ? 'लैंडमार्क या स्थिति विवरण:' : language === 'mr' ? 'लँडमार्क किंवा स्थिती तपशील:' : 'Landmark or Spoken Condition Note:'}
-                </label>
-                <div className="relative">
-                  <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder={language === 'hi' ? 'उदा. दूसरी मंजिल, फ्लैट 4B या मरीज की स्थिति' : language === 'mr' ? 'उदा. दुसरा मजला, फ्लॅट 4B किंवा स्थिती' : 'e.g. 2nd floor, Apartment 4B or condition details'}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
-                  />
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    {language === 'hi' ? 'लैंडमार्क या स्थिति विवरण:' : language === 'mr' ? 'लँडमार्क किंवा स्थिती तपशील:' : 'Landmark or Spoken Condition Note:'}
+                  </label>
+                  <div className="relative">
+                    <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder={language === 'hi' ? 'उदा. दूसरी मंजिल, फ्लैट 4B या मरीज की स्थिति' : language === 'mr' ? 'उदा. दुसरा मजला, फ्लॅट 4B किंवा स्थिती' : 'e.g. 2nd floor, Apartment 4B or condition details'}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
