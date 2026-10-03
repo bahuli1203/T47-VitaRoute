@@ -100,22 +100,22 @@ export const CitizenSOSView: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
-              Citizen Emergency SOS Portal
+              {language === 'hi' ? 'नागरिक आपातकालीन एसओएस पोर्टल' : language === 'mr' ? 'नागरिक आणीबाणी एसओएस पोर्टल' : 'Citizen Emergency SOS Portal'}
             </span>
             <h2 className="text-lg font-bold text-slate-900 mt-1">
-              Immediate Medical Dispatch
+              {language === 'hi' ? 'तत्काल मेडिकल डिस्पैच' : language === 'mr' ? 'तात्काळ वैद्यकीय डिस्पॅच' : 'Immediate Medical Dispatch'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Zero-wait automatic ambulance CAD dispatch and live telemetry verification.
+              {language === 'hi' ? 'शून्य-प्रतीक्षा स्वचालित एम्बुलेंस डिस्पैच एवं लाइव टेलीमेट्री।' : language === 'mr' ? 'शून्य-प्रतीक्षा स्वयंचलित रुग्णवाहिका डिस्पॅच आणि थेट टेलिमेट्री.' : 'Zero-wait automatic ambulance CAD dispatch and live telemetry verification.'}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setRole('ambulance')}
-              className="text-xs font-semibold px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors"
+              className="text-xs font-semibold px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors cursor-pointer"
             >
-              Switch to Ambulance CAD
+              {language === 'hi' ? 'एम्बुलेंस सीएडी पर जाएं' : language === 'mr' ? 'रुग्णवाहिका सीएडीवर जा' : 'Switch to Ambulance CAD'}
             </button>
           </div>
         </div>
@@ -125,11 +125,11 @@ export const CitizenSOSView: React.FC = () => {
           <div className="flex items-center gap-2 text-slate-700">
             <MapPin className="w-4 h-4 text-rose-600 shrink-0" />
             <span>
-              <strong>GPS Telemetry:</strong>{' '}
+              <strong>{language === 'hi' ? 'जीपीएस टेलीमेट्री:' : language === 'mr' ? 'जीपीएस टेलिमेट्री:' : 'GPS Telemetry:'}</strong>{' '}
               {isLocating ? (
-                <span className="text-slate-500">Acquiring satellite lock...</span>
+                <span className="text-slate-500">{language === 'hi' ? 'सैटेलाइट सिग्नल खोज रहे हैं...' : language === 'mr' ? 'सॅटेलाइट सिग्नल शोधत आहे...' : 'Acquiring satellite lock...'}</span>
               ) : gpsError ? (
-                <span className="text-amber-700">{gpsError} (Using Default Sector)</span>
+                <span className="text-amber-700">{gpsError}</span>
               ) : (
                 <span className="font-mono text-slate-800">
                   {liveCoordinates.lat.toFixed(4)} N, {Math.abs(liveCoordinates.lng).toFixed(4)} W
@@ -144,7 +144,7 @@ export const CitizenSOSView: React.FC = () => {
             className="text-xs text-neutral-700 hover:text-neutral-900 font-medium flex items-center gap-1 self-start sm:self-auto cursor-pointer"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>Refresh Location</span>
+            <span>{language === 'hi' ? 'स्थान रिफ्रेश करें' : language === 'mr' ? 'स्थान रिफ्रेश करा' : 'Refresh Location'}</span>
           </button>
         </div>
       </div>
@@ -156,11 +156,11 @@ export const CitizenSOSView: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-rose-600 animate-pulse"></span>
               <h3 className="text-base font-bold text-slate-900">
-                Ambulance En Route to Your Location
+                {language === 'hi' ? 'एम्बुलेंस आपके स्थान के लिए रवाना हो चुकी है' : language === 'mr' ? 'रुग्णवाहिका तुमच्या स्थानाकडे निघाली आहे' : 'Ambulance En Route to Your Location'}
               </h3>
             </div>
             <span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200">
-              Active CAD Dispatch
+              {language === 'hi' ? 'सक्रिय सीएडी डिस्पैच' : language === 'mr' ? 'सक्रिय सीएडी डिस्पॅच' : 'Active CAD Dispatch'}
             </span>
           </div>
 
@@ -168,7 +168,7 @@ export const CitizenSOSView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-slate-50 p-3 rounded border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-500 uppercase block">
-                Assigned Unit
+                {language === 'hi' ? 'नियुक्त एम्बुलेंस' : language === 'mr' ? 'नियुक्त रुग्णवाहिका' : 'Assigned Unit'}
               </span>
               <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
                 <Ambulance className="w-4 h-4 text-slate-700" />
@@ -178,17 +178,17 @@ export const CitizenSOSView: React.FC = () => {
 
             <div className="bg-slate-50 p-3 rounded border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-500 uppercase block">
-                Estimated Arrival
+                {language === 'hi' ? 'अनुमानित आगमन' : language === 'mr' ? 'अंदाजित आगमन' : 'Estimated Arrival'}
               </span>
               <span className="text-sm font-bold text-rose-700 flex items-center gap-1.5 mt-0.5 font-mono">
                 <Clock className="w-4 h-4" />
-                ~{activeCitizenSOS.etaMinutes} Minutes
+                ~{activeCitizenSOS.etaMinutes} {language === 'hi' ? 'मिनट' : language === 'mr' ? 'मिनिटे' : 'Minutes'}
               </span>
             </div>
 
             <div className="bg-slate-50 p-3 rounded border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-500 uppercase block">
-                Emergency Type
+                {language === 'hi' ? 'आपातकाल प्रकार' : language === 'mr' ? 'आणीबाणी प्रकार' : 'Emergency Type'}
               </span>
               <span className="text-sm font-bold text-slate-900 uppercase mt-0.5 block">
                 {activeCitizenSOS.category}
@@ -202,28 +202,28 @@ export const CitizenSOSView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-neutral-900 flex items-center gap-1">
                   <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  Auto-Verified Incident Record:
+                  {language === 'hi' ? 'सत्यापित घटना रिकॉर्ड:' : language === 'mr' ? 'पडताळणी घटना नोंद:' : 'Auto-Verified Incident Record:'}
                 </span>
                 <span className="font-mono bg-white px-2 py-0.5 rounded border border-neutral-300 font-bold text-neutral-900">
                   #{activeCitizenSOS.id.toUpperCase()}
                 </span>
               </div>
               <p className="text-slate-600">
-                Paramedic on-scene verification PIN:{' '}
+                {language === 'hi' ? 'पैरामेडिक सत्यापन पिन:' : language === 'mr' ? 'पॅरामेडिक पडताळणी पिन:' : 'Paramedic on-scene verification PIN:'}{' '}
                 <strong className="text-slate-900 font-mono text-sm">
                   {sosVerification ? sosVerification.verificationPin : '4821'}
                 </strong>
-                . Zero waiting time, ambulance was dispatched immediately.
+                . {language === 'hi' ? 'शून्य प्रतीक्षा समय, एम्बुलेंस तुरंत रवाना हुई।' : language === 'mr' ? 'शून्य प्रतीक्षा वेळ, रुग्णवाहिका लगेच निघाली.' : 'Zero waiting time, ambulance was dispatched immediately.'}
               </p>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
               <a
-                href="tel:911"
+                href="tel:108"
                 className="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1.5 text-xs shadow-xs"
               >
                 <PhoneCall className="w-3.5 h-3.5" />
-                <span>Call 911 / 108</span>
+                <span>{language === 'hi' ? 'कॉल 108 / 112' : language === 'mr' ? 'कॉल 108 / 112' : 'Call 911 / 108'}</span>
               </a>
 
               <button
@@ -238,12 +238,12 @@ export const CitizenSOSView: React.FC = () => {
                 {sosVerification?.teleTriageAudioConnected ? (
                   <>
                     <Radio className="w-3.5 h-3.5 animate-pulse" />
-                    <span>Tele-Triage Audio Active</span>
+                    <span>{language === 'hi' ? 'टेली-ट्राइएज ऑडियो सक्रिय' : language === 'mr' ? 'टेली-ट्रायेज ऑडिओ सक्रिय' : 'Tele-Triage Audio Active'}</span>
                   </>
                 ) : (
                   <>
                     <Mic className="w-3.5 h-3.5 text-neutral-700" />
-                    <span>Connect CAD Tele-Triage</span>
+                    <span>{language === 'hi' ? 'टेली-ट्राइएज कनेक्ट करें' : language === 'mr' ? 'टेली-ट्रायेज कनेक्ट करा' : 'Connect CAD Tele-Triage'}</span>
                   </>
                 )}
               </button>
@@ -254,13 +254,13 @@ export const CitizenSOSView: React.FC = () => {
           <div className="bg-slate-50 border border-slate-200 rounded p-4 text-xs space-y-2 text-slate-700">
             <div className="font-bold text-slate-900 flex items-center gap-1.5">
               <Shield className="w-4 h-4 text-neutral-800" />
-              <span>Critical First-Responder Instructions:</span>
+              <span>{language === 'hi' ? 'महत्वपूर्ण प्राथमिक उपचार निर्देश:' : language === 'mr' ? 'महत्त्वाच्या प्रथमोपचार सूचना:' : 'Critical First-Responder Instructions:'}</span>
             </div>
             <ul className="list-disc pl-5 space-y-1 text-slate-600">
-              <li>Keep your phone line open; CAD operators and paramedics can reach you directly.</li>
-              <li>Do not move trauma or spinal injury patients unless in immediate danger.</li>
-              <li>If the patient is unresponsive and not breathing normally, begin continuous chest compressions.</li>
-              <li>Turn on front lights and have someone wait at the street entrance if possible.</li>
+              <li>{language === 'hi' ? 'अपना फोन चालू रखें; सीएडी ऑपरेटर और पैरामेडिक्स सीधे आपसे संपर्क कर सकते हैं।' : language === 'mr' ? 'आपला फोन चालू ठेवा; सीएडी ऑपरेटर आणि पॅरामेडिक्स थेट संपर्क साधू शकतात.' : 'Keep your phone line open; CAD operators and paramedics can reach you directly.'}</li>
+              <li>{language === 'hi' ? 'गंभीर चोट या रीढ़ की हड्डी के मरीजों को खतरे के बिना न हिलाएं।' : language === 'mr' ? 'गंभीर दुखापत किंवा मणक्याच्या रुग्णांना हलवू नका.' : 'Do not move trauma or spinal injury patients unless in immediate danger.'}</li>
+              <li>{language === 'hi' ? 'मरीज बेहोश होने और सांस न लेने पर तुरंत छाती पर दबाव (सीपीआर) शुरू करें।' : language === 'mr' ? 'रुग्ण बेशुद्ध असल्यास त्वरित सीपीआर सुरू करा.' : 'If the patient is unresponsive and not breathing normally, begin continuous chest compressions.'}</li>
+              <li>{language === 'hi' ? 'मुख्य द्वार की लाइट जलाएं और संभव हो तो किसी को प्रवेश द्वार पर खड़ा करें।' : language === 'mr' ? 'दाराची लाईट चालू ठेवा आणि शक्य असल्यास कोणाला तरी गेटवर उभे करा.' : 'Turn on front lights and have someone wait at the street entrance if possible.'}</li>
             </ul>
           </div>
 
@@ -270,14 +270,14 @@ export const CitizenSOSView: React.FC = () => {
               onClick={() => cancelCitizenSOS(activeCitizenSOS.id)}
               className="w-full sm:w-auto px-4 py-2 rounded border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
-              Cancel Request / Patient Transported
+              {language === 'hi' ? 'अनुरोध रद्द करें / मरीज पहुंच गया' : language === 'mr' ? 'विनंती रद्द करा / रुग्ण पोहोचला' : 'Cancel Request / Patient Transported'}
             </button>
 
             <button
               onClick={() => setRole('ambulance')}
               className="w-full sm:w-auto px-4 py-2 rounded bg-neutral-900 hover:bg-black text-white text-xs font-bold transition-colors shadow-xs cursor-pointer"
             >
-              Monitor in Regional Hospital Dispatch Matrix
+              {language === 'hi' ? 'अस्पताल डिस्पैच मैट्रिक्स में देखें' : language === 'mr' ? 'रुग्णालय डिस्पॅच मॅट्रिक्समध्ये पहा' : 'Monitor in Regional Hospital Dispatch Matrix'}
             </button>
           </div>
         </div>
@@ -336,7 +336,7 @@ export const CitizenSOSView: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Callback Phone Number:
+                  {language === 'hi' ? 'संपर्क फोन नंबर:' : language === 'mr' ? 'संपर्क फोन नंबर:' : 'Callback Phone Number:'}
                 </label>
                 <div className="relative">
                   <PhoneCall className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -344,7 +344,7 @@ export const CitizenSOSView: React.FC = () => {
                     type="tel"
                     value={callerPhone}
                     onChange={(e) => setCallerPhone(e.target.value)}
-                    placeholder="e.g. 555-0199 / 9876543210"
+                    placeholder={language === 'hi' ? 'उदा. 9876543210' : language === 'mr' ? 'उदा. 9876543210' : 'e.g. 555-0199 / 9876543210'}
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
                   />
                 </div>
@@ -352,7 +352,7 @@ export const CitizenSOSView: React.FC = () => {
 
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Landmark or Spoken Condition Note:
+                  {language === 'hi' ? 'लैंडमार्क या स्थिति विवरण:' : language === 'mr' ? 'लँडमार्क किंवा स्थिती तपशील:' : 'Landmark or Spoken Condition Note:'}
                 </label>
                 <div className="relative">
                   <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -360,7 +360,7 @@ export const CitizenSOSView: React.FC = () => {
                     type="text"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="e.g. 2nd floor, Apartment 4B or condition details"
+                    placeholder={language === 'hi' ? 'उदा. दूसरी मंजिल, फ्लैट 4B या मरीज की स्थिति' : language === 'mr' ? 'उदा. दुसरा मजला, फ्लॅट 4B किंवा स्थिती' : 'e.g. 2nd floor, Apartment 4B or condition details'}
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500"
                   />
                 </div>

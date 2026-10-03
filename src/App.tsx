@@ -6,7 +6,7 @@ import { HomePage } from './components/home/HomePage';
 import { AmbulanceDispatchView } from './components/dispatch/AmbulanceDispatchView';
 import { NurseBedUpdateView } from './components/nurse/NurseBedUpdateView';
 import { ERConfirmHoldView } from './components/er/ERConfirmHoldView';
-import { PatientDashboard } from './components/patient/PatientDashboard';
+import { CitizenSOSView } from './components/citizen/CitizenSOSView';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { NotificationToast } from './components/common/NotificationToast';
 import { OmnidimensionVoiceAgent } from './components/common/OmnidimensionVoiceAgent';
@@ -53,7 +53,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onReturnHome }) => 
         {(currentRole === 'er' || currentRole === 'hospital') && <ERConfirmHoldView />}
 
         {/* Citizen SOS & Regional Admin */}
-        {currentRole === 'patient' && <PatientDashboard />}
+        {currentRole === 'patient' && <CitizenSOSView />}
         {currentRole === 'admin' && <AdminDashboard />}
       </main>
 

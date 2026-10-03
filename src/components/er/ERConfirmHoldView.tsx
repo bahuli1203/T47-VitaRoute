@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useBedLink } from '../../context/BedLinkContext';
 import { CountdownRing } from '../common/CountdownRing';
 import { soundManager } from '../../utils/audio';
-import { BED_TYPES, TRIAGE_LEVELS, HoldRequest } from '../../types/bedlink';
+import { BED_TYPES, TRIAGE_LEVELS, HoldRequest, BedTypeId } from '../../types/bedlink';
 import {
   Building,
   Check,
@@ -28,6 +28,8 @@ export const ERConfirmHoldView: React.FC = () => {
     markArrived,
     cancelHold,
     simulateIncomingAmbulance,
+    language,
+    t,
   } = useBedLink();
 
   // Find incoming pending hold
@@ -47,12 +49,38 @@ export const ERConfirmHoldView: React.FC = () => {
   // Rejection modal
   const [rejectingHoldId, setRejectingHoldId] = useState<string | null>(null);
 
-  const DIVERSION_REASONS = [
-    'Attending specialist occupied in emergency surgery',
-    'No ventilator capacity on ward',
-    'Emergency Department at maximum surge divert',
-    'Radiology / CT Scanner offline for maintenance',
+  const diversionReasons = [
+    language === 'hi' 
+      ? 'सर्जन/विशेषज्ञ आपातकालीन सर्जरी में व्यस्त हैं' 
+      : language === 'mr' 
+      ? 'तज्ज्ञ डॉक्टर आपत्कालीन शस्त्रक्रियेमध्ये व्यस्त आहेत' 
+      : 'Attending specialist occupied in emergency surgery',
+    language === 'hi' 
+      ? 'वार्ड में वेंटिलेटर की क्षमता उपलब्ध नहीं है' 
+      : language === 'mr' 
+      ? 'वॉर्डमध्ये व्हेंटिलेटरची क्षमता उपलब्ध नाही' 
+      : 'No ventilator capacity on ward',
+    language === 'hi' 
+      ? 'आपातकालीन विभाग अधिकतम सर्ज डायवर्जन पर है' 
+      : language === 'mr' 
+      ? 'आणीबाणी विभाग कमाल क्षमतेमुळे डायव्हर्शनवर आहे' 
+      : 'Emergency Department at maximum surge divert',
+    language === 'hi' 
+      ? 'रेडियोलॉजी / सीटी स्कैनर रखरखाव हेतु बंद है' 
+      : language === 'mr' 
+      ? 'रेडिओलॉजी / सीटी स्कॅनर देखभालीसाठी बंद आहे' 
+      : 'Radiology / CT Scanner offline for maintenance',
   ];
+
+  const getBedLabel = (key: BedTypeId) => {
+    if (key === 'icu_ventilator') return t.bedIcuVent;
+    if (key === 'icu_non_ventilator') return `${t.bedIcuVent} (Stepdown)`;
+    if (key === 'cardiac_monitored') return t.bedCardiac;
+    if (key === 'oxygen_bed') return t.bedOxygen;
+    if (key === 'burns_isolation') return t.bedBurns;
+    if (key === 'trauma_resuscitation') return t.bedTrauma;
+    return (BED_TYPES as Record<string, { label: string }>)[key]?.label || String(key);
+  };
 
   // Sound alert management for incoming pending request
   useEffect(() => {
@@ -105,7 +133,7 @@ export const ERConfirmHoldView: React.FC = () => {
               </select>
             </div>
             <p className="text-xs text-neutral-500 mt-1">
-              Receiving ER Desk &middot; Trauma Bay Coordination &middot; Radio: {currentHospital.directRadioChannel}
+              {t.receivingStationHeader} &middot; Radio: {currentHospital.directRadioChannel}
             </p>
           </div>
         </div>
@@ -115,7 +143,7 @@ export const ERConfirmHoldView: React.FC = () => {
           className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
           <Flame className="w-3.5 h-3.5 text-amber-600" />
-          <span>Simulate Incoming Request</span>
+          <span>{t.simulateIncoming}</span>
         </button>
       </div>
 
@@ -127,11 +155,11 @@ export const ERConfirmHoldView: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-subtle-pulse"></span>
               <h3 className="font-bold text-sm sm:text-base text-neutral-900">
-                Incoming bed hold request from {primaryPendingHold.ambulanceCallSign}
+                {t.incomingHoldAlert} {primaryPendingHold.ambulanceCallSign}
               </h3>
             </div>
             <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-              120s Confirmation Window
+              {t.window120Badge}
             </span>
           </div>
 
@@ -159,25 +187,25 @@ export const ERConfirmHoldView: React.FC = () => {
                 </span>
               </div>
 
-              {/* Bed Type Display (Exact Prompt Requirement) */}
+              {/* Bed Type Display */}
               <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
-                <span className="text-xs text-slate-500 block font-medium">Requested Bed:</span>
+                <span className="text-xs text-slate-500 block font-medium">{t.requiredBedType}:</span>
                 <span className="text-base font-bold text-slate-900 block mt-0.5">
-                  {BED_TYPES[primaryPendingHold.bedType].label}: 1 bed
+                  {getBedLabel(primaryPendingHold.bedType)}: 1 bed
                 </span>
                 <span className="text-xs text-slate-600 mt-0.5 block">
-                  Current Available in Hospital: {currentHospital.beds[primaryPendingHold.bedType]?.available ?? 0} beds
+                  {t.availableBeds}: {currentHospital.beds[primaryPendingHold.bedType]?.available ?? 0}
                 </span>
               </div>
 
               {/* Vitals Summary */}
               <div className="grid grid-cols-4 gap-2 text-center text-xs">
                 <div className="bg-slate-50 p-2 rounded border border-slate-200">
-                  <span className="text-[10px] text-slate-500 block">Blood Pressure</span>
+                  <span className="text-[10px] text-slate-500 block">BP</span>
                   <span className="font-bold text-slate-900 font-mono">{primaryPendingHold.vitalsSummary.bp}</span>
                 </div>
                 <div className="bg-slate-50 p-2 rounded border border-slate-200">
-                  <span className="text-[10px] text-slate-500 block">Heart Rate</span>
+                  <span className="text-[10px] text-slate-500 block">Pulse</span>
                   <span className="font-bold text-red-700 font-mono">{primaryPendingHold.vitalsSummary.hr} bpm</span>
                 </div>
                 <div className="bg-slate-50 p-2 rounded border border-slate-200">
@@ -191,14 +219,14 @@ export const ERConfirmHoldView: React.FC = () => {
               </div>
 
               <p className="text-xs text-slate-600">
-                <strong>Chief Complaint:</strong> {primaryPendingHold.chiefComplaint}
+                <strong>{t.patientFieldNoteLabel}</strong> {primaryPendingHold.chiefComplaint}
               </p>
             </div>
 
             {/* Countdown Timer */}
             <div className="md:col-span-4 flex flex-col items-center justify-center p-4 bg-slate-50 rounded-md border border-slate-200 text-center">
               <span className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wider">
-                Hold Deadline
+                {t.holdCountdownTitle}
               </span>
               <CountdownRing
                 expiresAt={primaryPendingHold.expiresAt}
@@ -207,12 +235,12 @@ export const ERConfirmHoldView: React.FC = () => {
                 strokeWidth={9}
               />
               <p className="text-[11px] text-slate-500 mt-2 max-w-[200px]">
-                If not confirmed within 120s, VitaRoute will automatically contact the next available hospital.
+                {t.autoCascadeNextHospital}
               </p>
             </div>
           </div>
 
-          {/* Action Buttons: Accept & Reject (Min 48px touch targets for mobile) */}
+          {/* Action Buttons: Accept & Reject */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-neutral-200">
             <button
               type="button"
@@ -220,7 +248,7 @@ export const ERConfirmHoldView: React.FC = () => {
               className="min-h-[48px] py-3 px-4 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:bg-rose-200"
             >
               <X className="w-4 h-4 text-rose-600" />
-              <span>Reject (Trigger Hospital Diversion)</span>
+              <span>{t.rejectHoldButton}</span>
             </button>
 
             <button
@@ -229,7 +257,7 @@ export const ERConfirmHoldView: React.FC = () => {
               className="min-h-[48px] py-3 px-4 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98"
             >
               <Check className="w-4 h-4 stroke-[2.5]" />
-              <span>Accept Bed Request (Confirm &amp; Lock)</span>
+              <span>{t.acceptHoldButton}</span>
             </button>
           </div>
         </div>
@@ -240,17 +268,25 @@ export const ERConfirmHoldView: React.FC = () => {
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
           <h3 className="text-sm font-bold text-neutral-900">
-            No Incoming Unconfirmed Requests at {currentHospital.name}
+            {language === 'hi' 
+              ? `${currentHospital.name} पर कोई नया असत्यापित अनुरोध नहीं है` 
+              : language === 'mr' 
+              ? `${currentHospital.name} येथे कोणतीही नवीन प्रलंबित विनंती नाही` 
+              : `No Incoming Unconfirmed Requests at ${currentHospital.name}`}
           </h3>
           <p className="text-xs text-neutral-500 max-w-sm mx-auto mt-1 mb-3">
-            All inbound emergency beds are confirmed or active. Click below to simulate an incoming ambulance reservation.
+            {language === 'hi' 
+              ? 'सभी आपातकालीन बेड आरक्षित या सक्रिय हैं। 120 सेकंड होल्ड का परीक्षण करने के लिए नीचे क्लिक करें।' 
+              : language === 'mr' 
+              ? 'सर्व आणीबाणी बेड्स आरक्षित किंवा सक्रिय आहेत. 120 सेकंद होल्ड चाचणीसाठी खाली क्लिक करा.' 
+              : 'All inbound emergency beds are confirmed or active. Click below to simulate an incoming ambulance reservation.'}
           </p>
           <button
             onClick={simulateIncomingAmbulance}
             className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Flame className="w-3.5 h-3.5 text-amber-600" />
-            <span>Simulate Incoming Ambulance (120s Hold)</span>
+            <span>{t.simulateIncoming} (120s Hold)</span>
           </button>
         </div>
       )}
@@ -261,10 +297,14 @@ export const ERConfirmHoldView: React.FC = () => {
           <div>
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-emerald-700" />
-              <span>Confirmed Bed Holds &middot; Inbound Ambulance Queue</span>
+              <span>{t.heldBedConfirmed}</span>
             </h3>
             <p className="text-xs text-neutral-500">
-              Emergency beds officially locked for arriving ambulances.
+              {language === 'hi' 
+                ? 'आने वाली एम्बुलेंस के लिए आधिकारिक रूप से सुरक्षित किए गए बेड।' 
+                : language === 'mr' 
+                ? 'येणाऱ्या रुग्णवाहिकांसाठी अधिकृतपणे आरक्षित केलेले बेड्स.' 
+                : 'Emergency beds officially locked for arriving ambulances.'}
             </p>
           </div>
           <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -274,12 +314,15 @@ export const ERConfirmHoldView: React.FC = () => {
 
         {confirmedHolds.length === 0 ? (
           <div className="py-8 text-center text-xs text-slate-400">
-            No confirmed bed holds currently en route to this hospital.
+            {language === 'hi' 
+              ? 'इस अस्पताल के लिए वर्तमान में कोई सक्रिय होल्ड नहीं है।' 
+              : language === 'mr' 
+              ? 'या रुग्णालयासाठी सध्या कोणतेही सक्रिय होल्ड नाही.' 
+              : 'No confirmed bed holds currently en route to this hospital.'}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-4">
             {confirmedHolds.map((hold) => (
-              /* Visually Obvious Bed Hold Card (Exact Prompt Specification) */
               <div
                 key={hold.id}
                 className="bg-emerald-50/50 border-2 border-emerald-500 rounded-lg p-4 flex flex-col justify-between shadow-xs"
@@ -289,29 +332,29 @@ export const ERConfirmHoldView: React.FC = () => {
                   <div className="flex items-center justify-between pb-2 border-b border-emerald-200">
                     <span className="text-xs font-black tracking-wider text-emerald-800 uppercase flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                      BED HELD
+                      {t.bedHeldReservationLocked}
                     </span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-600 text-white font-mono">
                       RESERVED
                     </span>
                   </div>
 
-                  {/* Required Information: Hospital Name, Bed Type, Ambulance ID, Hold Time Remaining */}
+                  {/* Required Information */}
                   <div className="space-y-1.5 pt-2 text-xs">
                     <div>
                       <span className="text-slate-500 font-medium">Hospital Name:</span>{' '}
                       <strong className="text-slate-900 font-bold">{hold.hospitalName}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-medium">Bed Type:</span>{' '}
-                      <strong className="text-slate-900 font-bold">{BED_TYPES[hold.bedType].label}</strong>
+                      <span className="text-slate-500 font-medium">{t.requiredBedType}:</span>{' '}
+                      <strong className="text-slate-900 font-bold">{getBedLabel(hold.bedType)}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-medium">Ambulance ID:</span>{' '}
+                      <span className="text-slate-500 font-medium">{t.ambulanceCallSign}:</span>{' '}
                       <strong className="text-slate-900 font-mono">{hold.ambulanceCallSign}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-medium">Hold Time Remaining / ETA:</span>{' '}
+                      <span className="text-slate-500 font-medium">{t.estimatedArrivalLabel}</span>{' '}
                       <strong className="text-emerald-800 font-mono font-bold">~{hold.etaMinutes} mins ({hold.distanceKm} km)</strong>
                     </div>
                     <div className="text-[11px] text-slate-600 bg-white p-2 rounded border border-emerald-200 mt-2">
@@ -420,11 +463,11 @@ export const ERConfirmHoldView: React.FC = () => {
             <p className="text-xs text-slate-600">
               When rejected, VitaRoute will notify dispatch:
               <br />
-              <em className="text-slate-800 font-semibold">&ldquo;Hospital did not confirm. Contacting next available hospital...&rdquo;</em>
+              <em className="text-slate-800 font-semibold">&ldquo;{t.hospitalDidNotConfirm}&rdquo;</em>
             </p>
 
             <div className="flex flex-col gap-2">
-              {DIVERSION_REASONS.map((reason) => (
+              {diversionReasons.map((reason) => (
                 <button
                   key={reason}
                   type="button"
@@ -443,7 +486,7 @@ export const ERConfirmHoldView: React.FC = () => {
                 onClick={() => setRejectingHoldId(null)}
                 className="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium"
               >
-                Cancel
+                {t.cancel}
               </button>
             </div>
           </div>

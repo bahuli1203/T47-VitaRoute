@@ -49,16 +49,18 @@ export const OmnidimensionVoiceAgent: React.FC<OmnidimensionVoiceAgentProps> = (
       sender: 'agent',
       text:
         language === 'hi'
-          ? 'नमस्ते! मैं वीटारूट का ओम्नीडायमेंशन आपातकालीन वॉइस एजेंट हूँ। आप मुझसे आईसीयू बेड, एम्बुलेंस डिस्पैच या अस्पताल होल्ड के बारे में पूछ सकते हैं।'
+          ? 'नमस्ते! मैं वीटारूट का वॉइस एजेंट (Voice Agent) हूँ। आप मुझसे आईसीयू बेड, एम्बुलेंस डिस्पैच या अस्पताल होल्ड के बारे में पूछ सकते हैं।'
           : language === 'mr'
-          ? 'नमस्कार! मी व्हिटारूटचा ओम्नीडायमेन्शन आणीबाणी व्हॉइस एजंट आहे. आपण मला आयसीयू बेड, रुग्णवाहिका किंवा रुग्णालयाबद्दल विचारू शकता.'
-          : 'Hello! I am VitaRoute’s Omnidimension Emergency Voice Agent. Ask me about real-time ICU beds, 120s ER holds, or nearest hospitals.',
+          ? 'नमस्कार! मी व्हिटारूटचा व्हॉइस एजंट (Voice Agent) आहे. आपण मला आयसीयू बेड, रुग्णवाहिका किंवा रुग्णालयाबद्दल विचारू शकता.'
+          : 'Hello! I am VitaRoute’s Voice Agent. Ask me about real-time ICU beds, 120s ER holds, or nearest hospitals.',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
 
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const speechDebounceTimerRef = useRef<any>(null);
+  const pendingSpokenRef = useRef<string>('');
 
   // Auto-scroll messages
   useEffect(() => {
@@ -81,32 +83,64 @@ export const OmnidimensionVoiceAgent: React.FC<OmnidimensionVoiceAgentProps> = (
     try {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
 
       if (language === 'hi') recognition.lang = 'hi-IN';
       else if (language === 'mr') recognition.lang = 'mr-IN';
       else recognition.lang = 'en-US';
 
       recognition.onresult = (event: any) => {
-        const spoken = event.results[0][0].transcript;
-        if (spoken) {
-          handleUserQuery(spoken);
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          fullTranscript += event.results[i][0].transcript + ' ';
         }
+        const cleanSpoken = fullTranscript.trim();
+        if (cleanSpoken) {
+          setInputText(cleanSpoken);
+          pendingSpokenRef.current = cleanSpoken;
+        }
+      };
+
+      recognition.onerror = () => {
         setIsListening(false);
       };
 
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
+      recognition.onend = () => {
+        setIsListening(false);
+        const queryToRun = pendingSpokenRef.current.trim();
+        if (queryToRun) {
+          pendingSpokenRef.current = '';
+          handleUserQuery(queryToRun);
+        }
+      };
 
       recognitionRef.current = recognition;
     } catch (_) {}
+
+    return () => {
+      if (speechDebounceTimerRef.current) clearTimeout(speechDebounceTimerRef.current);
+    };
   }, [language]);
 
   const toggleListening = () => {
     if (isListening) {
-      recognitionRef.current?.stop();
+      if (speechDebounceTimerRef.current) {
+        clearTimeout(speechDebounceTimerRef.current);
+      }
+      try {
+        recognitionRef.current?.stop();
+      } catch (_) {}
       setIsListening(false);
+
+      // Submit accumulated question once user taps mic to finish
+      if (pendingSpokenRef.current.trim()) {
+        const queryToRun = pendingSpokenRef.current.trim();
+        pendingSpokenRef.current = '';
+        handleUserQuery(queryToRun);
+      }
     } else {
+      setInputText('');
+      pendingSpokenRef.current = '';
       try {
         recognitionRef.current?.start();
         setIsListening(true);
@@ -238,7 +272,7 @@ export const OmnidimensionVoiceAgent: React.FC<OmnidimensionVoiceAgentProps> = (
         type="button"
         onClick={() => setIsOpen(true)}
         className="fixed bottom-20 sm:bottom-6 right-6 z-40 bg-neutral-900 hover:bg-black text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2.5 cursor-pointer border border-neutral-700 hover:scale-105"
-        title="Open Omnidimension Voice Agent"
+        title="Open Voice Agent"
       >
         <span className="relative flex h-3 w-3">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -246,7 +280,7 @@ export const OmnidimensionVoiceAgent: React.FC<OmnidimensionVoiceAgentProps> = (
         </span>
         <Sparkles className="w-4 h-4 text-emerald-400" />
         <span className="text-xs font-bold font-sans">
-          {language === 'hi' ? 'ओम्नीडायमेंशन वॉइस' : language === 'mr' ? 'व्हॉइस एजंट' : 'Omnidimension Voice AI'}
+          {language === 'hi' ? 'वॉइस एजेंट' : language === 'mr' ? 'व्हॉइस एजंट' : 'Voice Agent'}
         </span>
       </button>
 
@@ -278,7 +312,7 @@ export const OmnidimensionVoiceAgent: React.FC<OmnidimensionVoiceAgentProps> = (
                   className={`p-2 rounded-lg text-neutral-600 hover:text-neutral-900 transition-colors ${
                     showConfig ? 'bg-neutral-200' : 'hover:bg-neutral-100'
                   }`}
-                  title="Configure Omnidimension Agent Link"
+                  title="Configure Voice Agent Link"
                 >
                   <Settings className="w-4 h-4" />
                 </button>
@@ -301,15 +335,15 @@ export const OmnidimensionVoiceAgent: React.FC<OmnidimensionVoiceAgentProps> = (
               </div>
             </div>
 
-            {/* Omnidimension Link Configuration Drawer */}
+            {/* Voice Agent Link Configuration Drawer */}
             {showConfig && (
               <div className="p-3.5 bg-neutral-100 border-b border-neutral-200 text-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-neutral-900 flex items-center gap-1">
                     <ExternalLink className="w-3.5 h-3.5 text-neutral-700" />
-                    Omnidimension Custom Agent Link:
+                    Voice Agent Link (OmniDimension Embed):
                   </span>
-                  <span className="text-[11px] text-neutral-500">Paste your Omnidimension agent URL</span>
+                  <span className="text-[11px] text-neutral-500">Paste custom agent URL</span>
                 </div>
                 <div className="flex gap-2">
                   <input
@@ -331,18 +365,18 @@ export const OmnidimensionVoiceAgent: React.FC<OmnidimensionVoiceAgentProps> = (
                 </div>
                 <p className="text-[10px] text-neutral-500">
                   {omnidimensionLink
-                    ? '✓ Custom Omnidimension agent URL is active.'
-                    : 'Using built-in multi-lingual VitaRoute voice agent (Hindi, Marathi, English). Paste your Omnidimension link above anytime to load external embed.'}
+                    ? '✓ Custom Voice Agent URL is active.'
+                    : 'Using built-in multi-lingual VitaRoute voice agent (Hindi, Marathi, English). Paste your OmniDimension or custom link above anytime to load external embed.'}
                 </p>
               </div>
             )}
 
-            {/* If Omnidimension iframe URL is provided, display it directly */}
+            {/* If custom iframe URL is provided, display it directly */}
             {omnidimensionLink ? (
               <div className="flex-1 w-full bg-white relative">
                 <iframe
                   src={omnidimensionLink}
-                  title="Omnidimension Voice Agent"
+                  title="Voice Agent"
                   className="w-full h-full border-0"
                   allow="microphone; camera; display-capture"
                 />

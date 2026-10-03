@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth, DEMO_USERS } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useBedLink } from '../../context/BedLinkContext';
 import { AnimatedRouteHero } from './AnimatedRouteHero';
 import { AppRole } from '../../types/bedlink';
@@ -16,65 +16,17 @@ import {
   ArrowRight,
   ChevronRight,
   ShieldCheck,
-  MapPin,
+  Navigation,
   Lock,
   Play,
   Check,
   Globe,
-  Sparkles,
+  Radio,
 } from 'lucide-react';
 
 interface HomePageProps {
   onEnterApp?: () => void;
 }
-
-const HUMAN_DEMO_ACCOUNTS = [
-  {
-    role: 'ambulance' as AppRole,
-    title: 'Paramedic Ambulance Crew',
-    subtitle: 'Arjun Singh &middot; Unit 104',
-    email: 'ambulance@demo.com',
-    icon: Ambulance,
-    scenario: 'Looking for nearest hospital with open ICU ventilator for an intubated patient',
-    badgeText: 'Dispatch View',
-  },
-  {
-    role: 'nurse' as AppRole,
-    title: 'Ward Charge Nurse',
-    subtitle: 'Sarah Kowalski &middot; St. Jude Medical',
-    email: 'nurse@demo.com',
-    icon: Stethoscope,
-    scenario: 'Updating ICU and trauma bed counts on ward phone in under 10 seconds',
-    badgeText: '10s Bed Counter',
-  },
-  {
-    role: 'hospital' as AppRole,
-    title: 'ER Receiving Doctor',
-    subtitle: 'Dr. Katherine Vance &middot; City General ER',
-    email: 'hospital@demo.com',
-    icon: Clock,
-    scenario: 'Accepting incoming ambulance hold request within 2-minute confirmation window',
-    badgeText: '2m Hold Screen',
-  },
-  {
-    role: 'patient' as AppRole,
-    title: 'Citizen Emergency SOS',
-    subtitle: 'Rajesh Kumar &middot; Patient Profile',
-    email: 'patient@demo.com',
-    icon: Heart,
-    scenario: 'Triggering 1-tap medical SOS with bundled allergies and cardiac history',
-    badgeText: 'Citizen SOS',
-  },
-  {
-    role: 'admin' as AppRole,
-    title: 'Regional Health Director',
-    subtitle: 'Admin Control Center',
-    email: 'admin@demo.com',
-    icon: UserCog,
-    scenario: 'Monitoring regional hospital diversion statuses and city-wide ambulance fleet',
-    badgeText: 'Admin Command',
-  },
-];
 
 export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
   const { login } = useAuth();
@@ -84,6 +36,74 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const humanDemoAccounts = [
+    {
+      role: 'ambulance' as AppRole,
+      title: t.roleAmbulance,
+      subtitle: 'Arjun Singh · Unit 104',
+      email: 'ambulance@demo.com',
+      icon: Ambulance,
+      scenario: language === 'hi' 
+        ? 'वेंटिलेटर पर मरीज के लिए निकटतम आईसीयू बेड और कैथ लैब की खोज'
+        : language === 'mr'
+        ? 'व्हेंटिलेटरवरील रुग्णासाठी जवळचे आयसीयू बेड आणि कॅथ लॅब शोधणे'
+        : 'Looking for nearest hospital with open ICU ventilator for an intubated patient',
+      badgeText: language === 'hi' ? 'डिस्पैच व्यू' : language === 'mr' ? 'डिस्पॅच दृश्य' : 'Dispatch View',
+    },
+    {
+      role: 'nurse' as AppRole,
+      title: t.roleNurse,
+      subtitle: 'Sarah Kowalski · Ward Station 3',
+      email: 'nurse@demo.com',
+      icon: Stethoscope,
+      scenario: language === 'hi'
+        ? 'फोन पर 10 सेकंड में आईसीयू व ट्रामा बेड की सटीक संख्या अपडेट करना'
+        : language === 'mr'
+        ? 'मोबाईलवर 10 सेकंदात आयसीयू आणि ट्रॉमा बेड्स अद्ययावत करणे'
+        : 'Updating ICU and trauma bed counts on ward phone in under 10 seconds',
+      badgeText: language === 'hi' ? '10s बेड काउंटर' : language === 'mr' ? '10s बेड काउंटर' : '10s Bed Counter',
+    },
+    {
+      role: 'hospital' as AppRole,
+      title: t.roleERDoctor,
+      subtitle: 'Dr. Katherine Vance · City General ER',
+      email: 'hospital@demo.com',
+      icon: Clock,
+      scenario: language === 'hi'
+        ? '120 सेकंड की विंडो में आने वाली एम्बुलेंस का बेड होल्ड अनुरोध स्वीकारना'
+        : language === 'mr'
+        ? '120 सेकंदांच्या मुदतीत येणाऱ्या रुग्णवाहिकेची बेड होल्ड विनंती स्वीकारणे'
+        : 'Accepting incoming ambulance hold request within 2-minute confirmation window',
+      badgeText: language === 'hi' ? '120s होल्ड स्क्रीन' : language === 'mr' ? '120s होल्ड स्क्रीन' : '2m Hold Screen',
+    },
+    {
+      role: 'patient' as AppRole,
+      title: t.roleCitizen,
+      subtitle: 'Rajesh Kumar · Citizen Profile',
+      email: 'patient@demo.com',
+      icon: Heart,
+      scenario: language === 'hi'
+        ? '1-टैप में तत्काल जीपीएस के साथ आपातकालीन एसओएस भेजना'
+        : language === 'mr'
+        ? '1-टॅपमध्ये थेट जीपीएससह आणीबाणी एसओएस सुरू करणे'
+        : 'Triggering 1-tap medical SOS with bundled allergies and cardiac history',
+      badgeText: language === 'hi' ? 'नागरिक एसओएस' : language === 'mr' ? 'नागरिक एसओएस' : 'Citizen SOS',
+    },
+    {
+      role: 'admin' as AppRole,
+      title: t.roleAdmin,
+      subtitle: 'Admin Control Center',
+      email: 'admin@demo.com',
+      icon: UserCog,
+      scenario: language === 'hi'
+        ? 'क्षेत्रीय अस्पतालों की स्थिति और एम्बुलेंस फ्लीट की निगरानी'
+        : language === 'mr'
+        ? 'प्रादेशिक रुग्णालयांची स्थिती आणि रुग्णवाहिकांचे नियंत्रण'
+        : 'Monitoring regional hospital diversion statuses and city-wide ambulance fleet',
+      badgeText: language === 'hi' ? 'एडमिन कमांड' : language === 'mr' ? 'ॲडमिन कमांड' : 'Admin Command',
+    },
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,16 +153,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
             </div>
             <div>
               <span className="text-base font-bold text-neutral-950 tracking-tight block leading-tight">VitaRoute</span>
-              <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">Emergency Bed Coordination</span>
+              <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">{t.emergencyCoordination}</span>
             </div>
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-neutral-600">
             <button onClick={() => scrollToSection('problem-parts')} className="hover:text-neutral-950 transition-colors cursor-pointer">
-              {t.flowTitle}
+              {t.partsTitle}
             </button>
             <button onClick={() => scrollToSection('scenarios')} className="hover:text-neutral-950 transition-colors cursor-pointer">
-              Clinical Scenarios
+              {t.clinicalScenarios}
             </button>
             <button onClick={() => scrollToSection('login-portal')} className="hover:text-neutral-950 transition-colors cursor-pointer">
               {t.loginPortalTitle}
@@ -170,19 +190,19 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
               className="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-black text-white font-semibold text-xs transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Paramedic Demo</span>
+              <span>{t.openParamedicDemo}</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Human-Centered Liquid Glass Hero Section with Animated Route Graph */}
-      <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white border-b border-neutral-200 overflow-hidden">
-        {/* Animated Background Vector Routes & Monochrome Glass Nodes */}
+      {/* Transparent Liquid Glass Hero Section with Animated Route Graph */}
+      <section className="relative py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-transparent border-b border-neutral-200 overflow-hidden">
+        {/* Animated Background Vector Routes & Signals */}
         <AnimatedRouteHero />
 
-        {/* Liquid Glass Frosted Card */}
-        <div className="relative z-10 max-w-4xl mx-auto text-center backdrop-blur-[2px] bg-white/70 p-6 sm:p-10 rounded-3xl border border-white/80 shadow-xs">
+        {/* Completely Transparent Content Container */}
+        <div className="relative z-10 max-w-5xl mx-auto text-center bg-transparent py-4 sm:py-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-neutral-200 text-xs font-semibold text-neutral-800 mb-6 shadow-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
             <span>{t.tagline}</span>
@@ -195,7 +215,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
+          <p className="text-base sm:text-lg text-neutral-700 max-w-3xl mx-auto leading-relaxed mb-8 font-medium">
             {t.heroSubtitle}
           </p>
 
@@ -215,29 +235,102 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
             </button>
             <button
               onClick={() => handleQuickLogin('nurse@demo.com')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
             >
               <span>{t.nurseUpdate}</span>
             </button>
           </div>
 
-          {/* Real Operational Numbers */}
-          <div className="mt-14 pt-8 border-t border-neutral-200/80 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-            <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
+          {/* 4-Step Emergency Pipeline Track - 100% Visible on all devices (Steps 1, 2, 3, 4) */}
+          <div className="my-10 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5 text-left">
+              {/* Step 1: Citizen SOS */}
+              <div 
+                onClick={() => handleQuickLogin('patient@demo.com')}
+                className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/90 backdrop-blur-md border border-neutral-200/90 shadow-xs hover:border-neutral-400 transition-all cursor-pointer group"
+              >
+                <div className="relative shrink-0">
+                  <span className="absolute -inset-1 rounded-full bg-rose-500/20 animate-ping" />
+                  <div className="w-10 h-10 rounded-xl bg-white border border-rose-200 flex items-center justify-center text-rose-600 shadow-2xs group-hover:scale-105 transition-transform">
+                    <Heart className="w-5 h-5 fill-rose-50" />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-600 block">Step 01</span>
+                  <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep1}</span>
+                </div>
+              </div>
+
+              {/* Step 2: Live GPS & Road CAD - PROMINENTLY VISIBLE */}
+              <div 
+                onClick={() => handleQuickLogin('ambulance@demo.com')}
+                className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/90 backdrop-blur-md border border-neutral-200/90 shadow-xs hover:border-neutral-400 transition-all cursor-pointer group"
+              >
+                <div className="relative shrink-0">
+                  <span className="absolute -inset-1 rounded-full bg-neutral-900/10 animate-pulse" />
+                  <div className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                    <Radio className="w-5 h-5" />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500 block">Step 02</span>
+                  <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep2}</span>
+                </div>
+              </div>
+
+              {/* Step 3: 120s ER Hold Window - PROMINENTLY VISIBLE */}
+              <div 
+                onClick={() => handleQuickLogin('hospital@demo.com')}
+                className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/90 backdrop-blur-md border border-amber-300 shadow-xs hover:border-amber-400 transition-all cursor-pointer group"
+              >
+                <div className="relative shrink-0">
+                  <span className="absolute -inset-1 rounded-full bg-amber-500/20 animate-pulse" />
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                    <Clock className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700 block">Step 03</span>
+                  <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep3}</span>
+                </div>
+              </div>
+
+              {/* Step 4: ICU Bed Reserved */}
+              <div 
+                onClick={() => handleQuickLogin('nurse@demo.com')}
+                className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/90 backdrop-blur-md border border-emerald-300 shadow-xs hover:border-emerald-400 transition-all cursor-pointer group"
+              >
+                <div className="relative shrink-0">
+                  <span className="absolute -inset-1 rounded-full bg-emerald-500/20 animate-ping" />
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-700 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                    <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700 block">Step 04</span>
+                  <span className="text-xs font-bold text-neutral-900 leading-tight block">{t.pipelineStep4}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Operational Metrics Cards */}
+          <div className="pt-6 border-t border-neutral-200/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div className="bg-white/85 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/80 shadow-xs">
               <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">&lt; 10 sec</span>
-              <span className="text-xs text-neutral-500 font-medium">{t.nurseUpdate}</span>
+              <span className="text-xs text-neutral-500 font-medium">{t.nurseBedUpdateStat}</span>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
+            <div className="bg-white/85 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/80 shadow-xs">
               <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">4 Constraints</span>
-              <span className="text-xs text-neutral-500 font-medium">Beds, ETA, Freshness &amp; Load</span>
+              <span className="text-xs text-neutral-500 font-medium">{t.constraintsStat}</span>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
+            <div className="bg-white/85 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/80 shadow-xs">
               <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">120 sec</span>
-              <span className="text-xs text-neutral-500 font-medium">{t.erConfirmHold}</span>
+              <span className="text-xs text-neutral-500 font-medium">{t.holdTimerStat}</span>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
+            <div className="bg-white/85 backdrop-blur-xs p-3.5 rounded-xl border border-neutral-200/80 shadow-xs">
               <span className="text-2xl sm:text-3xl font-extrabold font-mono text-neutral-900 block">Automatic</span>
-              <span className="text-xs text-neutral-500 font-medium">Cascading Re-route on Reject</span>
+              <span className="text-xs text-neutral-500 font-medium">{t.autoRerouteStat}</span>
             </div>
           </div>
         </div>
@@ -247,9 +340,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
       <section id="problem-parts" className="py-16 px-4 sm:px-6 lg:px-8 bg-[#FBFBFB] border-b border-neutral-200">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-950 tracking-tight">The 3 Parts of VitaRoute</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-950 tracking-tight">{t.partsTitle}</h2>
             <p className="text-sm text-neutral-600 mt-2">
-              Designed to solve the real bottleneck in emergency room admissions: reliable information in real time.
+              {t.partsSubtitle}
             </p>
           </div>
 
@@ -262,15 +355,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[11px] font-mono font-bold text-neutral-500 uppercase">Part 1</span>
-                  <h3 className="text-base font-bold text-neutral-950">10-Second Bed Updates</h3>
+                  <h3 className="text-base font-bold text-neutral-950">{t.part1Title}</h3>
                 </div>
                 <p className="text-xs text-neutral-600 leading-relaxed">
-                  For ward charge nurses. Big tap targets for +1 and -1 on cheap mobile phones. Takes less than 10 seconds to update ICU, ventilator, oxygen, or cardiac bed availability. Caches updates if hospital basement Wi-Fi cuts out.
+                  {t.part1Desc}
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
                 <span>Touch target: <strong>48px tactile</strong></span>
-                <span className="text-emerald-700 font-semibold">Works offline</span>
+                <span className="text-emerald-700 font-semibold">{t.statusOnline}</span>
               </div>
             </div>
 
@@ -282,10 +375,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[11px] font-mono font-bold text-neutral-500 uppercase">Part 2</span>
-                  <h3 className="text-base font-bold text-neutral-950">Multi-Constraint Dispatch</h3>
+                  <h3 className="text-base font-bold text-neutral-950">{t.part2Title}</h3>
                 </div>
                 <p className="text-xs text-neutral-600 leading-relaxed">
-                  For ambulance paramedics. Selects patient needs (ventilator, cath lab, trauma bay) and ranks nearby hospitals using four critical factors: bed match, actual road travel time, data freshness in minutes, and current ER crowding.
+                  {t.part2Desc}
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
@@ -302,15 +395,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[11px] font-mono font-bold text-neutral-500 uppercase">Part 3</span>
-                  <h3 className="text-base font-bold text-neutral-950">2-Minute Confirm &amp; Hold</h3>
+                  <h3 className="text-base font-bold text-neutral-950">{t.part3Title}</h3>
                 </div>
                 <p className="text-xs text-neutral-600 leading-relaxed">
-                  For the receiving ER desk. Once the ambulance selects a hospital, an urgent 120-second countdown alert begins. ER staff accept and lock the bed, or reject with a diversion reason. On timeout or rejection, VitaRoute escalates automatically to the next best facility.
+                  {t.part3Desc}
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
                 <span>Hold window: <strong>120 seconds</strong></span>
-                <span className="text-amber-800 font-semibold">Zero ghost beds</span>
+                <span className="text-amber-800 font-semibold">{t.erConfirmHold}</span>
               </div>
             </div>
           </div>
@@ -321,9 +414,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
       <section id="scenarios" className="py-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-neutral-200">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <h2 className="text-2xl font-bold text-neutral-950 tracking-tight">Tested Clinical Patient Scenarios</h2>
+            <h2 className="text-2xl font-bold text-neutral-950 tracking-tight">{t.clinicalScenarios}</h2>
             <p className="text-xs text-neutral-600 mt-1.5">
-              Preset emergencies ready to test in the ambulance dispatch console with one click.
+              {language === 'hi' 
+                ? 'एम्बुलेंस डिस्पैच कंसोल में 1-क्लिक से परीक्षण के लिए तैयार आपातकालीन परिदृश्य।'
+                : language === 'mr'
+                ? 'रुग्णवाहिका कन्सोलमध्ये एका क्लिकवर चाचणीसाठी उपलब्ध असलेले वैद्यकीय प्रसंग.'
+                : 'Preset emergencies ready to test in the ambulance dispatch console with one click.'}
             </p>
           </div>
 
@@ -333,8 +430,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">Immediate Red</span>
                 <span className="text-xs text-neutral-500 font-mono">Cardiac Cath Lab</span>
               </div>
-              <h4 className="text-sm font-bold text-neutral-900">Acute STEMI (Heart Attack)</h4>
-              <p className="text-xs text-neutral-600 mt-1">Patient has persistent chest pain, ST elevation in anterior leads. Requires 24/7 Primary PCI Cath Lab on standby.</p>
+              <h4 className="text-sm font-bold text-neutral-900">
+                {language === 'hi' ? 'तीव्र स्टेमी (हार्ट अटैक)' : language === 'mr' ? 'तीव्र स्टेमी (हार्ट अटॅक)' : 'Acute STEMI (Heart Attack)'}
+              </h4>
+              <p className="text-xs text-neutral-600 mt-1">
+                {language === 'hi'
+                  ? 'मरीज को सीने में भारी दर्द, एसटी एलिवेशन। 24/7 प्राइमरी पीसीआई कैथ लैब की आवश्यकता।'
+                  : language === 'mr'
+                  ? 'छातीत तीव्र वेदना, एसटी एलिव्हेशन. 24/7 प्रायमरी पीसीआय कॅथ लॅब सज्ज असणे आवश्यक.'
+                  : 'Patient has persistent chest pain, ST elevation in anterior leads. Requires 24/7 Primary PCI Cath Lab on standby.'}
+              </p>
             </div>
 
             <div className="border border-neutral-200 rounded-xl p-4 bg-[#FAFAFA]">
@@ -342,8 +447,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">Immediate Red</span>
                 <span className="text-xs text-neutral-500 font-mono">ICU Ventilator</span>
               </div>
-              <h4 className="text-sm font-bold text-neutral-900">Acute Respiratory Failure (ARDS)</h4>
-              <p className="text-xs text-neutral-600 mt-1">Oxygen saturation 81% on bag-valve mask. Patient intubated in field. Requires open invasive mechanical ventilator bed.</p>
+              <h4 className="text-sm font-bold text-neutral-900">
+                {language === 'hi' ? 'तीव्र श्वसन विफलता (ARDS)' : language === 'mr' ? 'तीव्र श्वसन विकार (ARDS)' : 'Acute Respiratory Failure (ARDS)'}
+              </h4>
+              <p className="text-xs text-neutral-600 mt-1">
+                {language === 'hi'
+                  ? 'ऑक्सीजन 81% पर। मरीज फील्ड में इंट्यूबेट किया गया। यांत्रिक वेंटिलेटर बेड अनिवार्य।'
+                  : language === 'mr'
+                  ? 'ऑक्सिजन 81%. जागेवरच इंट्युबेट केले. तात्काळ मेकॅनिकल व्हेंटिलेटर बेडची गरज.'
+                  : 'Oxygen saturation 81% on bag-valve mask. Patient intubated in field. Requires open invasive mechanical ventilator bed.'}
+              </p>
             </div>
 
             <div className="border border-neutral-200 rounded-xl p-4 bg-[#FAFAFA]">
@@ -351,8 +464,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Urgent Yellow</span>
                 <span className="text-xs text-neutral-500 font-mono">Burns Isolation</span>
               </div>
-              <h4 className="text-sm font-bold text-neutral-900">Severe Chemical Burn</h4>
-              <p className="text-xs text-neutral-600 mt-1">35% total body surface area chemical alkali exposure. Requires negative-pressure laminar air flow isolation room.</p>
+              <h4 className="text-sm font-bold text-neutral-900">
+                {language === 'hi' ? 'गंभीर रासायनिक जलन' : language === 'mr' ? 'केमिकलने भाजलेली दुखापत' : 'Severe Chemical Burn'}
+              </h4>
+              <p className="text-xs text-neutral-600 mt-1">
+                {language === 'hi'
+                  ? '35% शरीर केमिकल से झुलसा। नेगेटिव-प्रेशर लैमिनार एयर फ्लो आइसोलेशन रूम चाहिए।'
+                  : language === 'mr'
+                  ? '35% शरीर केमिकलने भाजले. निगेटिव्ह-प्रेशर लॅमिनार एअर फ्लो कक्ष आवश्यक.'
+                  : '35% total body surface area chemical alkali exposure. Requires negative-pressure laminar air flow isolation room.'}
+              </p>
             </div>
 
             <div className="border border-neutral-200 rounded-xl p-4 bg-[#FAFAFA]">
@@ -360,8 +481,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">Immediate Red</span>
                 <span className="text-xs text-neutral-500 font-mono">Trauma Surgery</span>
               </div>
-              <h4 className="text-sm font-bold text-neutral-900">High-Speed Rollover Trauma</h4>
-              <p className="text-xs text-neutral-600 mt-1">Blunt chest and abdominal trauma, hemodynamic shock. Requires Level 1 surgical resuscitation team and rapid blood infuser.</p>
+              <h4 className="text-sm font-bold text-neutral-900">
+                {language === 'hi' ? 'हाई-स्पीड सड़क दुर्घटना' : language === 'mr' ? 'हाय-स्पीड रस्ता अपघात' : 'High-Speed Rollover Trauma'}
+              </h4>
+              <p className="text-xs text-neutral-600 mt-1">
+                {language === 'hi'
+                  ? 'सीने और पेट में आंतरिक चोट, रक्तस्राव। लेवल 1 सर्जिकल रीससिटेशन टीम आवश्यक।'
+                  : language === 'mr'
+                  ? 'छातीत आणि पोटाला अंतर्गत मार, तीव्र रक्तस्त्राव. लेव्हल 1 सर्जिकल टीम सज्ज हवी.'
+                  : 'Blunt chest and abdominal trauma, hemodynamic shock. Requires Level 1 surgical resuscitation team and rapid blood infuser.'}
+              </p>
             </div>
 
             <div className="border border-neutral-200 rounded-xl p-4 bg-[#FAFAFA]">
@@ -369,8 +498,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">Immediate Red</span>
                 <span className="text-xs text-neutral-500 font-mono">Thrombectomy</span>
               </div>
-              <h4 className="text-sm font-bold text-neutral-900">Acute Ischemic Stroke</h4>
-              <p className="text-xs text-neutral-600 mt-1">Onset 40 minutes ago, acute hemiplegia and aphasia. Within golden hour window for endovascular mechanical thrombectomy.</p>
+              <h4 className="text-sm font-bold text-neutral-900">
+                {language === 'hi' ? 'तीव्र इस्केमिक स्ट्रोक' : language === 'mr' ? 'तीव्र इस्केमिक स्ट्रोक' : 'Acute Ischemic Stroke'}
+              </h4>
+              <p className="text-xs text-neutral-600 mt-1">
+                {language === 'hi'
+                  ? '40 मिनट पहले पक्षाघात के लक्षण। गोल्डन ऑवर विंडो में थ्रोम्बेक्टोमी आवश्यक।'
+                  : language === 'mr'
+                  ? '40 मिनिटांपूर्वी पक्षाघात झाला. गोल्डन अवर विंडोमध्ये थ्रोम्बेक्टॉमी करणे गरजेचे.'
+                  : 'Onset 40 minutes ago, acute hemiplegia and aphasia. Within golden hour window for endovascular mechanical thrombectomy.'}
+              </p>
             </div>
 
             <div className="border border-neutral-200 rounded-xl p-4 bg-[#FAFAFA]">
@@ -378,8 +515,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">Stable Green</span>
                 <span className="text-xs text-neutral-500 font-mono">Oxygen Bed</span>
               </div>
-              <h4 className="text-sm font-bold text-neutral-900">Exacerbated COPD</h4>
-              <p className="text-xs text-neutral-600 mt-1">Moderate dyspnea, responsive to bronchodilators, vitals stable. Requires high-flow wall oxygen bed for continuous monitoring.</p>
+              <h4 className="text-sm font-bold text-neutral-900">
+                {language === 'hi' ? 'सीओपीडी सांस संकट' : language === 'mr' ? 'सीओपीडी श्वास अडथळा' : 'Exacerbated COPD'}
+              </h4>
+              <p className="text-xs text-neutral-600 mt-1">
+                {language === 'hi'
+                  ? 'मध्यम सांस फूलना, दवा से स्थिर। निरंतर हाई-फ्लो दीवार ऑक्सीजन बेड चाहिए।'
+                  : language === 'mr'
+                  ? 'मध्यम श्वास लागणे, स्थिती स्थिर. सतत हाय-फ्लो ऑक्सिजन बेडची आवश्यकता.'
+                  : 'Moderate dyspnea, responsive to bronchodilators, vitals stable. Requires high-flow wall oxygen bed for continuous monitoring.'}
+              </p>
             </div>
           </div>
         </div>
@@ -389,9 +534,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
       <section id="login-portal" className="py-16 px-4 sm:px-6 lg:px-8 bg-[#FBFBFB]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-xl mx-auto mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-950 tracking-tight">Sign In / Role Demo Access</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-950 tracking-tight">{t.loginPortalTitle}</h2>
             <p className="text-xs text-neutral-600 mt-2">
-              Click any role card below to jump directly into that user’s screen, or sign in with custom credentials.
+              {t.loginPortalSubtitle}
             </p>
           </div>
 
@@ -399,10 +544,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
             {/* Quick 1-Tap Role Demo Cards */}
             <div className="lg:col-span-7 space-y-3">
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 block mb-1">
-                Choose a Role to Test (1 Tap Entry)
+                {t.oneTapDemoLogin}
               </span>
 
-              {HUMAN_DEMO_ACCOUNTS.map((acc) => {
+              {humanDemoAccounts.map((acc) => {
                 const Icon = acc.icon;
                 return (
                   <button
@@ -431,7 +576,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0 text-neutral-400 group-hover:text-neutral-900 transition-colors">
-                      <span className="text-xs font-bold hidden sm:inline">Launch</span>
+                      <span className="text-xs font-bold hidden sm:inline">{t.signIn}</span>
                       <ChevronRight className="w-4 h-4" />
                     </div>
                   </button>
@@ -445,7 +590,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                 <div className="w-10 h-10 rounded-lg bg-neutral-900 text-white flex items-center justify-center mx-auto mb-2 font-bold shadow-xs">
                   <Lock className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-neutral-950">Credential Login</h3>
+                <h3 className="text-base font-bold text-neutral-950">{t.signIn}</h3>
                 <p className="text-xs text-neutral-500">Sign in with an authorized user email</p>
               </div>
 
@@ -539,7 +684,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
                   disabled={isLoading}
                   className="w-full py-2.5 rounded-lg bg-neutral-900 hover:bg-black text-white font-bold text-sm transition-colors shadow-xs disabled:opacity-60 cursor-pointer"
                 >
-                  {isLoading ? 'Signing in...' : 'Sign In'}
+                  {isLoading ? '...' : t.signIn}
                 </button>
               </form>
 
@@ -559,13 +704,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
               VR
             </div>
             <span className="font-bold text-neutral-900">VitaRoute</span>
-            <span className="text-neutral-400">&middot; Emergency Hospital Bed Coordination &amp; Ambulance Dispatch</span>
+            <span className="text-neutral-400">&middot; {t.emergencyCoordination}</span>
           </div>
 
           <div className="flex items-center gap-4 text-neutral-500">
             <span>OpenStreetMap</span>
             <span>OSRM Road Routing</span>
-            <span className="text-emerald-700 font-semibold">● System Ready</span>
+            <span className="text-emerald-700 font-semibold">● {t.statusOnline}</span>
           </div>
         </div>
       </footer>

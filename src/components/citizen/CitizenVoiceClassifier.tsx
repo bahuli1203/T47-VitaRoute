@@ -316,10 +316,10 @@ export const CitizenVoiceClassifier: React.FC<CitizenVoiceClassifierProps> = ({
             </span>
             <span className="text-[11px] text-neutral-500">
               {isListening
-                ? 'Speaking in ' + (language === 'hi' ? 'Hindi' : language === 'mr' ? 'Marathi' : 'English')
+                ? (language === 'hi' ? 'हिंदी में बोल रहे हैं...' : language === 'mr' ? 'मराठीत बोलत आहात...' : 'Speaking in English...')
                 : speechSupported
-                ? 'Tap mic to dictate in your native language'
-                : 'Speech recognition unavailable; use quick demo audio below'}
+                ? (language === 'hi' ? 'अपनी भाषा में बोलने के लिए माइक दबाएं' : language === 'mr' ? 'आपल्या भाषेत बोलण्यासाठी माइक दाबा' : 'Tap mic to dictate in your native language')
+                : (language === 'hi' ? 'माइक उपलब्ध नहीं; नीचे दिए डेमो विकल्प चुनें' : language === 'mr' ? 'माइक उपलब्ध नाही; खालील डेमो निवडा' : 'Speech recognition unavailable; use quick demo audio below')}
             </span>
           </div>
         </div>
@@ -340,7 +340,7 @@ export const CitizenVoiceClassifier: React.FC<CitizenVoiceClassifierProps> = ({
       {(transcript || interimText) && (
         <div className="p-3.5 rounded-xl bg-neutral-100 border border-neutral-200 text-xs">
           <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
-            Transcribed Voice Input
+            {language === 'hi' ? 'ध्वनि इनपुट प्रतिलेखन' : language === 'mr' ? 'व्हॉइस इनपुट ट्रान्सक्रिप्ट' : 'Transcribed Voice Input'}
           </span>
           <p className="text-neutral-900 font-medium">
             {transcript} <span className="text-neutral-400 italic">{interimText}</span>
@@ -382,16 +382,16 @@ export const CitizenVoiceClassifier: React.FC<CitizenVoiceClassifierProps> = ({
                 <button
                   type="button"
                   onClick={() => setAutoSendCountdown(null)}
-                  className="px-3 py-1.5 rounded-lg border border-neutral-300 bg-white text-neutral-700 text-xs font-bold hover:bg-neutral-50"
+                  className="px-3 py-1.5 rounded-lg border border-neutral-300 bg-white text-neutral-700 text-xs font-bold hover:bg-neutral-50 cursor-pointer"
                 >
-                  {t.cancel} Auto-Send
+                  {language === 'hi' ? 'स्वचालित प्रेषण रोकें' : language === 'mr' ? 'स्वयंचलित पाठवणे थांबवा' : `${t.cancel} Auto-Send`}
                 </button>
                 <button
                   type="button"
                   onClick={() => onAutoConfirmSOS(classification, transcript)}
-                  className="px-4 py-1.5 rounded-lg bg-neutral-900 hover:bg-black text-white text-xs font-bold flex items-center gap-1 shadow-sm"
+                  className="px-4 py-1.5 rounded-lg bg-neutral-900 hover:bg-black text-white text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer"
                 >
-                  <span>Dispatch Now</span>
+                  <span>{language === 'hi' ? 'तुरंत भेजें' : language === 'mr' ? 'त्वरित पाठवा' : 'Dispatch Now'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -403,7 +403,7 @@ export const CitizenVoiceClassifier: React.FC<CitizenVoiceClassifierProps> = ({
       {/* Quick Voice Demo Presets */}
       <div className="pt-2 border-t border-neutral-100 space-y-1.5">
         <span className="text-[11px] font-semibold text-neutral-500 block">
-          Or try a 1-tap voice test in Hindi, Marathi, or English:
+          {language === 'hi' ? 'या 1-टैप में डेमो आवाज परीक्षण चुनें (हिंदी, मराठी, अंग्रेजी):' : language === 'mr' ? 'किंवा 1-टॅप डेमो आवाज चाचणी निवडा (हिंदी, मराठी, इंग्रजी):' : 'Or try a 1-tap voice test in Hindi, Marathi, or English:'}
         </span>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {demoVoiceSamples.map((sample, i) => (

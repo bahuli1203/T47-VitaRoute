@@ -237,10 +237,10 @@ export const Header: React.FC<HeaderProps> = ({ onReturnHome }) => {
                   type="button"
                   onClick={logout}
                   className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900 border border-neutral-200 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1"
-                  title="Sign Out"
+                  title={t.signOut}
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Sign Out</span>
+                  <span className="hidden md:inline">{t.signOut}</span>
                 </button>
               </div>
             )}
