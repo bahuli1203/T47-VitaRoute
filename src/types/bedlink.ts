@@ -204,12 +204,21 @@ export type HoldStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'arri
 export interface HoldRequest {
   id: string;
   ambulanceCallSign: string;
+  ambulancePlate?: string;
+  driverName?: string;
+  driverPhone?: string;
   hospitalId: string;
   hospitalName: string;
+  hospitalAddress?: string;
+  hospitalPhone?: string;
   bedType: BedTypeId;
   triageAcuity: TriageAcuity;
+  patientName?: string;
+  patientPhone?: string;
+  patientAddress?: string;
   patientAgeGender: string;
   chiefComplaint: string;
+  notes?: string;
   vitalsSummary: {
     bp: string;
     hr: number;
@@ -261,14 +270,26 @@ export interface CitizenSOSRequest {
   timestamp: number;
   category: EmergencyCategory;
   callerPhone: string;
+  patientName?: string;
   patientCount: number;
   notes: string;
   lat: number;
   lng: number;
   addressApprox: string;
   assignedAmbulanceCallSign?: string;
-  status: 'transmitting' | 'dispatched' | 'en_route' | 'arrived';
+  assignedAmbulancePlate?: string;
+  driverName?: string;
+  driverPhone?: string;
+  assignedHospitalId?: string;
+  assignedHospitalName?: string;
+  assignedHospitalAddress?: string;
+  assignedHospitalPhone?: string;
+  assignedBay?: string;
+  holdId?: string;
+  emergencyId?: string;
+  status: 'transmitting' | 'dispatched' | 'en_route' | 'arrived' | 'cancelled';
   etaMinutes: number;
+  canRevokeUntil?: number;
 }
 
 export type EhrSyncStatus = 'connected' | 'syncing' | 'offline' | 'manual_override';
@@ -365,14 +386,23 @@ export interface Emergency {
   id: string;
   patientId: string;
   patientName: string;
+  patientPhone?: string;
+  patientAddress?: string;
+  notes?: string;
   category: EmergencyCategory;
-  status: EmergencyStatus;
+  status: EmergencyStatus | 'cancelled';
   createdAt: number;
   lat: number;
   lng: number;
   assignedAmbulance: string;
+  ambulancePlate?: string;
+  driverName?: string;
+  driverPhone?: string;
   assignedHospitalId: string | null;
   assignedHospitalName: string | null;
+  assignedHospitalAddress?: string;
+  assignedHospitalPhone?: string;
+  assignedBay?: string;
   holdRequestId: string | null;
   etaMinutes: number;
   timeline: EmergencyTimelineEvent[];

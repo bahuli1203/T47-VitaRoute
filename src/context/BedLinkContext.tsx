@@ -48,6 +48,9 @@ import {
   dbGetHospitals,
   dbSaveDoctors,
   dbGetDoctors,
+  dbDeleteHold,
+  dbDeleteEmergency,
+  dbDeleteCitizenSOS,
   dbResetAll,
 } from '../services/indexedDb';
 
@@ -90,6 +93,7 @@ interface BedLinkContextType {
   activeCitizenSOS: CitizenSOSRequest | null;
   triggerCitizenSOS: (category: EmergencyCategory, phone: string, notes: string) => CitizenSOSRequest;
   cancelCitizenSOS: (id: string) => void;
+  revokeCitizenSOS: (id: string) => void;
   sosVerification: SosVerificationState | null;
   connectTeleTriageAudio: () => void;
 
@@ -355,10 +359,18 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       {
         id: 'hold-demo-104',
         ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
+        ambulancePlate: 'MH-02-ER-104',
+        driverName: 'Paramedic Arjun Singh',
+        driverPhone: '+91 98201 55104',
         hospitalId: 'kem-01',
         hospitalName: 'King Edward Memorial Hospital (KEM)',
+        hospitalAddress: 'Acharya Donde Marg, Parel, Mumbai, Maharashtra 400012',
+        hospitalPhone: '022-2410 7000',
         bedType: 'icu_ventilator',
         triageAcuity: 'Red',
+        patientName: 'Rajesh Kumar',
+        patientPhone: '+91 98200 12345',
+        patientAddress: 'Bandra-Worli Sea Link / SV Road, Mumbai',
         patientAgeGender: '62M',
         chiefComplaint: 'Acute Respiratory Distress / Severe Hypoxemia',
         vitalsSummary: {
@@ -1371,27 +1383,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       soundManager.playRejectTone();
       soundManager.triggerVibration([120, 80, 120]);
 
-      const newRequest: CitizenSOSRequest = {
-        id: `sos-${Date.now()}`,
-        timestamp: Date.now(),
-        category,
-        callerPhone: phone || '+91 98200 12345',
-        patientCount: 1,
-        notes: notes || 'Citizen SOS trigger, urgent response required',
-        lat: liveCoordinates.lat,
-        lng: liveCoordinates.lng,
-        addressApprox: 'Bandra-Worli Sea Link / SV Road, Mumbai',
-        assignedAmbulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
-        status: 'dispatched',
-        etaMinutes: 5,
-      };
-
-      setCitizenSOSRequests((prev) => [newRequest, ...prev]);
-
-      // Automatically create the linked emergency case in system & IndexedDB
-      createEmergency(category, newRequest.id, phone || 'Citizen Caller (Mumbai SOS)');
-
-      // Pre-configure dispatch filter to match the emergency
+      // 1. Map emergency category to required bed, acuity & specialties
       let mappedBed: BedTypeId = 'oxygen_bed';
       let mappedAcuity: TriageAcuity = 'Yellow';
       let mappedSpecialties: SpecialtyId[] = [];
@@ -1418,6 +1410,173 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         mappedSpecialties = ['stroke_thrombectomy'];
       }
 
+      // 2. Rank regional hospitals to find optimal matching ER with available beds
+      const rankedHospitals = hospitals
+        .map((h) => {
+          const bed = h.beds[mappedBed];
+          const availableBeds = bed?.available ?? 0;
+          const dist = calculateHaversineDistance(liveCoordinates.lat, liveCoordinates.lng, h.lat, h.lng);
+          const eta = estimateEmergencyTravelTime(dist, h.erLoad);
+          const matchedSpecs = mappedSpecialties.filter((s) => h.specialties.includes(s));
+          const missingSpecs = mappedSpecialties.filter((s) => !h.specialties.includes(s));
+
+          let penalty = 0;
+          if (availableBeds <= 0) penalty += 1500;
+          else penalty -= availableBeds * 8;
+          if (missingSpecs.length > 0) penalty += missingSpecs.length * 150;
+          penalty += eta * 4;
+          if (h.erLoad === 'Surge') penalty += 35;
+          if (h.erLoad === 'Medium') penalty += 10;
+          if (h.diversionStatus === 'Diversion') penalty += 600;
+
+          return { hospital: h, penalty, eta, dist, availableBeds };
+        })
+        .sort((a, b) => a.penalty - b.penalty);
+
+      const targetMatch = rankedHospitals.find((r) => r.availableBeds > 0) || rankedHospitals[0];
+      const targetHospital = targetMatch?.hospital || hospitals[0];
+
+      // 3. Unique case and vehicle identifiers (Mumbai EMS)
+      const uniqueHoldId = `hold-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const uniqueEmergencyId = `emg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const uniqueSosId = `sos-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const callerNumber = phone || '+91 98200 12345';
+      const patientFullName = 'Rajesh Kumar';
+      const patientAddress = 'Bandra-Worli Sea Link / SV Road, Mumbai';
+      const ambulancePlateNo = 'MH-02-ER-104';
+      const driverFullName = 'Paramedic Arjun Singh';
+      const driverPhoneNumber = '+91 98201 55104';
+      const hospitalDirectPhone = '022-2410 7000';
+      const assignedBayName = 'Resuscitation Bay 1 - ICU';
+
+      // 4. Reserve Bed on Target Hospital in State & IndexedDB
+      setHospitals((prev) =>
+        prev.map((h) => {
+          if (h.id !== targetHospital.id) return h;
+          const currentBeds = h.beds[mappedBed];
+          return {
+            ...h,
+            activeHoldCount: h.activeHoldCount + 1,
+            beds: {
+              ...h.beds,
+              [mappedBed]: {
+                ...currentBeds,
+                available: Math.max(0, currentBeds.available - 1),
+                held: currentBeds.held + 1,
+              },
+            },
+          };
+        })
+      );
+
+      // 5. Create and persist new HoldRequest for ER Desk queue
+      const newHold: HoldRequest = {
+        id: uniqueHoldId,
+        ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
+        ambulancePlate: ambulancePlateNo,
+        driverName: driverFullName,
+        driverPhone: driverPhoneNumber,
+        hospitalId: targetHospital.id,
+        hospitalName: targetHospital.name,
+        hospitalAddress: targetHospital.address,
+        hospitalPhone: hospitalDirectPhone,
+        bedType: mappedBed,
+        triageAcuity: mappedAcuity,
+        patientName: patientFullName,
+        patientPhone: callerNumber,
+        patientAddress: patientAddress,
+        patientAgeGender: '58M',
+        chiefComplaint: notes || `${category.toUpperCase()} Emergency - Immediate Assistance Requested`,
+        vitalsSummary: {
+          bp: category === 'cardiac' ? '86/52' : '98/64',
+          hr: category === 'cardiac' ? 128 : 110,
+          spo2: category === 'respiratory' ? 82 : 89,
+          gcs: 9,
+        },
+        etaMinutes: targetHospital.travelTimeMins || 6,
+        distanceKm: targetHospital.distanceKm || 2.5,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 120 * 1000,
+        status: 'pending',
+        assignedBay: assignedBayName,
+        doctorInCharge: 'Dr. Rohan Merchant, MD (Attending)',
+        emergencyId: uniqueEmergencyId,
+        rejectedHospitalIds: [],
+      };
+
+      setActiveHolds((prev) => [newHold, ...prev]);
+      dbSaveHold(newHold);
+
+      // 6. Create and persist linked Emergency Case
+      const newEmergency: Emergency = {
+        id: uniqueEmergencyId,
+        patientId: `pat-${Date.now()}`,
+        patientName: patientFullName,
+        patientPhone: callerNumber,
+        patientAddress: patientAddress,
+        notes: notes || 'Citizen SOS trigger, urgent response required',
+        category,
+        status: 'hospital_pending',
+        createdAt: Date.now(),
+        lat: liveCoordinates.lat,
+        lng: liveCoordinates.lng,
+        assignedAmbulance: 'Ambulance 104 (ALS Paramedic Unit)',
+        ambulancePlate: ambulancePlateNo,
+        driverName: driverFullName,
+        driverPhone: driverPhoneNumber,
+        assignedHospitalId: targetHospital.id,
+        assignedHospitalName: targetHospital.name,
+        assignedHospitalAddress: targetHospital.address,
+        assignedHospitalPhone: hospitalDirectPhone,
+        assignedBay: assignedBayName,
+        holdRequestId: uniqueHoldId,
+        etaMinutes: targetHospital.travelTimeMins || 6,
+        timeline: [
+          { step: 'sos_triggered', timestamp: Date.now(), label: TIMELINE_STEP_LABELS.sos_triggered },
+          { step: 'location_acquired', timestamp: Date.now() + 200, label: TIMELINE_STEP_LABELS.location_acquired, detail: 'GPS: Bandra-Worli Sea Link, Mumbai' },
+          { step: 'ambulance_assigned', timestamp: Date.now() + 400, label: TIMELINE_STEP_LABELS.ambulance_assigned, detail: `Ambulance 104 (${ambulancePlateNo}) · ${driverFullName}` },
+          { step: 'hospital_selected', timestamp: Date.now() + 600, label: TIMELINE_STEP_LABELS.hospital_selected, detail: `${targetHospital.name} (${mappedBed.replace(/_/g, ' ')})` },
+        ],
+        requiredBedType: mappedBed,
+        requiredSpecialties: mappedSpecialties,
+        matchReasons: [`1 ${mappedBed.replace(/_/g, ' ')} bed reserved`, `${targetHospital.travelTimeMins || 6} min ETA`],
+      };
+
+      setEmergencies((prev) => [newEmergency, ...prev]);
+      dbSaveEmergency(newEmergency);
+
+      // 7. Create and persist Citizen SOS Request
+      const newRequest: CitizenSOSRequest = {
+        id: uniqueSosId,
+        timestamp: Date.now(),
+        category,
+        callerPhone: callerNumber,
+        patientName: patientFullName,
+        patientCount: 1,
+        notes: notes || 'Citizen SOS trigger, urgent response required',
+        lat: liveCoordinates.lat,
+        lng: liveCoordinates.lng,
+        addressApprox: patientAddress,
+        assignedAmbulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
+        assignedAmbulancePlate: ambulancePlateNo,
+        driverName: driverFullName,
+        driverPhone: driverPhoneNumber,
+        assignedHospitalId: targetHospital.id,
+        assignedHospitalName: targetHospital.name,
+        assignedHospitalAddress: targetHospital.address,
+        assignedHospitalPhone: hospitalDirectPhone,
+        assignedBay: assignedBayName,
+        holdId: uniqueHoldId,
+        emergencyId: uniqueEmergencyId,
+        status: 'dispatched',
+        etaMinutes: 5,
+        canRevokeUntil: Date.now() + 180 * 1000, // 3 minutes grace period to revoke
+      };
+
+      setCitizenSOSRequests((prev) => [newRequest, ...prev]);
+      dbSaveCitizenSOS(newRequest);
+
+      // 8. Pre-configure dispatch filter to match
       setDispatchFilter((prev) => ({
         ...prev,
         requiredBedType: mappedBed,
@@ -1429,16 +1588,98 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const fastPin = Math.floor(1000 + Math.random() * 9000).toString();
       setSosVerification({
         verifiedImmediately: true,
-        callbackPhone: phone || '+91 98200 12345 (Auto-Locked)',
+        callbackPhone: callerNumber + ' (Auto-Locked)',
         verificationPin: fastPin,
         teleTriageAudioConnected: false,
         dispatchConfirmedTimestamp: Date.now(),
       });
 
-      showNotification('Emergency SOS transmitted. ALS Unit 104 dispatched & hospital hold initiated.', 'alert');
+      showNotification(`Emergency SOS transmitted! Unit 104 dispatched & hold sent to ${targetHospital.name}.`, 'alert');
       return newRequest;
     },
-    [liveCoordinates, createEmergency, showNotification]
+    [hospitals, liveCoordinates, showNotification]
+  );
+
+  // Revoke Citizen SOS with grace period: frees hospital bed and stands down ambulance
+  const revokeCitizenSOS = useCallback(
+    (id: string) => {
+      soundManager.playTap();
+      soundManager.triggerVibration([50, 50]);
+
+      const targetSOS = citizenSOSRequests.find((r) => r.id === id);
+      if (!targetSOS) return;
+
+      // 1. Release held bed back to available on assigned hospital
+      if (targetSOS.assignedHospitalId) {
+        setHospitals((prev) =>
+          prev.map((h) => {
+            if (h.id !== targetSOS.assignedHospitalId) return h;
+            const linkedHold = activeHolds.find((hold) => hold.id === targetSOS.holdId);
+            const bedType = linkedHold?.bedType || 'icu_ventilator';
+            const currentBeds = h.beds[bedType];
+            if (!currentBeds) return h;
+            return {
+              ...h,
+              activeHoldCount: Math.max(0, h.activeHoldCount - 1),
+              beds: {
+                ...h.beds,
+                [bedType]: {
+                  ...currentBeds,
+                  available: Math.min(currentBeds.total, currentBeds.available + 1),
+                  held: Math.max(0, currentBeds.held - 1),
+                },
+              },
+            };
+          })
+        );
+      }
+
+      // 2. Remove hold from active holds and delete from IndexedDB
+      if (targetSOS.holdId) {
+        setActiveHolds((prev) => prev.filter((h) => h.id !== targetSOS.holdId));
+        dbDeleteHold(targetSOS.holdId);
+      }
+
+      // 3. Mark linked emergency as cancelled in state and IndexedDB
+      if (targetSOS.emergencyId) {
+        setEmergencies((prev) =>
+          prev.map((e) => {
+            if (e.id !== targetSOS.emergencyId) return e;
+            const cancelledEmg: Emergency = {
+              ...e,
+              status: 'cancelled',
+              timeline: [
+                ...e.timeline,
+                {
+                  step: 'emergency_completed' as EmergencyTimelineStep,
+                  timestamp: Date.now(),
+                  label: 'Emergency Revoked',
+                  detail: 'Request revoked by patient within grace window',
+                },
+              ],
+            };
+            dbSaveEmergency(cancelledEmg);
+            return cancelledEmg;
+          })
+        );
+      }
+
+      // 4. Mark Citizen SOS request as cancelled in state and IndexedDB
+      setCitizenSOSRequests((prev) =>
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const cancelledSos: CitizenSOSRequest = {
+            ...r,
+            status: 'cancelled',
+          };
+          dbSaveCitizenSOS(cancelledSos);
+          return cancelledSos;
+        })
+      );
+
+      showNotification('Emergency request revoked by patient. Ambulance stood down and reserved bed released.', 'info');
+    },
+    [citizenSOSRequests, activeHolds, showNotification]
   );
 
   // EHR Ingestion Mode (Connected generic webhook vs alternate autonomous schedule)
@@ -1625,10 +1866,18 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       {
         id: 'hold-demo-104',
         ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
+        ambulancePlate: 'MH-02-ER-104',
+        driverName: 'Paramedic Arjun Singh',
+        driverPhone: '+91 98201 55104',
         hospitalId: 'kem-01',
         hospitalName: 'King Edward Memorial Hospital (KEM)',
+        hospitalAddress: 'Acharya Donde Marg, Parel, Mumbai, Maharashtra 400012',
+        hospitalPhone: '022-2410 7000',
         bedType: 'icu_ventilator',
         triageAcuity: 'Red',
+        patientName: 'Rajesh Kumar',
+        patientPhone: '+91 98200 12345',
+        patientAddress: 'Bandra-Worli Sea Link / SV Road, Mumbai',
         patientAgeGender: '62M',
         chiefComplaint: 'Acute Respiratory Distress / Severe Hypoxemia',
         vitalsSummary: {
@@ -1737,6 +1986,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         activeCitizenSOS,
         triggerCitizenSOS,
         cancelCitizenSOS,
+        revokeCitizenSOS,
         sosVerification,
         connectTeleTriageAudio,
         mdtTheme,

@@ -264,6 +264,36 @@ export async function dbGetDoctors(): Promise<DoctorSchedule[]> {
   }
 }
 
+export async function dbDeleteHold(id: string): Promise<void> {
+  try {
+    await performTransaction(STORES.HOLDS, 'readwrite', (store) => {
+      store.delete(id);
+    });
+  } catch (err) {
+    console.warn('Failed to delete hold from IndexedDB', err);
+  }
+}
+
+export async function dbDeleteEmergency(id: string): Promise<void> {
+  try {
+    await performTransaction(STORES.EMERGENCIES, 'readwrite', (store) => {
+      store.delete(id);
+    });
+  } catch (err) {
+    console.warn('Failed to delete emergency from IndexedDB', err);
+  }
+}
+
+export async function dbDeleteCitizenSOS(id: string): Promise<void> {
+  try {
+    await performTransaction(STORES.CITIZEN_SOS, 'readwrite', (store) => {
+      store.delete(id);
+    });
+  } catch (err) {
+    console.warn('Failed to delete Citizen SOS from IndexedDB', err);
+  }
+}
+
 /**
  * Resets/clears all stores in the IndexedDB
  */

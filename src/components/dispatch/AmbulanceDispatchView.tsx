@@ -15,6 +15,9 @@ import {
   Heart,
   ChevronDown,
   ChevronUp,
+  User,
+  MapPin,
+  Activity,
 } from 'lucide-react';
 import { CountdownRing } from '../common/CountdownRing';
 
@@ -152,6 +155,97 @@ export const AmbulanceDispatchView: React.FC = () => {
 
       {/* Main Automated Match Card */}
       <div className="bg-white border-2 border-red-100 rounded-3xl p-6 sm:p-7 shadow-xs space-y-6">
+        {/* Step 0: Patient Details, Phone, Address & Timings (Requirement 2) */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-neutral-50/80 border border-neutral-200/90 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-neutral-200">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-red-700">
+                {language === 'hi' ? 'सीएडी मरीज विवरण एवं समय' : language === 'mr' ? 'सीएडी रुग्ण तपशील व वेळ' : 'CAD Patient Details & Timings'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="px-2 py-0.5 rounded bg-red-100 text-red-800 font-bold border border-red-200">
+                {activeHold?.triageAcuity || 'Red'} Level 1
+              </span>
+              <span className="text-neutral-500">
+                {language === 'hi' ? 'रिपोर्ट: ~1 मिनट पहले' : language === 'mr' ? 'नोंद: ~१ मिनिटापूर्वी' : 'Reported: ~1 min ago'}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            {/* Patient Name, Phone, and Address */}
+            <div className="space-y-1.5 bg-white p-3.5 rounded-xl border border-neutral-200">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  {language === 'hi' ? 'मरीज की पहचान:' : language === 'mr' ? 'रुग्णाची माहिती:' : 'Patient Identity:'}
+                </span>
+                <span className="font-mono text-[11px] font-bold text-neutral-600">
+                  {activeHold?.patientAgeGender || '58M'}
+                </span>
+              </div>
+              <h4 className="text-sm font-extrabold text-neutral-950 flex items-center gap-1.5">
+                <User className="w-4 h-4 text-red-600" />
+                <span>{activeHold?.patientName || 'Rajesh Kumar'}</span>
+              </h4>
+
+              <div className="flex items-center gap-2 text-neutral-700 pt-1">
+                <Phone className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <span className="font-mono text-xs font-bold text-neutral-900">
+                  {activeHold?.patientPhone || '+91 98200 12345'}
+                </span>
+                <a
+                  href={`tel:${(activeHold?.patientPhone || '+919820012345').replace(/[^0-9+]/g, '')}`}
+                  className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 cursor-pointer"
+                >
+                  Call Patient
+                </a>
+              </div>
+
+              <div className="flex items-start gap-1.5 text-neutral-600 pt-1.5 border-t border-neutral-100">
+                <MapPin className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
+                <span className="text-[11px] leading-snug">
+                  <strong>{language === 'hi' ? 'पिकअप पता:' : language === 'mr' ? 'पिकअप पत्ता:' : 'Scene Address:'}</strong>{' '}
+                  {activeHold?.patientAddress || 'Bandra-Worli Sea Link / SV Road, Mumbai'}
+                </span>
+              </div>
+            </div>
+
+            {/* Complaint and Timings */}
+            <div className="space-y-1.5 bg-white p-3.5 rounded-xl border border-neutral-200 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                  {language === 'hi' ? 'प्राथमिक स्थिति:' : language === 'mr' ? 'प्राथमिक स्थिती:' : 'Chief Complaint:'}
+                </span>
+                <p className="text-xs font-bold text-red-900 mt-1 leading-snug">
+                  {activeHold?.chiefComplaint || 'Acute Respiratory Distress / Severe Hypoxemia'}
+                </p>
+              </div>
+
+              {/* Timings Grid */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-100 font-mono text-center">
+                <div className="bg-neutral-50 p-2 rounded-lg border border-neutral-200">
+                  <span className="text-[9px] text-neutral-500 uppercase block">
+                    {language === 'hi' ? 'दृश्य आगमन' : language === 'mr' ? 'घटनास्थळ वेळ' : 'Scene ETA'}
+                  </span>
+                  <span className="text-xs font-extrabold text-neutral-900 mt-0.5 block">
+                    ~5 mins
+                  </span>
+                </div>
+                <div className="bg-neutral-50 p-2 rounded-lg border border-neutral-200">
+                  <span className="text-[9px] text-neutral-500 uppercase block">
+                    {language === 'hi' ? 'ईआर यात्रा' : language === 'mr' ? 'ईआर प्रवास' : 'ER Transit'}
+                  </span>
+                  <span className="text-xs font-extrabold text-red-700 mt-0.5 block">
+                    {matchedHospital.travelTimeMins} mins ({matchedHospital.distanceKm} km)
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Step 1: Assigned Ambulance Unit */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-100">
           <div className="flex items-center gap-3.5">
@@ -163,15 +257,26 @@ export const AmbulanceDispatchView: React.FC = () => {
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
                   {txt.assignedUnit}
                 </span>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.2 rounded-full bg-neutral-100 text-neutral-800 border border-neutral-200">
+                  {activeHold?.ambulancePlate || 'MH-02-ER-104'}
+                </span>
                 <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                   {txt.nearestFreeUnit}
                 </span>
               </div>
-              <h3 className="text-base font-extrabold text-neutral-950">
+              <h3 className="text-base font-extrabold text-neutral-950 mt-0.5">
                 {activeHold?.ambulanceCallSign || txt.unitName}
               </h3>
-              <p className="text-xs text-neutral-500">
-                {txt.driverInfo}
+              <p className="text-xs text-neutral-500 flex items-center gap-2 mt-0.5">
+                <span>{activeHold?.driverName || 'Paramedic Arjun Singh'}</span>
+                <span>&middot;</span>
+                <a
+                  href={`tel:${(activeHold?.driverPhone || '+919820155104').replace(/[^0-9+]/g, '')}`}
+                  className="text-red-600 font-semibold hover:underline flex items-center gap-1"
+                >
+                  <Phone className="w-3 h-3" />
+                  {activeHold?.driverPhone || '+91 98201 55104'}
+                </a>
               </p>
             </div>
           </div>

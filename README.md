@@ -89,19 +89,24 @@ flowchart TD
   3. **Live Road Travel Time (ETA)**: Calculated using OSRM road routing engine and Haversine distance adjusted for Mumbai urban road tortuosity.
   4. **Data Freshness**: Weight penalty applied for stale bed reports (>15m Amber, >45m Red).
   5. **ER Load / Surge Status**: Low, Medium, Surge, and Diversion status penalties.
+- **Ambulance CAD View**: Displays full patient details, patient phone number with 1-tap call, exact scene pickup address, chief complaint, acuity level, ambulance plate number (`MH-02-ER-104`), driver credentials, and incident timings.
 
-### 3. 2-Minute (120s) Confirm-and-Hold Lease
-- When an ambulance requests a bed, the destination hospital's ER desk is notified with an urgent audio tone.
-- A high-contrast circular countdown ring (`CountdownRing.tsx`) shows exact seconds remaining.
-- If accepted, the bed is locked and assigned to a specific resuscitation bay.
-- If rejected or if the 120-second timer expires without acknowledgement, VitaRoute automatically cascades the hold to the next-best regional hospital.
+### 3. Real-Time Multi-SOS Dynamic ER Desk Queue
+- When citizens trigger SOS or ambulances request a bed, holds are created dynamically and added to a real-time queue.
+- Hospital ER physicians see all concurrent incoming units with independent 120s countdown rings, patient profile (name, phone, pickup location), paramedic driver details, and live in-transit vitals (BP, HR, SpO2, GCS).
+- 1-tap acceptance locks the bed and allocates a designated resuscitation bay.
+- Timeout or rejection auto-cascades the request to the next best regional hospital.
 
-### 4. 10-Second Bed Updates for Ward Nurses
+### 4. Citizen Transparency & 3-Minute Revocation Window
+- **Full Transparency**: Citizens see the assigned hospital name, address, reserved bay, and emergency desk number, plus ambulance plate number (`MH-02-ER-104`), driver name (`Paramedic Arjun Singh`), and driver phone with 1-tap call.
+- **Revocation Grace Period**: If an emergency was triggered accidentally, citizens can revoke the request within the grace window, which automatically stands down the ambulance, releases the held bed back into the hospital inventory, and updates IndexedDB.
+
+### 5. 10-Second Bed Updates for Ward Nurses
 - Replaces 5-minute desktop EHR data-entry forms with tactile `+` and `-` touch buttons.
 - Minimum 48px tactile touch targets designed for mobile use on ward floors.
 - Works offline in shielded ICU units and basement corridors via PWA background sync.
 
-### 5. Multilingual Citizen Voice Triage (English, Hindi, Marathi)
+### 6. Multilingual Citizen Voice Triage (English, Hindi, Marathi)
 - Integrated Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`) supporting:
   - English (`en-IN`)
   - Hindi (`hi-IN`)
@@ -109,14 +114,14 @@ flowchart TD
 - Natural Language Clinical Classifier parses keywords across all 3 languages (e.g., *छाती में दर्द*, *हृदयविकार*, *श्वास घेण्यास त्रास*, *हादसा*, *अपघात*, *पक्षाघात*, *भाजले*).
 - Auto-classifies emergency category, maps required bed type and surgical specialty, and auto-dispatches an ambulance.
 
-### 6. OmniDimension Conversational Voice AI
+### 7. OmniDimension Conversational Voice AI
 - Integrated OmniDimension Voice AI web widget (`omnidim.io`) allowing hands-free spoken queries, emergency guidance, and citizen assistance.
 
-### 7. Live OpenStreetMap & Leaflet Telemetry
+### 8. Live OpenStreetMap & Leaflet Telemetry
 - Real-time road map (`LeafletEmergencyMap.tsx`) tracks the moving ALS ambulance along Mumbai road vectors.
-- Displays patient pickup scene, ambulance position, destination hospital receiving bay, speed telemetry, and dynamic ETA.
+- Displays patient details, patient phone, scene pickup location, ambulance position, plate number, driver details, destination hospital receiving bay, vehicle speed, and dynamic countdown ETA.
 
-### 8. Doctor Availability & On-Call Shift Calendar
+### 9. Doctor Availability & On-Call Shift Calendar
 - Real-time doctor duty toggle (`DoctorRosterView.tsx`) per hospital:
   - Available (Ready for incoming ER cases)
   - In Surgery (OR active with estimated duration)
