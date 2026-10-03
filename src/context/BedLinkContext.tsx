@@ -91,7 +91,7 @@ interface BedLinkContextType {
   // Citizen SOS and Fast Verification
   citizenSOSRequests: CitizenSOSRequest[];
   activeCitizenSOS: CitizenSOSRequest | null;
-  triggerCitizenSOS: (category: EmergencyCategory, phone: string, notes: string) => CitizenSOSRequest;
+  triggerCitizenSOS: (category: EmergencyCategory, phone: string, notes: string, sectorLat?: number, sectorLng?: number, sectorLabel?: string) => CitizenSOSRequest;
   cancelCitizenSOS: (id: string) => void;
   revokeCitizenSOS: (id: string) => void;
   sosVerification: SosVerificationState | null;
@@ -1379,9 +1379,14 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // CITIZEN SOS ACTIONS
   const triggerCitizenSOS = useCallback(
-    (category: EmergencyCategory, phone: string, notes: string): CitizenSOSRequest => {
+    (category: EmergencyCategory, phone: string, notes: string, sectorLat?: number, sectorLng?: number, sectorLabel?: string): CitizenSOSRequest => {
       soundManager.playRejectTone();
       soundManager.triggerVibration([120, 80, 120]);
+
+      // Use provided sector coordinates OR fall back to live GPS
+      const incidentLat = sectorLat ?? liveCoordinates.lat;
+      const incidentLng = sectorLng ?? liveCoordinates.lng;
+      const incidentLabel = sectorLabel ?? activeLocationName;
 
       // 1. Map emergency category to required bed, acuity & specialties
       let mappedBed: BedTypeId = 'oxygen_bed';
@@ -1410,46 +1415,72 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         mappedSpecialties = ['stroke_thrombectomy'];
       }
 
-      // 2. Rank regional hospitals to find optimal matching ER with available beds
+      // 2. Rank ALL hospitals by TRUE Haversine distance from the incident location
+      //    and penalise unavailable beds / diversion / load
       const rankedHospitals = hospitals
         .map((h) => {
           const bed = h.beds[mappedBed];
           const availableBeds = bed?.available ?? 0;
-          const dist = calculateHaversineDistance(liveCoordinates.lat, liveCoordinates.lng, h.lat, h.lng);
+          const dist = calculateHaversineDistance(incidentLat, incidentLng, h.lat, h.lng);
           const eta = estimateEmergencyTravelTime(dist, h.erLoad);
-          const matchedSpecs = mappedSpecialties.filter((s) => h.specialties.includes(s));
           const missingSpecs = mappedSpecialties.filter((s) => !h.specialties.includes(s));
 
-          let penalty = 0;
-          if (availableBeds <= 0) penalty += 1500;
-          else penalty -= availableBeds * 8;
-          if (missingSpecs.length > 0) penalty += missingSpecs.length * 150;
-          penalty += eta * 4;
-          if (h.erLoad === 'Surge') penalty += 35;
-          if (h.erLoad === 'Medium') penalty += 10;
-          if (h.diversionStatus === 'Diversion') penalty += 600;
+          let penalty = dist * 60; // Primary sort: true geographic distance (km → penalty weight)
+          if (availableBeds <= 0) penalty += 2000; // No bed → very high penalty
+          else penalty -= availableBeds * 5;
+          if (missingSpecs.length > 0) penalty += missingSpecs.length * 80; // Missing specialty
+          if (h.diversionStatus === 'Diversion') penalty += 500;
+          if (h.erLoad === 'Surge') penalty += 25;
+          if (h.erLoad === 'Medium') penalty += 8;
 
           return { hospital: h, penalty, eta, dist, availableBeds };
         })
         .sort((a, b) => a.penalty - b.penalty);
 
+      // 3. Pick nearest hospital with available beds, else nearest overall
       const targetMatch = rankedHospitals.find((r) => r.availableBeds > 0) || rankedHospitals[0];
       const targetHospital = targetMatch?.hospital || hospitals[0];
+      const realDistKm = Number(targetMatch?.dist.toFixed(1)) || targetHospital.distanceKm;
+      const realEtaMins = targetMatch?.eta || targetHospital.travelTimeMins;
 
-      // 3. Unique case and vehicle identifiers (Mumbai EMS)
+      // 4. Pick ambulance fleet based on nearest sector
+      const sectorAmbulanceMap: Record<string, string> = {
+        'Bandra': 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
+        'Mahim': 'Ambulance 208 (Cardiac Response Squad - Mahim)',
+        'Parel': 'Medic 7 (Critical Care Mobile ICU - Parel Hub)',
+        'Sion': 'Medic 19 (Metro Trauma Response - Sion Flyover)',
+        'Andheri': 'Rescue 12 (Rapid Resuscitation Unit - Andheri Depot)',
+        'Marine': 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
+      };
+      let ambulanceUnit = 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)';
+      for (const [key, val] of Object.entries(sectorAmbulanceMap)) {
+        if (incidentLabel.includes(key)) { ambulanceUnit = val; break; }
+      }
+
+      const ambulanceDriverMap: Record<string, { name: string; phone: string; plate: string }> = {
+        'Ambulance 104': { name: 'Paramedic Arjun Singh', phone: '+91 98201 55104', plate: 'MH-02-ER-104' },
+        'Ambulance 208': { name: 'Paramedic Ravi Patil', phone: '+91 98202 08208', plate: 'MH-02-ER-208' },
+        'Medic 7': { name: 'Paramedic Priya Nair', phone: '+91 98203 07007', plate: 'MH-04-ER-007' },
+        'Medic 19': { name: 'Paramedic Suresh Kamble', phone: '+91 98204 01919', plate: 'MH-04-ER-019' },
+        'Rescue 12': { name: 'Paramedic Ankita Sharma', phone: '+91 98205 01212', plate: 'MH-12-ER-012' },
+      };
+      const driverKey = Object.keys(ambulanceDriverMap).find((k) => ambulanceUnit.startsWith(k)) || 'Ambulance 104';
+      const driverInfo = ambulanceDriverMap[driverKey];
+
+      // 5. Unique case and vehicle identifiers (Mumbai EMS)
       const uniqueHoldId = `hold-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       const uniqueEmergencyId = `emg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       const uniqueSosId = `sos-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       const callerNumber = phone || '+91 98200 12345';
       const patientFullName = 'Rajesh Kumar';
-      const patientAddress = 'Bandra-Worli Sea Link / SV Road, Mumbai';
-      const ambulancePlateNo = 'MH-02-ER-104';
-      const driverFullName = 'Paramedic Arjun Singh';
-      const driverPhoneNumber = '+91 98201 55104';
-      const hospitalDirectPhone = '022-2410 7000';
+      const patientAddress = incidentLabel || 'Bandra-Worli Sea Link / SV Road, Mumbai';
+      const ambulancePlateNo = driverInfo.plate;
+      const driverFullName = driverInfo.name;
+      const driverPhoneNumber = driverInfo.phone;
+      const hospitalDirectPhone = targetHospital.phone || '022-2410 7000';
       const assignedBayName = 'Resuscitation Bay 1 - ICU';
 
-      // 4. Reserve Bed on Target Hospital in State & IndexedDB
+      // 6. Reserve Bed on Target Hospital in State & IndexedDB
       setHospitals((prev) =>
         prev.map((h) => {
           if (h.id !== targetHospital.id) return h;
@@ -1469,10 +1500,10 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         })
       );
 
-      // 5. Create and persist new HoldRequest for ER Desk queue
+      // 7. Create and persist new HoldRequest for ER Desk queue
       const newHold: HoldRequest = {
         id: uniqueHoldId,
-        ambulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit - Bandra Station)',
+        ambulanceCallSign: ambulanceUnit,
         ambulancePlate: ambulancePlateNo,
         driverName: driverFullName,
         driverPhone: driverPhoneNumber,
@@ -1493,8 +1524,8 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
           spo2: category === 'respiratory' ? 82 : 89,
           gcs: 9,
         },
-        etaMinutes: targetHospital.travelTimeMins || 6,
-        distanceKm: targetHospital.distanceKm || 2.5,
+        etaMinutes: realEtaMins,
+        distanceKm: realDistKm,
         createdAt: Date.now(),
         expiresAt: Date.now() + 120 * 1000,
         status: 'pending',
@@ -1507,7 +1538,7 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setActiveHolds((prev) => [newHold, ...prev]);
       dbSaveHold(newHold);
 
-      // 6. Create and persist linked Emergency Case
+      // 8. Create and persist linked Emergency Case
       const newEmergency: Emergency = {
         id: uniqueEmergencyId,
         patientId: `pat-${Date.now()}`,
@@ -1518,9 +1549,9 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         category,
         status: 'hospital_pending',
         createdAt: Date.now(),
-        lat: liveCoordinates.lat,
-        lng: liveCoordinates.lng,
-        assignedAmbulance: 'Ambulance 104 (ALS Paramedic Unit)',
+        lat: incidentLat,
+        lng: incidentLng,
+        assignedAmbulance: ambulanceUnit,
         ambulancePlate: ambulancePlateNo,
         driverName: driverFullName,
         driverPhone: driverPhoneNumber,
@@ -1530,22 +1561,22 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         assignedHospitalPhone: hospitalDirectPhone,
         assignedBay: assignedBayName,
         holdRequestId: uniqueHoldId,
-        etaMinutes: targetHospital.travelTimeMins || 6,
+        etaMinutes: realEtaMins,
         timeline: [
           { step: 'sos_triggered', timestamp: Date.now(), label: TIMELINE_STEP_LABELS.sos_triggered },
-          { step: 'location_acquired', timestamp: Date.now() + 200, label: TIMELINE_STEP_LABELS.location_acquired, detail: 'GPS: Bandra-Worli Sea Link, Mumbai' },
-          { step: 'ambulance_assigned', timestamp: Date.now() + 400, label: TIMELINE_STEP_LABELS.ambulance_assigned, detail: `Ambulance 104 (${ambulancePlateNo}) · ${driverFullName}` },
-          { step: 'hospital_selected', timestamp: Date.now() + 600, label: TIMELINE_STEP_LABELS.hospital_selected, detail: `${targetHospital.name} (${mappedBed.replace(/_/g, ' ')})` },
+          { step: 'location_acquired', timestamp: Date.now() + 200, label: TIMELINE_STEP_LABELS.location_acquired, detail: `GPS: ${patientAddress}` },
+          { step: 'ambulance_assigned', timestamp: Date.now() + 400, label: TIMELINE_STEP_LABELS.ambulance_assigned, detail: `${ambulanceUnit} (${ambulancePlateNo}) · ${driverFullName}` },
+          { step: 'hospital_selected', timestamp: Date.now() + 600, label: TIMELINE_STEP_LABELS.hospital_selected, detail: `${targetHospital.name} — ${realDistKm} km, ${realEtaMins} min ETA` },
         ],
         requiredBedType: mappedBed,
         requiredSpecialties: mappedSpecialties,
-        matchReasons: [`1 ${mappedBed.replace(/_/g, ' ')} bed reserved`, `${targetHospital.travelTimeMins || 6} min ETA`],
+        matchReasons: [`Nearest available: ${realDistKm} km`, `${realEtaMins} min ETA`, `1 ${mappedBed.replace(/_/g, ' ')} bed reserved`],
       };
 
       setEmergencies((prev) => [newEmergency, ...prev]);
       dbSaveEmergency(newEmergency);
 
-      // 7. Create and persist Citizen SOS Request
+      // 9. Create and persist Citizen SOS Request
       const newRequest: CitizenSOSRequest = {
         id: uniqueSosId,
         timestamp: Date.now(),
@@ -1554,10 +1585,10 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         patientName: patientFullName,
         patientCount: 1,
         notes: notes || 'Citizen SOS trigger, urgent response required',
-        lat: liveCoordinates.lat,
-        lng: liveCoordinates.lng,
+        lat: incidentLat,
+        lng: incidentLng,
         addressApprox: patientAddress,
-        assignedAmbulanceCallSign: 'Ambulance 104 (ALS Paramedic Unit)',
+        assignedAmbulanceCallSign: ambulanceUnit,
         assignedAmbulancePlate: ambulancePlateNo,
         driverName: driverFullName,
         driverPhone: driverPhoneNumber,
@@ -1569,14 +1600,14 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         holdId: uniqueHoldId,
         emergencyId: uniqueEmergencyId,
         status: 'dispatched',
-        etaMinutes: 5,
+        etaMinutes: realEtaMins,
         canRevokeUntil: Date.now() + 180 * 1000, // 3 minutes grace period to revoke
       };
 
       setCitizenSOSRequests((prev) => [newRequest, ...prev]);
       dbSaveCitizenSOS(newRequest);
 
-      // 8. Pre-configure dispatch filter to match
+      // 10. Pre-configure dispatch filter to match
       setDispatchFilter((prev) => ({
         ...prev,
         requiredBedType: mappedBed,
@@ -1594,11 +1625,12 @@ export const BedLinkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         dispatchConfirmedTimestamp: Date.now(),
       });
 
-      showNotification(`Emergency SOS transmitted! Unit 104 dispatched & hold sent to ${targetHospital.name}.`, 'alert');
+      showNotification(`SOS sent! ${ambulanceUnit} dispatched. Hold sent to ${targetHospital.name} (${realDistKm} km, ${realEtaMins} min ETA).`, 'alert');
       return newRequest;
     },
-    [hospitals, liveCoordinates, showNotification]
+    [hospitals, liveCoordinates, activeLocationName, showNotification]
   );
+
 
   // Revoke Citizen SOS with grace period: frees hospital bed and stands down ambulance
   const revokeCitizenSOS = useCallback(

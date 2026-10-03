@@ -197,6 +197,7 @@ export interface Hospital {
   activeHoldCount: number;
   nurseInCharge: string;
   directRadioChannel: string;
+  phone?: string;
 }
 
 export type HoldStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'arrived';

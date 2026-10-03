@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useBedLink } from '../../context/BedLinkContext';
 import { EmergencyCategory } from '../../types/bedlink';
+import { METRO_SECTORS } from '../../utils/geo';
 import {
   AlertCircle,
   PhoneCall,
@@ -47,6 +48,19 @@ export const CitizenSOSView: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
+  const [selectedSectorId, setSelectedSectorId] = useState<string>('sec-bandra');
+
+  // Mumbai sector definitions for routing (matches METRO_SECTORS in geo.ts)
+  const mumbaySectors = [
+    { id: 'sec-bandra', label: language === 'hi' ? 'बांद्रा पश्चिम / बीकेसी' : language === 'mr' ? 'वांद्रे पश्चिम / बीकेसी' : 'Bandra West / BKC', nearHospital: 'Lilavati' },
+    { id: 'sec-mahim',  label: language === 'hi' ? 'माहिम / कैडेल रोड' : language === 'mr' ? 'माहिम / कॅडेल रोड' : 'Mahim / Cadell Road', nearHospital: 'Hinduja' },
+    { id: 'sec-parel',  label: language === 'hi' ? 'परेल / डॉ. अम्बेडकर रोड' : language === 'mr' ? 'परळ / डॉ. आंबेडकर रोड' : 'Parel / Lower Parel', nearHospital: 'KEM' },
+    { id: 'sec-sion',   label: language === 'hi' ? 'सायन / पूर्वी एक्सप्रेसवे' : language === 'mr' ? 'सायन / पूर्व द्रुतगती' : 'Sion / Eastern Expy', nearHospital: 'Sion' },
+    { id: 'sec-andheri',label: language === 'hi' ? 'अंधेरी पश्चिम / लिंक रोड' : language === 'mr' ? 'अंधेरी पश्चिम / लिंक रोड' : 'Andheri West / Link Rd', nearHospital: 'Kokilaben' },
+    { id: 'sec-southmumbai', label: language === 'hi' ? 'मरीन लाइन्स / फोर्ट' : language === 'mr' ? 'मरीन लाइन्स / फोर्ट' : 'Marine Lines / South Mumbai', nearHospital: 'Bombay Hospital' },
+  ];
+
+  const selectedSector = METRO_SECTORS[selectedSectorId] || METRO_SECTORS['sec-bandra'];
 
   const handleVoiceClassified = (result: ClassifiedEmergency, transcript: string) => {
     setSelectedCategory(result.category);
@@ -60,7 +74,10 @@ export const CitizenSOSView: React.FC = () => {
     triggerCitizenSOS(
       result.category,
       callerPhone || '+91 98200 12345',
-      transcript || 'Voice classified emergency'
+      transcript || 'Voice classified emergency',
+      selectedSector.coords.lat,
+      selectedSector.coords.lng,
+      selectedSector.label
     );
   };
 
@@ -97,9 +114,17 @@ export const CitizenSOSView: React.FC = () => {
   ];
 
   const handleTriggerSOS = () => {
-    triggerCitizenSOS(selectedCategory, callerPhone, notes);
+    triggerCitizenSOS(
+      selectedCategory,
+      callerPhone,
+      notes,
+      selectedSector.coords.lat,
+      selectedSector.coords.lng,
+      selectedSector.label
+    );
     setIsConfirming(false);
   };
+
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
@@ -407,10 +432,51 @@ export const CitizenSOSView: React.FC = () => {
           />
 
           <div className="bg-white border border-slate-200 rounded-lg p-5 sm:p-6 shadow-xs flex flex-col gap-5">
+
+            {/* MUMBAI AREA / SECTOR SELECTOR */}
+            <div>
+              <label className="text-xs font-bold text-slate-900 uppercase tracking-wider block mb-2">
+                <MapPin className="w-3.5 h-3.5 inline mr-1 text-rose-600" />
+                {language === 'hi' ? 'आपका क्षेत्र / मोहल्ला (मुंबई)' : language === 'mr' ? 'तुमचा भाग / क्षेत्र (मुंबई)' : 'Your Area in Mumbai'}
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {mumbaySectors.map((sector) => {
+                  const isSel = selectedSectorId === sector.id;
+                  return (
+                    <button
+                      key={sector.id}
+                      type="button"
+                      onClick={() => setSelectedSectorId(sector.id)}
+                      className={`p-2.5 rounded-lg border text-left transition-colors cursor-pointer ${
+                        isSel
+                          ? 'border-rose-600 bg-rose-50 ring-1 ring-rose-500'
+                          : 'border-slate-200 hover:border-slate-300 bg-slate-50'
+                      }`}
+                    >
+                      <span className={`text-xs font-bold block ${isSel ? 'text-rose-900' : 'text-slate-700'}`}>
+                        {sector.label}
+                      </span>
+                      <span className={`text-[10px] mt-0.5 block ${isSel ? 'text-rose-600' : 'text-slate-400'}`}>
+                        {language === 'hi' ? 'निकट:' : language === 'mr' ? 'जवळ:' : 'Near:'} {sector.nearHospital}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1.5">
+                {language === 'hi'
+                  ? 'आपका चुना गया क्षेत्र अनुसार निकटतम उपलब्ध अस्पताल स्वतः चुना जाएगा।'
+                  : language === 'mr'
+                  ? 'तुमच्या निवडलेल्या क्षेत्रानुसार जवळचे उपलब्ध रुग्णालय आपोआप निवडले जाईल.'
+                  : 'The nearest available ER to your selected area will be auto-matched.'}
+              </p>
+            </div>
+
             <div>
               <label className="text-xs font-bold text-slate-900 uppercase tracking-wider block mb-2">
                 {t.selectEmergencyType}
               </label>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {emergencyCategories.map((cat) => {
                   const isSelected = selectedCategory === cat.id;

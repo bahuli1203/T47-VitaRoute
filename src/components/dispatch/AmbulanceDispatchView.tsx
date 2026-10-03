@@ -54,16 +54,58 @@ export const AmbulanceDispatchView: React.FC = () => {
 
   const handleSimulateNewEmergency = (type: 'cardiac' | 'respiratory' | 'trauma') => {
     if (type === 'cardiac') {
-      const best = hospitals.find((h) => h.specialties.includes('cardiac_cath_lab') && h.beds.cardiac_monitored.available > 0) || hospitals[0];
-      requestHold(best.id, 'cardiac_monitored', 'Ambulance Unit 104', 'Red', { bp: '90/60', hr: 132, spo2: 89, gcs: 11 });
+      // Cardiac: prefer cardiac_cath_lab specialty + available cardiac beds, rank by score
+      const ranked = [...hospitals]
+        .map((h) => ({
+          h,
+          score: (h.specialties.includes('cardiac_cath_lab') ? -200 : 0)
+            + (h.beds.cardiac_monitored.available > 0 ? -100 : 1000)
+            - h.beds.cardiac_monitored.available * 5
+            + (h.diversionStatus === 'Diversion' ? 500 : 0)
+            + (h.erLoad === 'Surge' ? 30 : h.erLoad === 'Medium' ? 10 : 0),
+        }))
+        .sort((a, b) => a.score - b.score);
+      const best = ranked[0].h;
+      requestHold(best.id, 'cardiac_monitored',
+        'Ambulance 208 (Cardiac Response Squad - Mahim)', 'Red',
+        { bp: '90/60', hr: 132, spo2: 89, gcs: 11 });
+
     } else if (type === 'respiratory') {
-      const best = hospitals.find((h) => h.beds.icu_ventilator.available > 0) || hospitals[0];
-      requestHold(best.id, 'icu_ventilator', 'Ambulance Unit 104', 'Red', { bp: '105/70', hr: 118, spo2: 81, gcs: 10 });
+      // Respiratory: prefer ECMO + ICU ventilator
+      const ranked = [...hospitals]
+        .map((h) => ({
+          h,
+          score: (h.specialties.includes('ecmo') ? -150 : 0)
+            + (h.beds.icu_ventilator.available > 0 ? -100 : 1000)
+            - h.beds.icu_ventilator.available * 5
+            + (h.diversionStatus === 'Diversion' ? 500 : 0)
+            + (h.erLoad === 'Surge' ? 30 : h.erLoad === 'Medium' ? 10 : 0),
+        }))
+        .sort((a, b) => a.score - b.score);
+      const best = ranked[0].h;
+      requestHold(best.id, 'icu_ventilator',
+        'Medic 7 (Critical Care Mobile ICU - Parel Hub)', 'Red',
+        { bp: '105/70', hr: 118, spo2: 81, gcs: 10 });
+
     } else {
-      const best = hospitals.find((h) => h.specialties.includes('trauma_level_1') && h.beds.trauma_resuscitation.available > 0) || hospitals[0];
-      requestHold(best.id, 'trauma_resuscitation', 'Ambulance Unit 104', 'Red', { bp: '82/50', hr: 140, spo2: 86, gcs: 8 });
+      // Trauma: prefer trauma_level_1 specialty + trauma_resuscitation bed
+      const ranked = [...hospitals]
+        .map((h) => ({
+          h,
+          score: (h.specialties.includes('trauma_level_1') ? -200 : 0)
+            + (h.beds.trauma_resuscitation.available > 0 ? -100 : 1000)
+            - h.beds.trauma_resuscitation.available * 5
+            + (h.diversionStatus === 'Diversion' ? 500 : 0)
+            + (h.erLoad === 'Surge' ? 30 : h.erLoad === 'Medium' ? 10 : 0),
+        }))
+        .sort((a, b) => a.score - b.score);
+      const best = ranked[0].h;
+      requestHold(best.id, 'trauma_resuscitation',
+        'Medic 19 (Metro Trauma Response - Sion Flyover)', 'Red',
+        { bp: '82/50', hr: 140, spo2: 86, gcs: 8 });
     }
   };
+
 
   const isAccepted = activeHold?.status === 'accepted';
   const isPending = activeHold?.status === 'pending';

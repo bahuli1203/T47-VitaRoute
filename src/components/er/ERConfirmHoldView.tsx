@@ -11,11 +11,12 @@ import {
   User,
   Phone,
   MapPin,
-  Clock,
+  ChevronDown,
 } from 'lucide-react';
 
 export const ERConfirmHoldView: React.FC = () => {
   const {
+    hospitals,
     currentHospital,
     activeHolds,
     acceptHold,
@@ -27,10 +28,20 @@ export const ERConfirmHoldView: React.FC = () => {
   } = useBedLink();
 
   const [rejectingHoldId, setRejectingHoldId] = useState<string | null>(null);
+  // Hospital desk selector: 'all' shows all holds; a hospital id filters to that hospital
+  const [deskHospitalId, setDeskHospitalId] = useState<string>(currentHospital.id);
 
-  // Dynamic real-time lists of holds
-  const pendingHolds = activeHolds.filter((h) => h.status === 'pending');
-  const acceptedHolds = activeHolds.filter((h) => h.status === 'accepted');
+  // Filter holds by selected hospital desk (or show all)
+  const selectedDeskHospital = hospitals.find((h) => h.id === deskHospitalId) || currentHospital;
+  const filteredActiveHolds = deskHospitalId === 'all'
+    ? activeHolds
+    : activeHolds.filter((h) => h.hospitalId === deskHospitalId);
+
+  const pendingHolds = filteredActiveHolds.filter((h) => h.status === 'pending');
+  const acceptedHolds = filteredActiveHolds.filter((h) => h.status === 'accepted');
+
+  // Network-wide counts for awareness
+  const allPendingCount = activeHolds.filter((h) => h.status === 'pending').length;
 
   const txt = {
     deptTitle: language === 'hi' ? 'आपातकालीन विभाग' : language === 'mr' ? 'आणीबाणी विभाग' : 'Emergency Department',
@@ -39,30 +50,35 @@ export const ERConfirmHoldView: React.FC = () => {
     radioLabel: language === 'hi' ? 'रेडियो' : language === 'mr' ? 'रेडिओ' : 'Radio',
     openIcuBeds: language === 'hi' ? 'खुले आईसीयू बेड' : language === 'mr' ? 'उपलब्ध आयसीयू बेड्स' : 'Open ICU Beds',
     availableText: language === 'hi' ? 'उपलब्ध' : language === 'mr' ? 'उपलब्ध' : 'Available',
-    incomingBanner: language === 'hi' ? 'आने वाली एम्बुलेंस का अनुरोध (120 सेकंड विंडो)' : language === 'mr' ? 'येणाऱ्या रुग्णवाहिकेची विनंती (१२० सेकंद विंडो)' : 'Incoming Ambulance Hold (120s Confirmation Window)',
+    incomingBanner: language === 'hi' ? 'आने वाली एम्बुलेंस — 120 सेकंड होल्ड विंडो' : language === 'mr' ? 'येणारी रुग्णवाहिका — १२० सेकंद होल्ड विंडो' : 'Incoming Ambulance — 120s Hold Window',
     timeToDecide: language === 'hi' ? 'निर्णय का समय' : language === 'mr' ? 'निर्णयाची वेळ' : 'Time to Decide',
-    autoRerouteNote: language === 'hi' ? 'समय समाप्ति पर स्वतः पुनर्निर्देशन' : language === 'mr' ? 'वेळ संपल्यास आपोआप पुढच्या रुग्णालयाकडे' : 'Auto-reroutes on timeout',
-    patientIncident: language === 'hi' ? 'मरीज की स्थिति एवं लक्षण' : language === 'mr' ? 'रुग्णाची स्थिती आणि लक्षणे' : 'Patient Incident & Chief Complaint',
+    autoRerouteNote: language === 'hi' ? 'समय समाप्ति पर स्वतः पुनर्निर्देशन' : language === 'mr' ? 'वेळ संपल्यास आपोआप पुढे' : 'Auto-reroutes on timeout',
+    patientIncident: language === 'hi' ? 'मरीज की जानकारी एवं मुख्य लक्षण' : language === 'mr' ? 'रुग्णाची माहिती आणि मुख्य लक्षणे' : 'Patient Info & Chief Complaint',
     acuityLabel: language === 'hi' ? 'तीव्रता' : language === 'mr' ? 'तीव्रता' : 'Acuity',
     acuityRed: language === 'hi' ? 'तात्कालिक रेड' : language === 'mr' ? 'तात्काळ रेड' : 'Immediate Red',
     etaLabel: language === 'hi' ? 'अनुमानित समय' : language === 'mr' ? 'अंदाजित वेळ' : 'ETA',
     minsText: language === 'hi' ? 'मिनट' : language === 'mr' ? 'मिनिटे' : 'mins',
     liveVitals: language === 'hi' ? 'रास्ते में लाइव वाइटल्स' : language === 'mr' ? 'थेट प्रवासातील वाइटल्स' : 'Live In-Transit Vitals',
-    btnAccept: language === 'hi' ? 'बेड होल्ड स्वीकारें एवं एम्बुलेंस हेतु आरक्षित करें' : language === 'mr' ? 'बेड होल्ड स्वीकारा आणि रुग्णवाहिकेसाठी आरक्षित करा' : 'Accept Bed Hold & Lock ER Bay',
+    btnAccept: language === 'hi' ? 'बेड होल्ड स्वीकारें' : language === 'mr' ? 'बेड होल्ड स्वीकारा' : 'Accept Bed Hold',
     btnDivert: language === 'hi' ? 'डायवर्ट / अस्वीकृत' : language === 'mr' ? 'डायव्हर्ट / नकार' : 'Divert / Reject',
-    selectDiversionReason: language === 'hi' ? 'डायवर्जन का कारण चुनें (एम्बुलेंस स्वतः अगले ईआर को जाएगी):' : language === 'mr' ? 'डायव्हर्शनचे कारण निवडा (रुग्णवाहिका आपोआप पुढच्या रुग्णालयाकडे जाईल):' : 'Select Diversion Reason (Ambulance will auto-reroute to next ER):',
-    activeReservations: language === 'hi' ? 'आने वाली एम्बुलेंस के लिए सक्रिय बेड आरक्षण' : language === 'mr' ? 'येणाऱ्या रुग्णवाहिकांसाठी सक्रिय बेड आरक्षण' : 'Active Bed Reservations for Incoming Units',
+    selectDiversionReason: language === 'hi' ? 'डायवर्जन का कारण चुनें:' : language === 'mr' ? 'डायव्हर्शनचे कारण निवडा:' : 'Select Diversion Reason:',
+    activeReservations: language === 'hi' ? 'स्वीकृत बेड आरक्षण' : language === 'mr' ? 'स्वीकृत बेड आरक्षण' : 'Active Bed Reservations',
     incomingCount: (count: number) => language === 'hi' ? `${count} एम्बुलेंस रास्ते में` : language === 'mr' ? `${count} रुग्णवाहिका मार्गावर` : `${count} Unit(s) Incoming`,
-    zeroPending: language === 'hi' ? '0 लंबित अनुरोध' : language === 'mr' ? '० प्रलंबित विनंत्या' : '0 Pending Requests',
-    bedHeldBay: (bay: string) => language === 'hi' ? `बेड आरक्षित: ${bay}` : language === 'mr' ? `बेड आरक्षित: ${bay}` : `Bed Held: ${bay}`,
-    btnTrackLiveMap: language === 'hi' ? 'लाइव मैप पर ट्रैक करें' : language === 'mr' ? 'थेट नकाशावर ट्रॅक करा' : 'Track on Live Map',
-    noAmbulancesNotice: language === 'hi' ? 'वर्तमान में कोई लंबित अनुरोध नहीं है। नागरिक एसओएस या एम्बुलेंस अनुरोध आने पर तुरंत नया कार्ड दिखाई देगा।' : language === 'mr' ? 'सध्या कोणतीही प्रलंबित विनंती नाही. नागरिक एसओएस किंवा विनंती आल्यावर त्वरित नवीन कार्ड दिसेल.' : 'No pending hold requests at present. When a citizen clicks SOS or an ambulance requests a hold, a real-time card appears here instantly.',
+    zeroPending: language === 'hi' ? '0 लंबित अनुरोध' : language === 'mr' ? '० प्रलंबित विनंत्या' : '0 Pending',
+    bedHeldBay: (bay: string) => language === 'hi' ? `बेड आरक्षित: ${bay}` : language === 'mr' ? `बेड आरक्षित: ${bay}` : `Bay: ${bay}`,
+    btnTrackLiveMap: language === 'hi' ? 'लाइव मैप' : language === 'mr' ? 'थेट नकाशा' : 'Track Live Map',
+    noAmbulancesNotice: language === 'hi' ? 'इस अस्पताल के लिए कोई लंबित अनुरोध नहीं। नागरिक एसओएस भेजने पर तुरंत यहाँ कार्ड दिखेगा।' : language === 'mr' ? 'या रुग्णालयासाठी सध्या कोणती प्रलंबित विनंती नाही.' : 'No pending holds for this hospital desk. Requests appear instantly when a citizen triggers SOS.',
+    deskLabel: language === 'hi' ? 'अस्पताल डेस्क:' : language === 'mr' ? 'रुग्णालय डेस्क:' : 'Hospital Desk:',
+    allNetwork: language === 'hi' ? 'संपूर्ण मुंबई नेटवर्क' : language === 'mr' ? 'संपूर्ण मुंबई नेटवर्क' : 'All Mumbai Network',
+    targetHospitalLabel: language === 'hi' ? 'लक्षित ईआर' : language === 'mr' ? 'लक्ष्य ईआर' : 'Target ER',
+    distanceLabel: language === 'hi' ? 'दूरी' : language === 'mr' ? 'अंतर' : 'Distance',
+    markArrived: language === 'hi' ? 'आगमन चिह्नित करें' : language === 'mr' ? 'आगमन नोंदवा' : 'Mark Arrived',
   };
 
   const diversionReasons = [
-    language === 'hi' ? 'आपातकालीन विभाग अधिकतम सर्ज डायवर्जन पर है' : language === 'mr' ? 'आणीबाणी विभाग कमाल क्षमतेमुळे डायव्हर्शनवर आहे' : 'Emergency Department at maximum surge capacity',
-    language === 'hi' ? 'सर्जन/विशेषज्ञ आपातकालीन सर्जरी में व्यस्त हैं' : language === 'mr' ? 'तज्ज्ञ डॉक्टर आपत्कालीन शस्त्रक्रियेमध्ये व्यस्त आहेत' : 'Attending specialist currently occupied in surgery',
-    language === 'hi' ? 'रेडियोलॉजी / सीटी स्कैनर रखरखाव हेतु बंद है' : language === 'mr' ? 'रेडिओलॉजी / सीटी स्कॅनर देखभालीसाठी बंद आहे' : 'CT scanner / Cath lab temporarily offline for maintenance',
+    language === 'hi' ? 'आपातकालीन विभाग अधिकतम सर्ज पर — डायवर्जन' : language === 'mr' ? 'आणीबाणी विभाग कमाल क्षमतेमुळे डायव्हर्शन' : 'Emergency Department at maximum surge capacity',
+    language === 'hi' ? 'सर्जन आपातकालीन सर्जरी में व्यस्त' : language === 'mr' ? 'तज्ज्ञ डॉक्टर आपत्कालीन शस्त्रक्रियेत व्यस्त' : 'Attending specialist in emergency surgery',
+    language === 'hi' ? 'सीटी स्कैनर / कैथ लैब अस्थायी रूप से बंद' : language === 'mr' ? 'सीटी स्कॅनर / कॅथ लॅब तात्पुरते बंद' : 'CT scanner / Cath lab temporarily offline',
   ];
 
   const handleAccept = (holdId: string) => {
@@ -76,47 +92,95 @@ export const ERConfirmHoldView: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 py-2">
-      {/* Hospital ER Desk Header */}
-      <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 font-bold shrink-0">
-            <Building2 className="w-6 h-6" />
+      {/* Hospital ER Desk Header + Desk Switcher */}
+      <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 font-bold shrink-0">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-extrabold text-neutral-950">
+                  {selectedDeskHospital.name} &middot; {txt.deptTitle}
+                </h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  {txt.erOpen}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                {selectedDeskHospital.address}
+              </p>
+            </div>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-extrabold text-neutral-950">
-                {currentHospital.name} &middot; {txt.deptTitle}
-              </h2>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                {txt.erOpen}
+          <div className="flex items-center gap-2 text-xs shrink-0">
+            <div className="bg-neutral-50 px-3 py-1.5 rounded-xl border border-neutral-200 text-center">
+              <span className="text-[10px] font-bold text-neutral-400 block uppercase">{txt.openIcuBeds}</span>
+              <span className="text-base font-black font-mono text-emerald-700">
+                {selectedDeskHospital.beds.icu_ventilator.available} {txt.availableText}
               </span>
             </div>
-            <p className="text-xs text-neutral-500 mt-0.5">
-              {txt.levelLabel}: {currentHospital.designation} &middot; {txt.radioLabel}: {currentHospital.directRadioChannel}
-            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <div className="bg-neutral-50 px-3 py-1.5 rounded-xl border border-neutral-200 text-center">
-            <span className="text-[10px] font-bold text-neutral-400 block uppercase">{txt.openIcuBeds}</span>
-            <span className="text-base font-black font-mono text-emerald-700">
-              {currentHospital.beds.icu_ventilator.available} {txt.availableText}
-            </span>
+        {/* Hospital Desk Switcher */}
+        <div className="pt-3 border-t border-neutral-100">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-neutral-500 shrink-0">{txt.deskLabel}</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setDeskHospitalId('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                  deskHospitalId === 'all'
+                    ? 'bg-neutral-900 text-white border-neutral-900'
+                    : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50'
+                }`}
+              >
+                {txt.allNetwork}
+                {allPendingCount > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black">
+                    {allPendingCount}
+                  </span>
+                )}
+              </button>
+              {hospitals.map((h) => {
+                const hPendingCount = activeHolds.filter((hold) => hold.hospitalId === h.id && hold.status === 'pending').length;
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => setDeskHospitalId(h.id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                      deskHospitalId === h.id
+                        ? 'bg-red-600 text-white border-red-600'
+                        : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50'
+                    }`}
+                  >
+                    {h.code}
+                    {hPendingCount > 0 && (
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black">
+                        {hPendingCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* DYNAMIC LIST OF INCOMING PENDING HOLDS (Real-time SOS triggers appear here!) */}
+      {/* DYNAMIC LIST OF INCOMING PENDING HOLDS */}
       {pendingHolds.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-red-700 bg-red-50 border border-red-200 px-3 py-1 rounded-full flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-              {pendingHolds.length} {language === 'hi' ? 'सक्रिय आपातकालीन अनुरोध कतार' : language === 'mr' ? 'सक्रिय आणीबाणी विनंती कतार' : 'Active Emergency Request Queue'}
+              {pendingHolds.length} {language === 'hi' ? 'सक्रिय आपातकालीन अनुरोध' : language === 'mr' ? 'सक्रिय आणीबाणी विनंत्या' : 'Active Emergency Requests'}
             </span>
             <span className="text-xs text-neutral-500 font-mono">
-              {language === 'hi' ? 'व्यक्तिगत 120s उल्टी गिनती' : language === 'mr' ? 'वैयक्तिक १२० सेकंद टाइमर' : 'Independent 120s Hold Timers'}
+              {language === 'hi' ? 'व्यक्तिगत 120s उल्टी गिनती' : language === 'mr' ? 'वैयक्तिक १२० सेकंद टाइमर' : 'Individual 120s countdown per request'}
             </span>
           </div>
 
@@ -125,9 +189,9 @@ export const ERConfirmHoldView: React.FC = () => {
               key={hold.id}
               className="bg-white border-2 border-red-300 rounded-3xl p-6 sm:p-7 shadow-lg shadow-red-500/5 space-y-5"
             >
-              {/* Unit, Driver, and Individual 120s Countdown */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-100">
-                <div className="flex items-start sm:items-center gap-3">
+              {/* Unit header + Target Hospital badge + Countdown */}
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-neutral-100">
+                <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold shrink-0 animate-pulse">
                     <Ambulance className="w-5 h-5" />
                   </div>
@@ -136,7 +200,7 @@ export const ERConfirmHoldView: React.FC = () => {
                       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-red-600">
                         {txt.incomingBanner}
                       </span>
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.2 rounded bg-neutral-100 text-neutral-800 border border-neutral-200">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 border border-neutral-200">
                         {hold.ambulancePlate || 'MH-02-ER-104'}
                       </span>
                     </div>
@@ -154,24 +218,34 @@ export const ERConfirmHoldView: React.FC = () => {
                         {hold.driverPhone || '+91 98201 55104'}
                       </a>
                     </p>
+                    {/* Target hospital badge */}
+                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1">
+                        <Building2 className="w-3 h-3" />
+                        {txt.targetHospitalLabel}: {hold.hospitalName}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200">
+                        {txt.distanceLabel}: {hold.distanceKm} km · {hold.etaMinutes} {txt.minsText}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3.5 self-start sm:self-auto shrink-0">
+                {/* Prominent ticking countdown timer */}
+                <div className="flex flex-col items-center gap-1.5 self-start shrink-0">
                   <CountdownRing
                     expiresAt={hold.expiresAt}
-                    size={62}
-                    strokeWidth={5}
+                    size={80}
+                    strokeWidth={7}
                     language={language}
+                    showLabel={true}
                   />
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                      {txt.timeToDecide}
-                    </span>
-                    <span className="text-xs font-bold text-red-600">
-                      {txt.autoRerouteNote}
-                    </span>
-                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 text-center">
+                    {txt.timeToDecide}
+                  </span>
+                  <span className="text-[9px] font-bold text-red-600 text-center">
+                    {txt.autoRerouteNote}
+                  </span>
                 </div>
               </div>
 
@@ -199,7 +273,7 @@ export const ERConfirmHoldView: React.FC = () => {
                   </div>
 
                   <p className="text-xs font-bold text-red-900 bg-red-50/70 p-2 rounded-lg border border-red-100 leading-snug">
-                    {hold.chiefComplaint || 'Acute Respiratory Distress / Severe Hypoxemia'}
+                    {hold.chiefComplaint || 'Acute Emergency — Immediate Admission Required'}
                   </p>
 
                   <div className="flex items-center gap-2 pt-1 font-mono text-neutral-600 text-[11px]">
@@ -235,13 +309,21 @@ export const ERConfirmHoldView: React.FC = () => {
 
                   <div className="p-2.5 rounded-xl bg-white border border-neutral-200 space-y-1 mt-2 text-[11px]">
                     <div className="flex justify-between text-neutral-600">
-                      <span>Bed Requested:</span>
+                      <span>{language === 'hi' ? 'अनुरोधित बेड:' : language === 'mr' ? 'मागणी केलेले बेड:' : 'Bed Requested:'}</span>
                       <span className="font-bold text-neutral-900 uppercase font-mono">{hold.bedType.replace(/_/g, ' ')}</span>
                     </div>
                     <div className="flex justify-between text-neutral-600">
-                      <span>Designated Bay:</span>
+                      <span>{language === 'hi' ? 'निर्धारित बे:' : language === 'mr' ? 'नेमून दिलेले बे:' : 'Designated Bay:'}</span>
                       <span className="font-bold text-emerald-700">{hold.assignedBay || 'Resuscitation Bay 1'}</span>
                     </div>
+                    {hold.hospitalPhone && (
+                      <div className="flex justify-between items-center text-neutral-600">
+                        <span>{language === 'hi' ? 'अस्पताल फोन:' : language === 'mr' ? 'रुग्णालय फोन:' : 'Hospital Phone:'}</span>
+                        <a href={`tel:${hold.hospitalPhone.replace(/[^0-9+]/g, '')}`} className="font-mono font-bold text-blue-700 hover:underline">
+                          {hold.hospitalPhone}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -266,7 +348,7 @@ export const ERConfirmHoldView: React.FC = () => {
                 </button>
               </div>
 
-              {/* Divert Reasons Modal Dropdown */}
+              {/* Divert Reasons */}
               {rejectingHoldId === hold.id && (
                 <div className="p-4 rounded-2xl bg-red-50 border border-red-200 space-y-2 text-xs">
                   <span className="font-bold text-red-900 block">
@@ -324,7 +406,7 @@ export const ERConfirmHoldView: React.FC = () => {
                     <strong>{acceptedHold.patientName || 'Rajesh Kumar'}</strong> &middot; {acceptedHold.chiefComplaint} &middot; {txt.etaLabel}: {acceptedHold.etaMinutes} {txt.minsText}
                   </p>
                   <p className="text-[11px] text-neutral-500 mt-0.5">
-                    Driver: {acceptedHold.driverName || 'Paramedic Arjun Singh'} ({acceptedHold.driverPhone || '+91 98201 55104'})
+                    {language === 'hi' ? 'चालक:' : language === 'mr' ? 'चालक:' : 'Driver:'} {acceptedHold.driverName || 'Paramedic Arjun Singh'} ({acceptedHold.driverPhone || '+91 98201 55104'})
                   </p>
                 </div>
 
@@ -334,7 +416,7 @@ export const ERConfirmHoldView: React.FC = () => {
                     onClick={() => markArrived(acceptedHold.id)}
                     className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors"
                   >
-                    Mark Arrived
+                    {txt.markArrived}
                   </button>
                   <button
                     type="button"

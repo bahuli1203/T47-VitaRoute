@@ -26,6 +26,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     lastUpdatedTimestamp: Date.now() - 4 * 60 * 1000,
     nurseInCharge: 'Sister Anjali Deshmukh, RN BSc Nursing',
     directRadioChannel: 'MUM-EMS CH-1 (155.340 MHz)',
+    phone: '022-2410 7000',
     activeHoldCount: 1,
     beds: {
       icu_ventilator: { total: 16, available: 3, held: 1 },
@@ -62,6 +63,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     lastUpdatedTimestamp: Date.now() - 11 * 60 * 1000,
     nurseInCharge: 'Sister Mary Fernandes, RN BSN CCRN',
     directRadioChannel: 'MUM-EMS CH-2 (155.280 MHz)',
+    phone: '022-2675 1000',
     activeHoldCount: 0,
     beds: {
       icu_ventilator: { total: 14, available: 5, held: 0 },
@@ -91,6 +93,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     lastUpdatedTimestamp: Date.now() - 24 * 60 * 1000,
     nurseInCharge: 'Sister Rashmi Kulkarni, RN MSN',
     directRadioChannel: 'MUM-EMS CH-3 (155.385 MHz)',
+    phone: '022-2445 1515',
     activeHoldCount: 2,
     beds: {
       icu_ventilator: { total: 12, available: 2, held: 1 },
@@ -120,6 +123,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     lastUpdatedTimestamp: Date.now() - 8 * 60 * 1000,
     nurseInCharge: 'Sister Pooja Sawant, RN',
     directRadioChannel: 'MUM-EMS CH-4 (155.220 MHz)',
+    phone: '022-4269 6969',
     activeHoldCount: 0,
     beds: {
       icu_ventilator: { total: 18, available: 6, held: 0 },
@@ -149,6 +153,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     lastUpdatedTimestamp: Date.now() - 15 * 60 * 1000,
     nurseInCharge: 'Sister Kavita Shinde, RN',
     directRadioChannel: 'MUM-EMS CH-5 (155.400 MHz)',
+    phone: '022-2407 6381',
     activeHoldCount: 1,
     beds: {
       icu_ventilator: { total: 14, available: 2, held: 1 },
@@ -178,6 +183,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     lastUpdatedTimestamp: Date.now() - 6 * 60 * 1000,
     nurseInCharge: 'Sister Deepa Nair, RN',
     directRadioChannel: 'MUM-EMS CH-6 (155.150 MHz)',
+    phone: '022-2206 7676',
     activeHoldCount: 0,
     beds: {
       icu_ventilator: { total: 12, available: 4, held: 0 },
@@ -207,6 +213,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     lastUpdatedTimestamp: Date.now() - 14 * 60 * 1000,
     nurseInCharge: 'Sister Sunita Jadhav, RN',
     directRadioChannel: 'MUM-EMS CH-7 (155.420 MHz)',
+    phone: '022-2626 7500',
     activeHoldCount: 0,
     beds: {
       icu_ventilator: { total: 12, available: 3, held: 0 },
